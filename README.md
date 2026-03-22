@@ -1,16 +1,107 @@
-# React + Vite
+# Financial Intelligence Suite — Tableau de bord exécutif
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Tableau de bord d'intelligence financière pour dirigeants. Scoring hybride IA + quantitatif, visualisations interactives, analyse de portefeuille en temps réel.
 
-Currently, two official plugins are available:
+> Développé par [Mark Systems](https://github.com/AILabManager-tech/mark-systems). Certifié SOIC v3.0 μ=9.62/10.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Fonctionnalités
 
-## React Compiler
+- Tableau de bord exécutif avec KPIs financiers
+- Scoring hybride IA + quantitatif (scoreTranslator)
+- Graphiques interactifs (Recharts)
+- Table d'actifs avec recherche et filtres
+- Indicateurs de sécurité (SafetyBadge)
+- Market Pulse en temps réel
+- Top Performers avec classement dynamique
+- Responsive design
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Stack technique
 
-## Expanding the ESLint configuration
+| Couche | Technologie |
+|--------|-------------|
+| Framework | React 19 + Vite 7 |
+| CSS | Tailwind CSS 4 |
+| Graphiques | Recharts |
+| Icônes | Lucide React |
+| Tests | Vitest + @testing-library/react |
+| Déploiement | Vercel |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Composants
+
+| Composant | Description |
+|-----------|-------------|
+| `ScoreGauge` | Jauge visuelle du score global |
+| `IntelligenceCard` | Carte KPI avec indicateur de tendance |
+| `AssetTable` | Table d'actifs triable et filtrable |
+| `MarketPulse` | Indicateurs de marché en temps réel |
+| `TopPerformers` | Classement des meilleurs actifs |
+| `SafetyBadge` | Badge de niveau de sécurité |
+| `SearchFilter` | Barre de recherche avec filtres |
+
+## Démarrage
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # Build production
+npm test           # Tests
+```
+
+## Licence
+
+Propriétaire — Mark Systems © 2026
+
+---
+
+# Financial Intelligence Suite — Executive Dashboard
+
+Executive financial intelligence dashboard. Hybrid AI + quantitative scoring, interactive visualizations, real-time portfolio analysis.
+
+> Built by [Mark Systems](https://github.com/AILabManager-tech/mark-systems). SOIC v3.0 certified μ=9.62/10.
+
+## Features
+
+- Executive dashboard with financial KPIs
+- Hybrid AI + quantitative scoring (scoreTranslator)
+- Interactive charts (Recharts)
+- Asset table with search and filters
+- Security indicators (SafetyBadge)
+- Real-time Market Pulse
+- Top Performers with dynamic ranking
+- Responsive design
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | React 19 + Vite 7 |
+| CSS | Tailwind CSS 4 |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Testing | Vitest + @testing-library/react |
+| Deployment | Vercel |
+
+## Components
+
+| Component | Description |
+|-----------|-------------|
+| `ScoreGauge` | Visual gauge for overall score |
+| `IntelligenceCard` | KPI card with trend indicator |
+| `AssetTable` | Sortable and filterable asset table |
+| `MarketPulse` | Real-time market indicators |
+| `TopPerformers` | Top asset ranking |
+| `SafetyBadge` | Security level badge |
+| `SearchFilter` | Search bar with filters |
+
+## Getting Started
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # Production build
+npm test           # Tests
+```
+
+## License
+
+Proprietary — Mark Systems © 2026
