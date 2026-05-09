@@ -1,32 +1,29 @@
-import { useState, useCallback } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
+import { getSectorFamily } from "../utils/portfolioAnalytics";
 
-const SECTORS = [
-  "Tous les secteurs",
-  "Technologie",
-  "Automobile",
-  "Finance",
-  "Santé",
-  "Consommation",
-];
-
-const SCORE_RANGES = [
-  { label: "Tous les scores", min: 0, max: 100 },
-  { label: "Opportunité Forte (90+)", min: 90, max: 100 },
-  { label: "Opportunité Modérée (75-89)", min: 75, max: 89 },
-  { label: "Surveiller (60-74)", min: 60, max: 74 },
-  { label: "Prudence / Risque (<60)", min: 0, max: 59 },
+const REVIEW_FILTERS = [
+  { label: "Tous les statuts", test: () => true },
+  { label: "Variation négative", test: (asset) => asset.changePct < 0 },
+  { label: "Variation positive", test: (asset) => asset.changePct >= 0 },
+  { label: "Source Finnhub", test: (asset) => asset.marketData?.source === "finnhub.io" },
+  { label: "Source fallback", test: (asset) => asset.marketData?.source && asset.marketData.source !== "finnhub.io" },
 ];
 
 export default function SearchFilter({ assets, onFilter }) {
+  const sectors = useMemo(() => [
+    "Tous les secteurs",
+    ...Array.from(new Set(assets.map((asset) => getSectorFamily(asset.sector)))).sort((a, b) => a.localeCompare(b)),
+  ], [assets]);
+
   const [query, setQuery] = useState("");
-  const [sector, setSector] = useState(SECTORS[0]);
-  const [scoreRange, setScoreRange] = useState(SCORE_RANGES[0]);
+  const [sector, setSector] = useState("Tous les secteurs");
+  const [reviewFilter, setReviewFilter] = useState(REVIEW_FILTERS[0]);
   const [showFilters, setShowFilters] = useState(false);
 
-  const hasActiveFilters = query || sector !== SECTORS[0] || scoreRange !== SCORE_RANGES[0];
+  const hasActiveFilters = query || sector !== sectors[0] || reviewFilter !== REVIEW_FILTERS[0];
 
-  const applyFilters = useCallback((q, sec, range) => {
+  const applyFilters = useCallback((q, sec, review) => {
     let filtered = assets;
 
     if (q.trim()) {
@@ -36,35 +33,35 @@ export default function SearchFilter({ assets, onFilter }) {
       );
     }
 
-    if (sec !== SECTORS[0]) {
-      filtered = filtered.filter((a) => a.sector.toLowerCase().includes(sec.toLowerCase()));
+    if (sec !== sectors[0]) {
+      filtered = filtered.filter((a) => getSectorFamily(a.sector) === sec);
     }
 
-    filtered = filtered.filter((a) => a.score >= range.min && a.score <= range.max);
+    filtered = filtered.filter(review.test);
 
     onFilter(filtered);
-  }, [assets, onFilter]);
+  }, [assets, onFilter, sectors]);
 
   const handleQuery = (value) => {
     setQuery(value);
-    applyFilters(value, sector, scoreRange);
+    applyFilters(value, sector, reviewFilter);
   };
 
   const handleSector = (value) => {
     setSector(value);
-    applyFilters(query, value, scoreRange);
+    applyFilters(query, value, reviewFilter);
   };
 
-  const handleScoreRange = (value) => {
-    const range = SCORE_RANGES.find((r) => r.label === value) || SCORE_RANGES[0];
-    setScoreRange(range);
-    applyFilters(query, sector, range);
+  const handleReviewFilter = (value) => {
+    const filter = REVIEW_FILTERS.find((r) => r.label === value) || REVIEW_FILTERS[0];
+    setReviewFilter(filter);
+    applyFilters(query, sector, filter);
   };
 
   const clearAll = () => {
     setQuery("");
-    setSector(SECTORS[0]);
-    setScoreRange(SCORE_RANGES[0]);
+    setSector(sectors[0]);
+    setReviewFilter(REVIEW_FILTERS[0]);
     onFilter(assets);
   };
 
@@ -120,18 +117,18 @@ export default function SearchFilter({ assets, onFilter }) {
             aria-label="Filtrer par secteur"
             className="px-3 py-2 rounded-lg bg-surface-800 border border-white/5 text-sm text-slate-300 focus:outline-none focus:border-violet-500/50 cursor-pointer"
           >
-            {SECTORS.map((s) => (
+            {sectors.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
 
           <select
-            value={scoreRange.label}
-            onChange={(e) => handleScoreRange(e.target.value)}
-            aria-label="Filtrer par score"
+            value={reviewFilter.label}
+            onChange={(e) => handleReviewFilter(e.target.value)}
+            aria-label="Filtrer par statut opérateur"
             className="px-3 py-2 rounded-lg bg-surface-800 border border-white/5 text-sm text-slate-300 focus:outline-none focus:border-violet-500/50 cursor-pointer"
           >
-            {SCORE_RANGES.map((r) => (
+            {REVIEW_FILTERS.map((r) => (
               <option key={r.label} value={r.label}>{r.label}</option>
             ))}
           </select>

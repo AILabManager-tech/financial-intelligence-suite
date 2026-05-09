@@ -50,6 +50,22 @@ const GLOSSARY = {
     title: "Score Global",
     description: "Note de 0 à 100 combinant l'analyse quantitative (chiffres) et l'analyse IA (contexte). Au-dessus de 75, l'actif est considéré comme une bonne opportunité.",
   },
+  positionValue: {
+    title: "Valeur de Position",
+    description: "Valeur de marché de la position détenue : quantité multipliée par le dernier prix disponible.",
+  },
+  unrealizedPnl: {
+    title: "P&L Latent",
+    description: "Gain ou perte non réalisé par rapport au coût moyen de la position. Il devient réalisé seulement après vente.",
+  },
+  quantity: {
+    title: "Quantité Détenue",
+    description: "Nombre d'actions ou unités suivies pour cet actif dans le portefeuille modèle.",
+  },
+  averageCost: {
+    title: "Coût Moyen",
+    description: "Prix moyen payé par unité. Il sert de base au calcul du gain ou de la perte latente.",
+  },
 };
 
 export default function Tooltip({ term, children }) {

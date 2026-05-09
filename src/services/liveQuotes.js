@@ -1,0 +1,87 @@
+const QUOTE_ENDPOINT = "/api/quotes";
+
+function toNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function normalizeQuote(rawQuote) {
+  const symbol = rawQuote?.symbol ?? rawQuote?.Ticker;
+  const price = toNumber(rawQuote?.price ?? rawQuote?.Price);
+  const change = toNumber(rawQuote?.change ?? rawQuote?.ChangeAmount);
+  const changePct = toNumber(rawQuote?.changePct ?? rawQuote?.ChangePercentage);
+
+  if (!symbol || price === null) return null;
+
+  return {
+    symbol,
+    name: rawQuote?.name ?? rawQuote?.Name,
+    price,
+    change: change ?? 0,
+    changePct: changePct ?? 0,
+    volume: toNumber(rawQuote?.volume ?? rawQuote?.Volume),
+    previousClose: toNumber(rawQuote?.previousClose),
+    source: rawQuote?.source ?? "stockprices.dev",
+    fetchedAt: rawQuote?.fetchedAt ?? new Date().toISOString(),
+    asOf: rawQuote?.asOf,
+  };
+}
+
+export function mergeQuotesIntoAssets(assets, quotes) {
+  const quoteMap = new Map(
+    quotes
+      .map(normalizeQuote)
+      .filter(Boolean)
+      .map((quote) => [quote.symbol.toUpperCase(), quote])
+  );
+
+  return assets.map((asset) => {
+    const quote = quoteMap.get(asset.symbol.toUpperCase());
+    if (!quote) {
+      return {
+        ...asset,
+        marketData: {
+          status: "stale",
+          source: "mock",
+          fetchedAt: null,
+          message: "Quote live indisponible; données statiques conservées.",
+        },
+      };
+    }
+
+    return {
+      ...asset,
+      name: quote.name || asset.name,
+      price: quote.price,
+      change: quote.change,
+      changePct: quote.changePct,
+      volume: quote.volume ?? asset.volume,
+      marketData: {
+        status: "live",
+      source: quote.source,
+      fetchedAt: quote.fetchedAt,
+      asOf: quote.asOf,
+      previousClose: quote.previousClose,
+      message: "Prix récupéré depuis une source externe.",
+    },
+    };
+  });
+}
+
+export async function fetchLiveQuotes(symbols) {
+  const params = new URLSearchParams({ symbols: symbols.join(",") });
+  const response = await fetch(`${QUOTE_ENDPOINT}?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(`Quote API unavailable (${response.status})`);
+  }
+
+  const payload = await response.json();
+  return {
+    quotes: Array.isArray(payload.quotes) ? payload.quotes : [],
+    errors: Array.isArray(payload.errors) ? payload.errors : [],
+    source: payload.source ?? "stockprices.dev",
+    fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
+    primaryConfigured: Boolean(payload.primaryConfigured),
+  };
+}

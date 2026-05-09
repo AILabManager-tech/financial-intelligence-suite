@@ -11,6 +11,7 @@ export const PORTFOLIO_ASSETS = [
     change: +3.21,
     changePct: +0.34,
     volume: 48_200_000,
+    position: { quantity: 42, averageCost: 701.35, targetWeight: 12 },
     recommendation: "Opportunité Forte",
     aiVerdict: "L'IA détecte une convergence de signaux haussiers : demande en accélération pour les puces IA, marges record au dernier trimestre, et un RSI en zone d'achat. Le consensus du marché sous-estime le potentiel de croissance lié aux contrats data center.",
     deterministic: {
@@ -41,6 +42,7 @@ export const PORTFOLIO_ASSETS = [
     change: +1.87,
     changePct: +0.77,
     volume: 52_100_000,
+    position: { quantity: 86, averageCost: 204.80, targetWeight: 10 },
     recommendation: "Opportunité Modérée",
     aiVerdict: "Profil défensif solide. L'IA note une stabilité des revenus services (+18% YoY) qui compense le ralentissement hardware. La trésorerie massive offre un coussin de sécurité. Position recommandée pour les profils conservateurs.",
     deterministic: {
@@ -71,6 +73,7 @@ export const PORTFOLIO_ASSETS = [
     change: +5.42,
     changePct: +1.14,
     volume: 28_400_000,
+    position: { quantity: 51, averageCost: 391.20, targetWeight: 12 },
     recommendation: "Opportunité Forte",
     aiVerdict: "Azure affiche une croissance de +29% ce trimestre, portée par l'adoption massive de Copilot. L'IA identifie Microsoft comme le meilleur vecteur d'exposition au marché de l'IA d'entreprise, avec un ratio risque/rendement optimal.",
     deterministic: {
@@ -101,6 +104,7 @@ export const PORTFOLIO_ASSETS = [
     change: -0.95,
     changePct: -0.48,
     volume: 31_700_000,
+    position: { quantity: 74, averageCost: 174.15, targetWeight: 8 },
     recommendation: "Opportunité Modérée",
     aiVerdict: "Résultats mitigés. La croissance publicitaire reste solide mais l'IA perçoit un risque de disruption par les agents IA sur le search. Google Cloud progresse mais reste 3ème. Position à maintenir mais pas à renforcer.",
     deterministic: {
@@ -131,6 +135,7 @@ export const PORTFOLIO_ASSETS = [
     change: -8.40,
     changePct: -2.15,
     volume: 89_300_000,
+    position: { quantity: 22, averageCost: 405.10, targetWeight: 5 },
     recommendation: "Prudence",
     aiVerdict: "Volatilité élevée. L'IA détecte une divergence entre le momentum du marché et les fondamentaux. Les marges auto sont sous pression (-3pts YoY). Le robotaxi reste prometteur mais non monétisé. Risque de correction à court terme.",
     deterministic: {
@@ -161,6 +166,7 @@ export const PORTFOLIO_ASSETS = [
     change: +2.15,
     changePct: +0.96,
     volume: 44_600_000,
+    position: { quantity: 88, averageCost: 183.75, targetWeight: 11 },
     recommendation: "Opportunité Forte",
     aiVerdict: "AWS reste le leader incontesté du cloud avec +17% de croissance. L'IA note une amélioration significative des marges e-commerce grâce à l'automatisation des entrepôts. La publicité digitale est le moteur de profit caché, en croissance de +24%.",
     deterministic: {
@@ -191,6 +197,7 @@ export const PORTFOLIO_ASSETS = [
     change: +4.30,
     changePct: +0.71,
     volume: 18_900_000,
+    position: { quantity: 31, averageCost: 492.40, targetWeight: 8 },
     recommendation: "Opportunité Modérée",
     aiVerdict: "La monétisation de Reels et l'IA publicitaire Advantage+ portent les résultats. L'IA alerte cependant sur les dépenses colossales en Reality Labs (-$16Mds/an) dont le retour sur investissement reste incertain. Bonne opportunité si tolérance au risque métavers.",
     deterministic: {
@@ -221,6 +228,7 @@ export const PORTFOLIO_ASSETS = [
     change: +1.20,
     changePct: +0.48,
     volume: 9_800_000,
+    position: { quantity: 58, averageCost: 218.90, targetWeight: 8 },
     recommendation: "Opportunité Modérée",
     aiVerdict: "Première banque mondiale par capitalisation. L'IA note une résilience exceptionnelle face aux cycles économiques. Les revenus de trading et de gestion d'actifs compensent la pression sur les marges d'intérêt. Valeur refuge pour diversification.",
     deterministic: {
@@ -251,6 +259,7 @@ export const PORTFOLIO_ASSETS = [
     change: -0.60,
     changePct: -0.38,
     volume: 7_200_000,
+    position: { quantity: 64, averageCost: 164.30, targetWeight: 6 },
     recommendation: "Surveiller",
     aiVerdict: "Profil ultra-défensif après la séparation de Kenvue. L'IA apprécie le pipeline pharmaceutique (Darzalex, Tremfya) mais note une croissance modeste. Idéal comme stabilisateur de portefeuille avec un dividende fiable (+62 ans consécutifs).",
     deterministic: {
@@ -281,6 +290,7 @@ export const PORTFOLIO_ASSETS = [
     change: +2.80,
     changePct: +0.89,
     volume: 6_500_000,
+    position: { quantity: 48, averageCost: 279.20, targetWeight: 8 },
     recommendation: "Opportunité Modérée",
     aiVerdict: "Duopole mondial des paiements avec Mastercard. L'IA valorise le modèle quasi-monopolistique avec des marges nettes exceptionnelles (>50%). La transition vers les paiements numériques dans les marchés émergents offre une piste de croissance à long terme.",
     deterministic: {
@@ -311,6 +321,7 @@ export const PORTFOLIO_ASSETS = [
     change: +0.90,
     changePct: +0.19,
     volume: 3_400_000,
+    position: { quantity: 29, averageCost: 421.60, targetWeight: 7 },
     recommendation: "Opportunité Modérée",
     aiVerdict: "La forteresse financière de Buffett avec $157Mds de cash. L'IA note un positionnement défensif idéal en période d'incertitude. Les participations dans Apple, Coca-Cola et le secteur assurance offrent une diversification naturelle. Manque de catalyseur haussier à court terme.",
     deterministic: {
@@ -341,6 +352,7 @@ export const PORTFOLIO_ASSETS = [
     change: -5.10,
     changePct: -1.04,
     volume: 5_100_000,
+    position: { quantity: 18, averageCost: 528.30, targetWeight: 5 },
     recommendation: "Surveiller",
     aiVerdict: "Leader de l'assurance santé aux USA. L'IA identifie une pression réglementaire croissante (transparence des prix, PBM reform) qui pourrait comprimer les marges. Optum reste un atout stratégique majeur. Rendement stable mais potentiel de hausse limité.",
     deterministic: {

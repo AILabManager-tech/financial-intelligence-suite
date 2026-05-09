@@ -1,12 +1,13 @@
-import { useState, useCallback, lazy, Suspense } from "react";
-import { Brain } from "lucide-react";
-import { PORTFOLIO_ASSETS, MACRO_DATA, PIPELINE_HEALTH } from "./data/portfolioData";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
+import { AlertTriangle, Brain, RefreshCw, Wifi } from "lucide-react";
+import { PORTFOLIO_ASSETS } from "./data/portfolioData";
 import TopPerformers from "./components/TopPerformers";
 import SafetyBadge from "./components/SafetyBadge";
 import AssetTable from "./components/AssetTable";
-import MarketPulse from "./components/MarketPulse";
+import RiskCommandCenter from "./components/RiskCommandCenter";
 import SearchFilter from "./components/SearchFilter";
-import { getScoreColor } from "./utils/scoreTranslator";
+import MarketLookup from "./components/MarketLookup";
+import { fetchLiveQuotes, mergeQuotesIntoAssets } from "./services/liveQuotes";
 
 const IntelligenceCard = lazy(() => import("./components/IntelligenceCard"));
 
@@ -28,37 +29,6 @@ function CardSkeleton() {
   );
 }
 
-function PortfolioScore({ assets }) {
-  const avg = Math.round(assets.reduce((s, a) => s + a.score, 0) / assets.length);
-  const { text, ring } = getScoreColor(avg);
-
-  return (
-    <div className="flex items-center gap-3" role="status" aria-label={`Score portefeuille: ${avg} sur 100`}>
-      <div className="relative w-14 h-14">
-        <svg width={56} height={56} className="-rotate-90" aria-hidden="true">
-          <circle cx={28} cy={28} r={24} fill="none" stroke="currentColor" className="text-white/5" strokeWidth={5} />
-          <circle
-            cx={28} cy={28} r={24} fill="none" stroke={ring} strokeWidth={5}
-            strokeDasharray={2 * Math.PI * 24}
-            strokeDashoffset={2 * Math.PI * 24 * (1 - avg / 100)}
-            strokeLinecap="round"
-            style={{ transition: "stroke-dashoffset 1s ease-out" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`text-base font-bold ${text}`}>{avg}</span>
-        </div>
-      </div>
-      <div className="hidden sm:block">
-        <div className="text-sm text-slate-400">Score Portefeuille</div>
-        <div className={`text-lg font-bold ${text}`}>
-          {avg >= 80 ? "Excellent" : avg >= 65 ? "Bon" : "À surveiller"}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center animate-slide-up">
@@ -73,9 +43,111 @@ function EmptyState() {
   );
 }
 
+function MarketBootScreen({ status }) {
+  return (
+    <div className="min-h-screen bg-surface-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md p-6 rounded-xl bg-surface-900 border border-white/5 text-center">
+        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-violet-500/10 flex items-center justify-center">
+          <RefreshCw className="w-5 h-5 text-violet-400 animate-spin" aria-hidden="true" />
+        </div>
+        <h1 className="text-lg font-semibold text-white">Chargement des prix de marché</h1>
+        <p className="text-sm text-slate-400 mt-2">
+          Le tableau de bord s'affichera seulement après réception des valeurs actuelles.
+        </p>
+        {status.error && (
+          <p className="text-xs text-amber-400 mt-3">{status.error}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MarketDataStatus({ status, onRefresh }) {
+  const isLive = status.mode === "live";
+  const isLoading = status.mode === "loading";
+  const Icon = isLive ? Wifi : AlertTriangle;
+  const tone = isLive ? "text-emerald-400" : "text-amber-400";
+
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <Icon className={`w-3.5 h-3.5 ${tone}`} aria-hidden="true" />
+      <span className={tone}>{status.label}</span>
+      {status.fetchedAt && (
+        <span className="hidden sm:inline text-slate-600">
+          {new Date(status.fetchedAt).toLocaleString("fr-CA", { dateStyle: "medium", timeStyle: "short" })}
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={isLoading}
+        className="p-1 rounded-md hover:bg-white/5 disabled:opacity-50 cursor-pointer"
+        aria-label="Rafraîchir les prix de marché"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? "animate-spin" : ""}`} />
+      </button>
+    </div>
+  );
+}
+
+function HeaderSubtitle() {
+  return (
+    <p className="text-[11px] sm:text-xs text-slate-500">
+      Observer le marché avec des données traçables
+    </p>
+  );
+}
+
 export default function App() {
   const [selected, setSelected] = useState(null);
-  const [filtered, setFiltered] = useState(PORTFOLIO_ASSETS);
+  const [assets, setAssets] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [marketStatus, setMarketStatus] = useState({
+    mode: "booting",
+    label: "Chargement prix live",
+    fetchedAt: null,
+  });
+
+  const loadLiveQuotes = useCallback(async () => {
+    setMarketStatus((current) => ({
+      ...current,
+      mode: "loading",
+      label: "Chargement prix live",
+    }));
+
+    try {
+      const symbols = PORTFOLIO_ASSETS.map((asset) => asset.symbol);
+      const payload = await fetchLiveQuotes(symbols);
+      const mergedAssets = mergeQuotesIntoAssets(PORTFOLIO_ASSETS, payload.quotes);
+      const liveCount = mergedAssets.filter((asset) => asset.marketData?.status === "live").length;
+
+      setAssets(mergedAssets);
+      setFiltered(mergedAssets);
+      setSelected((current) => {
+        if (!current) return current;
+        return mergedAssets.find((asset) => asset.symbol === current.symbol) ?? current;
+      });
+      setMarketStatus({
+        mode: liveCount === mergedAssets.length ? "live" : "partial",
+        label: liveCount === mergedAssets.length
+          ? `Prix live · ${payload.primaryConfigured ? "Finnhub" : "Stooq fallback"}`
+          : `${liveCount}/${mergedAssets.length} prix live`,
+        fetchedAt: payload.fetchedAt,
+      });
+    } catch {
+      setMarketStatus({
+        mode: "error",
+        label: "Prix indisponibles",
+        fetchedAt: null,
+        error: "Impossible de récupérer les prix de marché. Tableau masqué pour éviter d'afficher des valeurs statiques.",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const refreshTimer = window.setTimeout(loadLiveQuotes, 0);
+    return () => window.clearTimeout(refreshTimer);
+  }, [loadLiveQuotes]);
 
   const handleFilter = useCallback((results) => {
     setFiltered(results);
@@ -85,6 +157,10 @@ export default function App() {
     setSelected(asset);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  if (!assets.length) {
+    return <MarketBootScreen status={marketStatus} />;
+  }
 
   return (
     <div className="min-h-screen bg-surface-950">
@@ -105,12 +181,10 @@ export default function App() {
                 <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
                   Financial Intelligence Suite
                 </h1>
-                <p className="text-[11px] sm:text-xs text-slate-500">
-                  Analyse hybride IA + Quantitative — {PIPELINE_HEALTH.pipelinesActive} pipelines actifs
-                </p>
+                <HeaderSubtitle />
               </div>
             </div>
-            <PortfolioScore assets={PORTFOLIO_ASSETS} />
+            <MarketDataStatus status={marketStatus} onRefresh={loadLiveQuotes} />
           </div>
         </div>
       </header>
@@ -127,23 +201,26 @@ export default function App() {
         )}
 
         {/* Top performers */}
-        <section aria-label="Meilleures opportunités">
-          <TopPerformers assets={PORTFOLIO_ASSETS} onSelect={handleSelect} />
+        <section aria-label="Recherche marché globale">
+          <MarketLookup onSelect={handleSelect} />
         </section>
 
-        {/* Market Pulse + Safety */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-          <section aria-label="Indicateurs macroéconomiques">
-            <MarketPulse macro={MACRO_DATA} />
-          </section>
-          <section aria-label="Intégrité et fiabilité">
-            <SafetyBadge health={PIPELINE_HEALTH} assets={PORTFOLIO_ASSETS} />
-          </section>
-        </div>
+        <section aria-label="Meilleures opportunités">
+          <TopPerformers assets={assets} onSelect={handleSelect} />
+        </section>
+
+        <section aria-label="Intégrité et fiabilité">
+          <SafetyBadge assets={assets} />
+        </section>
+
+        {/* Portfolio risk */}
+        <section aria-label="Centre de risque portefeuille">
+          <RiskCommandCenter assets={assets} />
+        </section>
 
         {/* Search & Filter */}
         <section aria-label="Recherche et filtres">
-          <SearchFilter assets={PORTFOLIO_ASSETS} onFilter={handleFilter} />
+          <SearchFilter assets={assets} onFilter={handleFilter} />
         </section>
 
         {/* Full asset table or empty state */}
@@ -158,10 +235,10 @@ export default function App() {
         {/* Footer */}
         <footer className="pt-6 sm:pt-8 pb-4 border-t border-white/5 text-center" role="contentinfo">
           <p className="text-xs text-slate-600">
-            Les analyses présentées sont générées automatiquement et ne constituent pas des conseils financiers.
+            Données de marché externes affichées avec provenance. Ne constitue pas un conseil financier.
           </p>
           <p className="text-xs text-slate-700 mt-1">
-            Financial Intelligence Suite v1.0 — Propulsé par 10 pipelines d'analyse
+            Financial Intelligence Suite v1.0 — Mode factuel
           </p>
         </footer>
       </main>

@@ -1,23 +1,150 @@
-import { Brain, BarChart3, ArrowUpRight, ArrowDownRight, X, Lightbulb, AlertTriangle } from "lucide-react";
-import ScoreGauge from "./ScoreGauge";
-import Tooltip from "./Tooltip";
-import { getScoreColor, confidenceToText, formatCurrency } from "../utils/scoreTranslator";
-import { LineChart, Line, ResponsiveContainer, Tooltip as ChartTooltip, YAxis } from "recharts";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, ArrowDownRight, X, Database, RefreshCw } from "lucide-react";
+import { formatCurrency } from "../utils/scoreTranslator";
+import { CartesianGrid, LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import ChartErrorBoundary from "./ChartErrorBoundary";
+import { fetchPriceHistory } from "../services/priceHistory";
+
+function PriceHistoryChart({ asset }) {
+  const [history, setHistory] = useState({ symbol: asset.symbol, status: "loading", points: [], source: null, fetchedAt: null });
+
+  if (history.symbol !== asset.symbol && history.status !== "loading") {
+    setHistory({ symbol: asset.symbol, status: "loading", points: [], source: null, fetchedAt: null });
+  }
+
+  useEffect(() => {
+    let active = true;
+
+    fetchPriceHistory(asset.symbol, 30)
+      .then((payload) => {
+        if (active) {
+          setHistory({ symbol: asset.symbol, status: "ready", points: payload.points, source: payload.source, fetchedAt: payload.fetchedAt });
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setHistory({ symbol: asset.symbol, status: "error", points: [], source: null, fetchedAt: null, error: error.message });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [asset.symbol]);
+
+  if (history.status === "loading") {
+    return (
+      <div className="p-4 rounded-xl bg-surface-800 border border-white/5 min-h-[260px] flex items-center justify-center">
+        <div className="flex items-center gap-2 text-sm text-slate-400">
+          <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" />
+          Chargement historique Finnhub
+        </div>
+      </div>
+    );
+  }
+
+  if (history.status === "error" || history.points.length < 2) {
+    return (
+      <div className="p-4 rounded-xl bg-surface-800 border border-white/5 min-h-[260px] flex items-center justify-center text-center">
+        <div>
+          <div className="text-sm font-medium text-amber-400">Historique indisponible</div>
+          <div className="text-xs text-slate-500 mt-1">La courbe est masquée pour éviter d'afficher des valeurs simulées.</div>
+        </div>
+      </div>
+    );
+  }
+
+  const first = history.points[0].close;
+  const last = history.points.at(-1).close;
+  const prices = history.points.map((point) => point.close);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const deltaPct = ((last - first) / first) * 100;
+  const isImproving = deltaPct >= 0;
+  const stroke = isImproving ? "#34d399" : "#fb7185";
+  const domainMin = Math.max(0, min * 0.98);
+  const domainMax = max * 1.02;
+
+  return (
+    <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <span className="text-xs text-slate-500 block">Prix de clôture — 30 jours</span>
+          <div className="flex items-baseline gap-2 mt-1">
+            <span className="text-2xl font-bold text-white">${last.toFixed(2)}</span>
+            <span className={`text-xs font-semibold ${isImproving ? "text-emerald-400" : "text-rose-400"}`}>
+              {isImproving ? "+" : ""}{deltaPct.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+        <div className="text-right text-[11px] text-slate-500">
+          <div>Min ${min.toFixed(2)}</div>
+          <div>Max ${max.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <ChartErrorBoundary>
+        <ResponsiveContainer width="100%" height={160}>
+          <LineChart data={history.points} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+            <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "#64748b", fontSize: 11 }}
+              interval="preserveStartEnd"
+              tickFormatter={(value) => value.slice(5)}
+            />
+            <YAxis
+              domain={[domainMin, domainMax]}
+              tickLine={false}
+              axisLine={false}
+              tick={{ fill: "#64748b", fontSize: 11 }}
+              width={34}
+              tickFormatter={(value) => `$${Number(value).toFixed(0)}`}
+            />
+            <ReferenceLine y={first} stroke="rgba(96,165,250,0.45)" strokeDasharray="4 4" />
+            <ChartTooltip
+              cursor={{ stroke: "rgba(255,255,255,0.12)" }}
+              contentStyle={{ background: "#151d35", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+              labelFormatter={(value) => value}
+              formatter={(value) => [`$${Number(value).toFixed(2)}`, "Clôture"]}
+            />
+            <Line
+              type="monotone"
+              dataKey="close"
+              stroke={stroke}
+              strokeWidth={3}
+              dot={{ r: 3, strokeWidth: 0, fill: stroke }}
+              activeDot={{ r: 5, stroke: "#ffffff", strokeWidth: 2, fill: stroke }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartErrorBoundary>
+      <div className="mt-2 text-[11px] text-slate-500">
+        Source: {history.source}. Ligne pointillée: première clôture de la période.
+      </div>
+    </div>
+  );
+}
 
 export default function IntelligenceCard({ asset, onClose }) {
   if (!asset) return null;
 
-  const { deterministic: det, aiAnalysis: ai, earnings, history = [] } = asset;
   const isUp = asset.changePct >= 0;
-  const chartData = history.map((v, i) => ({ day: i + 1, score: v }));
+  const quantity = asset.position?.quantity ?? 0;
+  const averageCost = asset.position?.averageCost ?? asset.price;
+  const positionValue = quantity * asset.price;
+  const positionCost = quantity * averageCost;
+  const unrealizedPnl = positionValue - positionCost;
+  const unrealizedPnlPct = positionCost > 0 ? (unrealizedPnl / positionCost) * 100 : 0;
+  const pnlTone = unrealizedPnl >= 0 ? "text-emerald-400" : "text-rose-400";
 
   return (
     <div className="animate-slide-up" role="region" aria-label={`Analyse de ${asset.symbol}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <ScoreGauge score={asset.score} size={72} />
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-bold text-white truncate">
               {asset.symbol} <span className="text-sm sm:text-base font-normal text-slate-400">— {asset.name}</span>
@@ -26,12 +153,15 @@ export default function IntelligenceCard({ asset, onClose }) {
               <span className="text-lg sm:text-xl font-semibold text-white">
                 ${asset.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
               </span>
-              <span className={`flex items-center text-sm font-medium ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-bold ${isUp ? "bg-emerald-500/25 text-emerald-300" : "bg-rose-500/25 text-rose-300"}`}>
                 {isUp ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                 {isUp ? "+" : ""}{asset.changePct.toFixed(2)}%
               </span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getScoreColor(asset.score).bg} ${getScoreColor(asset.score).text}`}>
-                {asset.recommendation}
+              <span className={`text-sm font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                {isUp ? "+" : "-"}${Math.abs(asset.change).toFixed(2)}
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-300">
+                {asset.marketData?.source ?? "source externe"}
               </span>
             </div>
           </div>
@@ -41,129 +171,47 @@ export default function IntelligenceCard({ asset, onClose }) {
         </button>
       </div>
 
-      {/* AI Verdict */}
-      <div className="p-4 rounded-xl bg-violet-500/8 border border-violet-500/20 mb-6">
+      <div className="p-4 rounded-xl bg-surface-800 border border-white/5 mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <Brain className="w-4 h-4 text-violet-400" aria-hidden="true" />
-          <span className="text-sm font-semibold text-violet-300">Pourquoi l'IA recommande cet actif</span>
+          <Database className="w-4 h-4 text-blue-400" aria-hidden="true" />
+          <span className="text-sm font-semibold text-white">Provenance des données</span>
         </div>
-        <p className="text-sm text-slate-300 leading-relaxed">{asset.aiVerdict}</p>
-      </div>
-
-      {/* Two columns: Deterministic vs AI */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {/* Deterministic */}
-        <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-1.5 rounded-md bg-blue-500/15">
-              <BarChart3 className="w-4 h-4 text-blue-400" aria-hidden="true" />
-            </div>
-            <span className="text-sm font-semibold text-white">Analyse des Chiffres</span>
-            <span className="ml-auto text-xs text-slate-500">Données quantitatives</span>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div>
+            <div className="text-slate-500">Quote</div>
+            <div className="font-medium text-slate-200">{asset.marketData?.source ?? "source externe"}</div>
           </div>
-
-          <div className="space-y-3">
-            {[
-              { label: "Force du marché", term: "rsi", value: det.rsiSignal },
-              { label: "Tendance", term: "macd", value: det.macd },
-              { label: "Volatilité", term: "bollinger", value: det.bollinger },
-              { label: "Moyennes mobiles", term: "movingAvg", value: det.movingAvg },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between">
-                <Tooltip term={item.term}>
-                  <span className="text-xs text-slate-400">{item.label}</span>
-                </Tooltip>
-                <span className="text-xs font-medium text-slate-200">{item.value}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-            <Tooltip term="signalScore">
-              <span className="text-xs text-slate-500">Score quantitatif</span>
-            </Tooltip>
-            <span className={`text-lg font-bold ${getScoreColor(det.signalScore).text}`}>{det.signalScore}/100</span>
-          </div>
-        </div>
-
-        {/* AI Analysis */}
-        <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-1.5 rounded-md bg-violet-500/15">
-              <Brain className="w-4 h-4 text-violet-400" aria-hidden="true" />
-            </div>
-            <span className="text-sm font-semibold text-white">Avis de l'Analyste IA</span>
-            <Tooltip term="confidence">
-              <span className="ml-auto text-xs text-slate-500">{confidenceToText(ai.confidence)}</span>
-            </Tooltip>
-          </div>
-
-          <div className="mb-3">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Lightbulb className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-              <span className="text-xs font-medium text-emerald-400">Points forts</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {ai.keyFactors.map((f) => (
-                <span key={f} className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px]">{f}</span>
-              ))}
+          <div>
+            <div className="text-slate-500">Horodatage</div>
+            <div className="font-medium text-slate-200">
+              {asset.marketData?.asOf ? new Date(asset.marketData.asOf).toLocaleString("fr-CA", { dateStyle: "medium", timeStyle: "short" }) : "API quote"}
             </div>
           </div>
-
-          <div className="mb-3">
-            <div className="flex items-center gap-1.5 mb-2">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
-              <span className="text-xs font-medium text-amber-400">Risques identifiés</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {ai.risks.map((r) => (
-                <span key={r} className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[11px]">{r}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-            <Tooltip term="decisionScore">
-              <span className="text-xs text-slate-500">Score IA</span>
-            </Tooltip>
-            <span className={`text-lg font-bold ${getScoreColor(ai.decisionScore).text}`}>{ai.decisionScore}/100</span>
+          <div>
+            <div className="text-slate-500">Volume</div>
+            <div className="font-medium text-slate-200">{asset.volume?.toLocaleString("fr-CA") ?? "n/d"}</div>
           </div>
         </div>
       </div>
 
       {/* Score trend mini-chart + Earnings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
-          <span className="text-xs text-slate-500 mb-2 block">Évolution du score (10 derniers jours)</span>
-          <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height={100}>
-              <LineChart data={chartData}>
-                <YAxis domain={["dataMin - 5", "dataMax + 5"]} hide />
-                <ChartTooltip
-                  contentStyle={{ background: "#151d35", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
-                  labelFormatter={(v) => `Jour ${v}`}
-                  formatter={(v) => [`${v}/100`, "Score"]}
-                />
-                <Line type="monotone" dataKey="score" stroke={getScoreColor(asset.score).ring} strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartErrorBoundary>
-        </div>
+        <PriceHistoryChart asset={asset} />
 
         <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
-          <span className="text-xs text-slate-500 mb-3 block">Fondamentaux financiers</span>
+          <span className="text-xs text-slate-500 mb-3 block">Position & fondamentaux</span>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "Chiffre d'affaires", term: "revenue", value: formatCurrency(earnings.revenue) },
-              { label: "Marge nette", term: "netMargin", value: `${earnings.netMargin}%` },
-              { label: "Bénéfice/action", term: "eps", value: `$${earnings.eps}` },
-              { label: "Croissance", term: "growth", value: earnings.growth },
+              { label: "Valeur position", term: "positionValue", value: formatCurrency(positionValue) },
+              { label: "P&L latent", term: "unrealizedPnl", value: `${formatCurrency(unrealizedPnl)} (${unrealizedPnlPct >= 0 ? "+" : ""}${unrealizedPnlPct.toFixed(1)}%)`, tone: pnlTone },
+              { label: "Quantité", term: "quantity", value: quantity.toLocaleString("fr-FR") },
+              { label: "Coût moyen", term: "averageCost", value: `$${averageCost.toFixed(2)}` },
+              { label: "Prix actuel", value: `$${asset.price.toFixed(2)}` },
+              { label: "Variation", value: `${isUp ? "+" : "-"}$${Math.abs(asset.change).toFixed(2)} (${isUp ? "+" : ""}${asset.changePct.toFixed(2)}%)`, tone: isUp ? "text-emerald-400" : "text-rose-400" },
             ].map((item) => (
               <div key={item.label}>
-                <Tooltip term={item.term}>
-                  <span className="text-[11px] text-slate-500">{item.label}</span>
-                </Tooltip>
-                <div className="text-sm font-semibold text-white">{item.value}</div>
+                <span className="text-[11px] text-slate-500">{item.label}</span>
+                <div className={`text-sm font-semibold ${item.tone ?? "text-white"}`}>{item.value}</div>
               </div>
             ))}
           </div>

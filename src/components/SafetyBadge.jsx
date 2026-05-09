@@ -1,9 +1,13 @@
-import { ShieldCheck, Lock, Activity, Database, Clock } from "lucide-react";
-import { timeAgo } from "../utils/scoreTranslator";
+import { Activity, Clock, Database, ShieldCheck } from "lucide-react";
 
-export default function SafetyBadge({ health, assets }) {
-  const allVerified = assets.every((a) => a.integrity.verified);
-  const passRate = `${health.integrityPassed}/${health.integrityChecks}`;
+export default function SafetyBadge({ assets }) {
+  const liveQuotes = assets.filter((asset) => asset.marketData?.status === "live").length;
+  const sources = Array.from(new Set(assets.map((asset) => asset.marketData?.source).filter(Boolean)));
+  const latestFetch = assets
+    .map((asset) => asset.marketData?.fetchedAt)
+    .filter(Boolean)
+    .sort()
+    .at(-1);
 
   return (
     <div className="animate-slide-up">
@@ -11,62 +15,46 @@ export default function SafetyBadge({ health, assets }) {
         <div className="p-2 rounded-lg bg-emerald-500/10">
           <ShieldCheck className="w-5 h-5 text-emerald-400" />
         </div>
-        <h2 className="text-lg font-semibold text-white">Intégrité & Fiabilité</h2>
+        <h2 className="text-lg font-semibold text-white">Provenance & Fiabilité</h2>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Données certifiées */}
         <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
           <div className="flex items-center gap-2 mb-2">
-            <Lock className={`w-4 h-4 ${allVerified ? "text-emerald-400" : "text-amber-400"}`} />
-            <span className="text-xs text-slate-400">Données</span>
+            <Activity className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs text-slate-400">Quotes</span>
           </div>
-          <div className={`text-sm font-semibold ${allVerified ? "text-emerald-400" : "text-amber-400"}`}>
-            {allVerified ? "Certifiées" : "En vérification"}
-          </div>
-          <div className="text-[11px] text-slate-500 mt-1">
-            Empreinte numérique vérifiée
-          </div>
+          <div className="text-sm font-semibold text-emerald-400">{liveQuotes}/{assets.length} reçues</div>
+          <div className="text-[11px] text-slate-500 mt-1">Aucune donnée statique affichée</div>
         </div>
 
-        {/* Contrôles passés */}
         <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
           <div className="flex items-center gap-2 mb-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs text-slate-400">Contrôles</span>
+            <Database className="w-4 h-4 text-blue-400" />
+            <span className="text-xs text-slate-400">Sources</span>
           </div>
-          <div className="text-sm font-semibold text-emerald-400">{passRate} réussis</div>
-          <div className="text-[11px] text-slate-500 mt-1">
-            Audit automatique nocturne
-          </div>
+          <div className="text-sm font-semibold text-blue-400">{sources.join(", ") || "n/d"}</div>
+          <div className="text-[11px] text-slate-500 mt-1">Source visible par actif</div>
         </div>
 
-        {/* Sources actives */}
-        <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
-          <div className="flex items-center gap-2 mb-2">
-            <Activity className="w-4 h-4 text-blue-400" />
-            <span className="text-xs text-slate-400">Analyses</span>
-          </div>
-          <div className="text-sm font-semibold text-blue-400">
-            {health.pipelinesActive} actives
-          </div>
-          <div className="text-[11px] text-slate-500 mt-1">
-            {health.dataPointsToday.toLocaleString()} points aujourd'hui
-          </div>
-        </div>
-
-        {/* Dernière mise à jour */}
         <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-violet-400" />
-            <span className="text-xs text-slate-400">Mise à jour</span>
+            <span className="text-xs text-slate-400">Dernière requête</span>
           </div>
           <div className="text-sm font-semibold text-violet-400">
-            {timeAgo(health.lastUpdate)}
+            {latestFetch ? new Date(latestFetch).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" }) : "n/d"}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">
-            Rafraîchissement continu
+          <div className="text-[11px] text-slate-500 mt-1">Horodatage API local</div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs text-slate-400">Mode</span>
           </div>
+          <div className="text-sm font-semibold text-emerald-400">Factuel</div>
+          <div className="text-[11px] text-slate-500 mt-1">Mock masqué hors chargement</div>
         </div>
       </div>
     </div>

@@ -1,12 +1,16 @@
 import { useState, useMemo } from "react";
 import { ArrowUpRight, ArrowDownRight, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import { getScoreColor, getScoreLabel, formatPercent } from "../utils/scoreTranslator";
+import { formatCurrency, formatPercent } from "../utils/scoreTranslator";
+import { enrichAssetsWithPositionMetrics } from "../utils/portfolioAnalytics";
 
 const SORT_COLUMNS = {
   symbol: (a, b) => a.symbol.localeCompare(b.symbol),
   price: (a, b) => a.price - b.price,
   changePct: (a, b) => a.changePct - b.changePct,
-  score: (a, b) => a.score - b.score,
+  marketValue: (a, b) => a.positionMetrics.marketValue - b.positionMetrics.marketValue,
+  unrealizedPnlPct: (a, b) => a.positionMetrics.unrealizedPnlPct - b.positionMetrics.unrealizedPnlPct,
+  targetDrift: (a, b) => Math.abs(a.positionMetrics.targetDrift) - Math.abs(b.positionMetrics.targetDrift),
+  source: (a, b) => (a.marketData?.source ?? "").localeCompare(b.marketData?.source ?? ""),
 };
 
 function SortIcon({ column, sortBy, sortDir }) {
@@ -17,15 +21,16 @@ function SortIcon({ column, sortBy, sortDir }) {
 }
 
 export default function AssetTable({ assets, onSelect }) {
-  const [sortBy, setSortBy] = useState("score");
+  const [sortBy, setSortBy] = useState("changePct");
   const [sortDir, setSortDir] = useState("desc");
+  const positionedAssets = useMemo(() => enrichAssetsWithPositionMetrics(assets), [assets]);
 
   const sorted = useMemo(() => {
     const fn = SORT_COLUMNS[sortBy];
-    if (!fn) return assets;
-    const result = [...assets].sort(fn);
+    if (!fn) return positionedAssets;
+    const result = [...positionedAssets].sort(fn);
     return sortDir === "desc" ? result.reverse() : result;
-  }, [assets, sortBy, sortDir]);
+  }, [positionedAssets, sortBy, sortDir]);
 
   const toggleSort = (col) => {
     if (sortBy === col) {
@@ -44,7 +49,7 @@ export default function AssetTable({ assets, onSelect }) {
       </div>
 
       <div className="rounded-xl border border-white/5 overflow-x-auto">
-        <table className="w-full min-w-[600px]" role="grid">
+        <table className="w-full min-w-[820px]" role="grid">
           <thead>
             <tr className="bg-surface-800/80">
               <th className="text-left text-xs font-medium text-slate-400 px-4 py-3">
@@ -62,19 +67,34 @@ export default function AssetTable({ assets, onSelect }) {
                   Variation <SortIcon column="changePct" sortBy={sortBy} sortDir={sortDir} />
                 </button>
               </th>
-              <th className="text-center text-xs font-medium text-slate-400 px-4 py-3">
-                <button onClick={() => toggleSort("score")} className="flex items-center gap-1 mx-auto cursor-pointer hover:text-white transition-colors" aria-label="Trier par score">
-                  Score <SortIcon column="score" sortBy={sortBy} sortDir={sortDir} />
+              <th className="text-right text-xs font-medium text-slate-400 px-4 py-3">
+                <button onClick={() => toggleSort("marketValue")} className="flex items-center gap-1 ml-auto cursor-pointer hover:text-white transition-colors" aria-label="Trier par valeur de position">
+                  Position <SortIcon column="marketValue" sortBy={sortBy} sortDir={sortDir} />
                 </button>
               </th>
-              <th className="text-left text-xs font-medium text-slate-400 px-4 py-3 hidden md:table-cell">Verdict</th>
+              <th className="text-right text-xs font-medium text-slate-400 px-4 py-3 hidden lg:table-cell">
+                <button onClick={() => toggleSort("unrealizedPnlPct")} className="flex items-center gap-1 ml-auto cursor-pointer hover:text-white transition-colors" aria-label="Trier par gain latent">
+                  P&L <SortIcon column="unrealizedPnlPct" sortBy={sortBy} sortDir={sortDir} />
+                </button>
+              </th>
+              <th className="text-right text-xs font-medium text-slate-400 px-4 py-3 hidden xl:table-cell">
+                <button onClick={() => toggleSort("targetDrift")} className="flex items-center gap-1 ml-auto cursor-pointer hover:text-white transition-colors" aria-label="Trier par dérive cible">
+                  Drift <SortIcon column="targetDrift" sortBy={sortBy} sortDir={sortDir} />
+                </button>
+              </th>
+              <th className="text-left text-xs font-medium text-slate-400 px-4 py-3 hidden md:table-cell">
+                <button onClick={() => toggleSort("source")} className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors" aria-label="Trier par source">
+                  Source <SortIcon column="source" sortBy={sortBy} sortDir={sortDir} />
+                </button>
+              </th>
               <th className="text-right text-xs font-medium text-slate-400 px-4 py-3 w-10"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {sorted.map((asset) => {
-              const { bg, text } = getScoreColor(asset.score);
               const isUp = asset.changePct >= 0;
+              const pnlUp = asset.positionMetrics.unrealizedPnl >= 0;
+              const driftAbs = Math.abs(asset.positionMetrics.targetDrift);
 
               return (
                 <tr
@@ -84,7 +104,7 @@ export default function AssetTable({ assets, onSelect }) {
                   role="row"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === "Enter" && onSelect(asset)}
-                  aria-label={`${asset.symbol} — Score ${asset.score}, ${formatPercent(asset.changePct)}`}
+                  aria-label={`${asset.symbol} — ${formatPercent(asset.changePct)}`}
                 >
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
@@ -103,18 +123,37 @@ export default function AssetTable({ assets, onSelect }) {
                     </span>
                   </td>
                   <td className="px-4 py-3.5 text-right">
-                    <span className={`inline-flex items-center gap-0.5 text-sm font-medium ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                    <div className="inline-flex items-center justify-end gap-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${isUp ? "bg-emerald-500/25 text-emerald-300" : "bg-rose-500/25 text-rose-300"}`}>
                       {isUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
                       {formatPercent(asset.changePct)}
-                    </span>
+                      </span>
+                      <span className={`text-xs font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                        {isUp ? "+" : "-"}${Math.abs(asset.change).toFixed(2)}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${bg} ${text}`}>
-                      {asset.score}
-                    </span>
+                  <td className="px-4 py-3.5 text-right">
+                    <div className="text-sm font-medium text-white">{formatCurrency(asset.positionMetrics.marketValue)}</div>
+                    <div className="text-[11px] text-slate-500">{asset.positionMetrics.weight.toFixed(1)}% du portefeuille</div>
+                  </td>
+                  <td className="px-4 py-3.5 text-right hidden lg:table-cell">
+                    <div className={`text-sm font-semibold ${pnlUp ? "text-emerald-400" : "text-rose-400"}`}>
+                      {formatPercent(asset.positionMetrics.unrealizedPnlPct)}
+                    </div>
+                    <div className="text-[11px] text-slate-500">{formatCurrency(asset.positionMetrics.unrealizedPnl)}</div>
+                  </td>
+                  <td className="px-4 py-3.5 text-right hidden xl:table-cell">
+                    <div className={`text-sm font-semibold ${driftAbs >= 2.5 ? "text-amber-400" : "text-slate-300"}`}>
+                      {formatPercent(asset.positionMetrics.targetDrift)}
+                    </div>
+                    <div className="text-[11px] text-slate-500">cible {asset.positionMetrics.targetWeight.toFixed(1)}%</div>
                   </td>
                   <td className="px-4 py-3.5 hidden md:table-cell">
-                    <span className={`text-xs font-medium ${text}`}>{getScoreLabel(asset.score)}</span>
+                    <div className="text-xs font-medium text-slate-300">{asset.marketData?.source ?? "source externe"}</div>
+                    <div className="text-[11px] text-slate-500">
+                      {asset.marketData?.asOf ? new Date(asset.marketData.asOf).toLocaleString("fr-CA", { dateStyle: "short", timeStyle: "short" }) : "Horodatage API"}
+                    </div>
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
