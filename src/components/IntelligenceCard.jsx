@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowUpRight, ArrowDownRight, X, Database, RefreshCw } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, X, Database, RefreshCw, Save, BookmarkPlus, BookmarkCheck, Star } from "lucide-react";
 import { formatCurrency } from "../utils/scoreTranslator";
 import { CartesianGrid, LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import ChartErrorBoundary from "./ChartErrorBoundary";
@@ -128,10 +128,33 @@ function PriceHistoryChart({ asset }) {
   );
 }
 
-export default function IntelligenceCard({ asset, onClose }) {
-  if (!asset) return null;
-
+export default function IntelligenceCard({
+  asset,
+  onClose,
+  onSavePosition,
+  onToggleWatchlist,
+  onToggleFavorite,
+  isInPortfolio = false,
+  isInWatchlist = false,
+  isFavorite = false,
+}) {
   const isUp = asset.changePct >= 0;
+  const [positionDraft, setPositionDraft] = useState({
+    symbol: asset.symbol,
+    quantity: String(asset.position?.quantity ?? 0),
+    averageCost: String(asset.position?.averageCost ?? asset.price),
+    targetWeight: String(asset.position?.targetWeight ?? 0),
+  });
+
+  if (positionDraft.symbol !== asset.symbol) {
+    setPositionDraft({
+      symbol: asset.symbol,
+      quantity: String(asset.position?.quantity ?? 0),
+      averageCost: String(asset.position?.averageCost ?? asset.price),
+      targetWeight: String(asset.position?.targetWeight ?? 0),
+    });
+  }
+
   const quantity = asset.position?.quantity ?? 0;
   const averageCost = asset.position?.averageCost ?? asset.price;
   const positionValue = quantity * asset.price;
@@ -139,6 +162,13 @@ export default function IntelligenceCard({ asset, onClose }) {
   const unrealizedPnl = positionValue - positionCost;
   const unrealizedPnlPct = positionCost > 0 ? (unrealizedPnl / positionCost) * 100 : 0;
   const pnlTone = unrealizedPnl >= 0 ? "text-emerald-400" : "text-rose-400";
+  const savePosition = () => {
+    onSavePosition?.(asset, {
+      quantity: Number(positionDraft.quantity),
+      averageCost: Number(positionDraft.averageCost),
+      targetWeight: Number(positionDraft.targetWeight),
+    });
+  };
 
   return (
     <div className="animate-slide-up" role="region" aria-label={`Analyse de ${asset.symbol}`}>
@@ -199,7 +229,12 @@ export default function IntelligenceCard({ asset, onClose }) {
         <PriceHistoryChart asset={asset} />
 
         <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
-          <span className="text-xs text-slate-500 mb-3 block">Position & fondamentaux</span>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="text-xs text-slate-500 block">Position</span>
+            <span className={`text-[11px] ${isInPortfolio ? "text-emerald-400" : "text-amber-400"}`}>
+              {isInPortfolio ? "En portefeuille" : "Consultation seulement"}
+            </span>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             {[
               { label: "Valeur position", term: "positionValue", value: formatCurrency(positionValue) },
@@ -214,6 +249,54 @@ export default function IntelligenceCard({ asset, onClose }) {
                 <div className={`text-sm font-semibold ${item.tone ?? "text-white"}`}>{item.value}</div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-white/5">
+          <div className="grid grid-cols-3 gap-2">
+              {[
+                { key: "quantity", label: "Quantité", step: "0.01" },
+                { key: "averageCost", label: "Coût moyen", step: "0.1" },
+                { key: "targetWeight", label: "Cible %", step: "0.1" },
+              ].map((field) => (
+                <label key={field.key} className="block">
+                  <span className="text-[11px] text-slate-500">{field.label}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step={field.step}
+                    value={positionDraft[field.key]}
+                    onChange={(event) => setPositionDraft((current) => ({ ...current, [field.key]: event.target.value }))}
+                    className="mt-1 w-full px-2 py-1.5 rounded-lg bg-surface-900 border border-white/5 text-sm text-white focus:outline-none focus:border-violet-500/50"
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={savePosition}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15 text-xs font-semibold cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {isInPortfolio ? "Mettre à jour la position" : "Ajouter au portefeuille"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleWatchlist?.(asset)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 text-violet-300 hover:bg-violet-500/15 text-xs font-semibold cursor-pointer"
+              >
+                {isInWatchlist ? <BookmarkCheck className="w-3.5 h-3.5" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
+                {isInWatchlist ? "Retirer de la watchlist" : "Ajouter à la watchlist"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggleFavorite?.(asset.symbol)}
+                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer ${isFavorite ? "bg-amber-500/15 text-amber-300" : "bg-surface-900 text-slate-300 hover:bg-white/5"}`}
+              >
+                <Star className={`w-3.5 h-3.5 ${isFavorite ? "fill-current" : ""}`} />
+                {isFavorite ? "Favori" : "Marquer favori"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 const QUOTE_ENDPOINT = "/api/quotes";
+const staleQuoteThresholdMs = 4 * 24 * 60 * 60 * 1000;
 
 function toNumber(value) {
   const parsed = Number(value);
@@ -27,6 +28,26 @@ export function normalizeQuote(rawQuote) {
   };
 }
 
+export function getQuoteFreshness(asOf, now = new Date()) {
+  if (!asOf) {
+    return { isStale: false, ageHours: null };
+  }
+
+  const asOfTime = new Date(asOf).getTime();
+  const nowTime = now.getTime();
+
+  if (!Number.isFinite(asOfTime) || !Number.isFinite(nowTime)) {
+    return { isStale: false, ageHours: null };
+  }
+
+  const ageMs = Math.max(0, nowTime - asOfTime);
+
+  return {
+    isStale: ageMs > staleQuoteThresholdMs,
+    ageHours: Math.round(ageMs / 36_000) / 100,
+  };
+}
+
 export function mergeQuotesIntoAssets(assets, quotes) {
   const quoteMap = new Map(
     quotes
@@ -49,6 +70,8 @@ export function mergeQuotesIntoAssets(assets, quotes) {
       };
     }
 
+    const freshness = getQuoteFreshness(quote.asOf);
+
     return {
       ...asset,
       name: quote.name || asset.name,
@@ -57,13 +80,16 @@ export function mergeQuotesIntoAssets(assets, quotes) {
       changePct: quote.changePct,
       volume: quote.volume ?? asset.volume,
       marketData: {
-        status: "live",
-      source: quote.source,
-      fetchedAt: quote.fetchedAt,
-      asOf: quote.asOf,
-      previousClose: quote.previousClose,
-      message: "Prix récupéré depuis une source externe.",
-    },
+        status: freshness.isStale ? "stale" : "live",
+        source: quote.source,
+        fetchedAt: quote.fetchedAt,
+        asOf: quote.asOf,
+        ageHours: freshness.ageHours,
+        previousClose: quote.previousClose,
+        message: freshness.isStale
+          ? "Prix récupéré, mais horodatage de marché trop ancien."
+          : "Prix récupéré depuis une source externe.",
+      },
     };
   });
 }
@@ -83,5 +109,7 @@ export async function fetchLiveQuotes(symbols) {
     source: payload.source ?? "stockprices.dev",
     fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
     primaryConfigured: Boolean(payload.primaryConfigured),
+    cacheStatus: payload.cache?.status,
+    cacheExpiresAt: payload.cache?.expiresAt,
   };
 }

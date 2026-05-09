@@ -115,13 +115,14 @@ export function calculatePortfolioAnalytics(assets) {
     .sort((a, b) => b.weight - a.weight);
 
   const topSector = sectorExposure[0] || { sector: "Non classé", count: 0, marketValue: 0, weight: 0 };
-  const weakAssets = enrichedAssets.filter((asset) => asset.score < 70);
-  const highConviction = enrichedAssets.filter((asset) => asset.score >= 85);
-  const weightedScore = enrichedAssets.reduce((sum, asset) => sum + asset.score * (asset.positionMetrics.weight / 100), 0);
-  const avgScore = Math.round(weightedScore || average(enrichedAssets.map((asset) => asset.score)));
-  const scoreVolatility = average(enrichedAssets.map((asset) => standardDeviation(asset.history || [])));
-  const drawdown = average(enrichedAssets.map((asset) => Math.abs(maxDrawdown(asset.history || []))));
-  const integrityFailures = enrichedAssets.filter((asset) => !asset.integrity?.verified).length;
+  const scoredAssets = enrichedAssets.filter((asset) => Number.isFinite(asset.score));
+  const weakAssets = scoredAssets.filter((asset) => asset.score < 70);
+  const highConviction = scoredAssets.filter((asset) => asset.score >= 85);
+  const weightedScore = scoredAssets.reduce((sum, asset) => sum + asset.score * (asset.positionMetrics.weight / 100), 0);
+  const avgScore = Math.round(weightedScore || average(scoredAssets.map((asset) => asset.score)));
+  const scoreVolatility = average(scoredAssets.map((asset) => standardDeviation(asset.history || [])));
+  const drawdown = average(scoredAssets.map((asset) => Math.abs(maxDrawdown(asset.history || []))));
+  const integrityFailures = enrichedAssets.filter((asset) => asset.integrity && !asset.integrity.verified).length;
   const driftedAssets = enrichedAssets
     .filter((asset) => Math.abs(asset.positionMetrics.targetDrift) >= 2.5)
     .sort((a, b) => Math.abs(b.positionMetrics.targetDrift) - Math.abs(a.positionMetrics.targetDrift));

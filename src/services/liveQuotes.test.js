@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeQuotesIntoAssets, normalizeQuote } from './liveQuotes';
+import { getQuoteFreshness, mergeQuotesIntoAssets, normalizeQuote } from './liveQuotes';
 
 describe('normalizeQuote', () => {
   it('normalizes stockprices.dev quote payloads', () => {
@@ -37,5 +37,38 @@ describe('mergeQuotesIntoAssets', () => {
     expect(result[1].price).toBe(200);
     expect(result[1].marketData.status).toBe('stale');
   });
+
+  it('marks quotes with old market timestamps as stale', () => {
+    const result = mergeQuotesIntoAssets([
+      { symbol: 'MSFT', name: 'Microsoft', price: 100, change: 0, changePct: 0 },
+    ], [
+      {
+        symbol: 'MSFT',
+        price: 250,
+        change: 1,
+        changePct: 0.4,
+        source: 'finnhub.io',
+        fetchedAt: '2026-05-08T12:00:00.000Z',
+        asOf: '2026-05-01T20:00:00.000Z',
+      },
+    ]);
+
+    expect(result[0].price).toBe(250);
+    expect(result[0].marketData.status).toBe('stale');
+    expect(result[0].marketData.message).toContain('trop ancien');
+  });
 });
 
+describe('getQuoteFreshness', () => {
+  it('allows normal weekend market age but flags older timestamps', () => {
+    expect(getQuoteFreshness(
+      '2026-05-08T20:00:00.000Z',
+      new Date('2026-05-09T16:00:00.000Z'),
+    ).isStale).toBe(false);
+
+    expect(getQuoteFreshness(
+      '2026-05-01T20:00:00.000Z',
+      new Date('2026-05-09T16:00:00.000Z'),
+    ).isStale).toBe(true);
+  });
+});

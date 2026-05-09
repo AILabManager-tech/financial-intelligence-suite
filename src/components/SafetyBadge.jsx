@@ -2,6 +2,7 @@ import { Activity, Clock, Database, ShieldCheck } from "lucide-react";
 
 export default function SafetyBadge({ assets }) {
   const liveQuotes = assets.filter((asset) => asset.marketData?.status === "live").length;
+  const staleQuotes = assets.filter((asset) => asset.marketData?.status === "stale").length;
   const sources = Array.from(new Set(assets.map((asset) => asset.marketData?.source).filter(Boolean)));
   const latestFetch = assets
     .map((asset) => asset.marketData?.fetchedAt)
@@ -25,7 +26,9 @@ export default function SafetyBadge({ assets }) {
             <span className="text-xs text-slate-400">Quotes</span>
           </div>
           <div className="text-sm font-semibold text-emerald-400">{liveQuotes}/{assets.length} reçues</div>
-          <div className="text-[11px] text-slate-500 mt-1">Aucune donnée statique affichée</div>
+          <div className="text-[11px] text-slate-500 mt-1">
+            {staleQuotes ? `${staleQuotes} stale ou indisponible` : "Aucune donnée statique affichée"}
+          </div>
         </div>
 
         <div className="p-4 rounded-xl bg-surface-800 border border-white/5">

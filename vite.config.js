@@ -1,9 +1,54 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { checkMarketDataHealth } from './server/marketDataHealth.js'
+import { createPortfolioRepository } from './server/portfolioRepository.js'
+import { validatePortfolioAssets, validatePortfolioSnapshot } from './server/portfolioValidation.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const fallbackQuoteSource = 'stooq.com'
+const marketCache = new Map()
+const cacheTtlMs = {
+  quotes: 20 * 1000,
+  history: 6 * 60 * 60 * 1000,
+  search: 10 * 60 * 1000,
+  health: 60 * 1000,
+}
+
+async function readThroughCache(key, ttlMs, loadValue) {
+  const now = Date.now()
+  const cached = marketCache.get(key)
+
+  if (cached && cached.expiresAt > now) {
+    return { value: cached.value, cacheStatus: 'hit', expiresAt: cached.expiresAt }
+  }
+
+  const value = await loadValue()
+  const expiresAt = now + ttlMs
+  marketCache.set(key, { value, expiresAt })
+  return { value, cacheStatus: 'miss', expiresAt }
+}
+
+function sendJson(response, statusCode, payload) {
+  response.statusCode = statusCode
+  response.setHeader('Content-Type', 'application/json')
+  response.end(JSON.stringify(payload))
+}
+
+function readJsonBody(request) {
+  return new Promise((resolve, reject) => {
+    const chunks = []
+    request.on('data', (chunk) => chunks.push(chunk))
+    request.on('end', () => {
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'))
+      } catch (error) {
+        reject(error)
+      }
+    })
+    request.on('error', reject)
+  })
+}
 
 function toStooqSymbol(symbol) {
   return `${symbol.replace('.', '-').toLowerCase()}.us`
@@ -171,6 +216,41 @@ export default defineConfig(({ mode }) => {
       {
         name: 'financial-quotes-api',
         configureServer(server) {
+          const portfolioRepository = createPortfolioRepository()
+
+          server.middlewares.use('/api/health/market-data', async (request, response) => {
+            if (request.method !== 'GET') {
+              sendJson(response, 405, { error: 'method not allowed' })
+              return
+            }
+
+            try {
+              const { value, cacheStatus, expiresAt } = await readThroughCache(
+                'health:market-data',
+                cacheTtlMs.health,
+                () => checkMarketDataHealth({
+                  finnhubApiKey: process.env.FINNHUB_API_KEY,
+                  twelveDataApiKey: process.env.TWELVE_DATA_API_KEY,
+                }),
+              )
+
+              sendJson(response, value.status === 'degraded' ? 207 : 200, {
+                ...value,
+                cache: {
+                  status: cacheStatus,
+                  ttlMs: cacheTtlMs.health,
+                  expiresAt: new Date(expiresAt).toISOString(),
+                },
+              })
+            } catch (error) {
+              sendJson(response, 503, {
+                status: 'down',
+                checkedAt: new Date().toISOString(),
+                error: error.message,
+              })
+            }
+          })
+
           server.middlewares.use('/api/quotes', async (request, response) => {
             const requestUrl = new URL(request.url ?? '', 'http://localhost')
             const symbols = (requestUrl.searchParams.get('symbols') ?? '')
@@ -186,23 +266,39 @@ export default defineConfig(({ mode }) => {
               return
             }
 
-            const settled = await Promise.allSettled(symbols.map(fetchQuote))
-            const quotes = settled
-              .filter((result) => result.status === 'fulfilled')
-              .map((result) => result.value)
-            const errors = settled
-              .filter((result) => result.status === 'rejected')
-              .map((result) => result.reason.message)
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `quotes:${symbols.join(',')}`,
+              cacheTtlMs.quotes,
+              async () => {
+                const settled = await Promise.allSettled(symbols.map(fetchQuote))
+                const quotes = settled
+                  .filter((result) => result.status === 'fulfilled')
+                  .map((result) => result.value)
+                const errors = settled
+                  .filter((result) => result.status === 'rejected')
+                  .map((result) => result.reason.message)
+
+                return {
+                  source: quotes.some((quote) => quote.source === primaryQuoteSource) ? primaryQuoteSource : fallbackQuoteSource,
+                  fetchedAt: new Date().toISOString(),
+                  quotes,
+                  errors,
+                  primaryConfigured: Boolean(process.env.FINNHUB_API_KEY),
+                }
+              },
+            )
+            const quotes = value.quotes
 
             response.statusCode = quotes.length ? 200 : 502
             response.setHeader('Content-Type', 'application/json')
             response.setHeader('Cache-Control', 'no-store')
           response.end(JSON.stringify({
-              source: quotes.some((quote) => quote.source === primaryQuoteSource) ? primaryQuoteSource : fallbackQuoteSource,
-              fetchedAt: new Date().toISOString(),
-              quotes,
-              errors,
-              primaryConfigured: Boolean(process.env.FINNHUB_API_KEY),
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.quotes,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
           }))
         })
 
@@ -219,7 +315,11 @@ export default defineConfig(({ mode }) => {
           }
 
           try {
-            const points = await fetchHistory(symbol, days)
+            const { value: points, cacheStatus, expiresAt } = await readThroughCache(
+              `history:${symbol}:${days}`,
+              cacheTtlMs.history,
+              () => fetchHistory(symbol, days),
+            )
             response.statusCode = 200
             response.setHeader('Content-Type', 'application/json')
             response.setHeader('Cache-Control', 'no-store')
@@ -227,6 +327,11 @@ export default defineConfig(({ mode }) => {
               symbol,
               source: 'twelvedata.com',
               fetchedAt: new Date().toISOString(),
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.history,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
               points,
             }))
           } catch (error) {
@@ -248,19 +353,83 @@ export default defineConfig(({ mode }) => {
           }
 
           try {
-            const results = await searchSymbols(query)
+            const { value: results, cacheStatus, expiresAt } = await readThroughCache(
+              `search:${query.toLowerCase()}`,
+              cacheTtlMs.search,
+              () => searchSymbols(query),
+            )
             response.statusCode = 200
             response.setHeader('Content-Type', 'application/json')
             response.setHeader('Cache-Control', 'no-store')
             response.end(JSON.stringify({
               source: primaryQuoteSource,
               fetchedAt: new Date().toISOString(),
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.search,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
               results,
             }))
           } catch (error) {
             response.statusCode = 503
             response.setHeader('Content-Type', 'application/json')
             response.end(JSON.stringify({ error: error.message, source: primaryQuoteSource }))
+          }
+        })
+
+        server.middlewares.use('/api/portfolio/snapshots', async (request, response) => {
+          if (request.method === 'GET') {
+            const requestUrl = new URL(request.url ?? '', 'http://localhost')
+            const limit = requestUrl.searchParams.get('limit') ?? 120
+
+            sendJson(response, 200, {
+              snapshots: portfolioRepository.listSnapshots(limit),
+              source: 'sqlite',
+            })
+            return
+          }
+
+          if (request.method !== 'POST') {
+            sendJson(response, 405, { error: 'method not allowed' })
+            return
+          }
+
+          try {
+            const payload = await readJsonBody(request)
+            sendJson(response, 201, {
+              snapshot: portfolioRepository.saveSnapshot(validatePortfolioSnapshot(payload.snapshot ?? payload)),
+              source: 'sqlite',
+            })
+          } catch (error) {
+            sendJson(response, 400, { error: error.message })
+          }
+        })
+
+        server.middlewares.use('/api/portfolio', async (request, response) => {
+          if (request.method === 'GET') {
+            sendJson(response, 200, {
+              assets: portfolioRepository.listAssets(),
+              source: 'sqlite',
+            })
+            return
+          }
+
+          if (request.method !== 'PUT') {
+            sendJson(response, 405, { error: 'method not allowed' })
+            return
+          }
+
+          try {
+            const payload = await readJsonBody(request)
+            const assets = validatePortfolioAssets(payload.assets ?? [])
+            sendJson(response, 200, {
+              assets: portfolioRepository.saveAssets(assets),
+              updatedAt: new Date().toISOString(),
+              source: 'sqlite',
+            })
+          } catch (error) {
+            sendJson(response, 400, { error: error.message })
           }
         })
       },

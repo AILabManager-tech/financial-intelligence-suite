@@ -1,6 +1,7 @@
 import { Activity, Layers3, ShieldAlert, WalletCards, Repeat2 } from "lucide-react";
 import { calculatePortfolioAnalytics } from "../utils/portfolioAnalytics";
 import { formatCurrency, formatPercent } from "../utils/scoreTranslator";
+import PortfolioPerformanceChart from "./PortfolioPerformanceChart";
 
 function Metric({ icon, label, value, caption, tone = "text-white" }) {
   const Icon = icon;
@@ -17,7 +18,7 @@ function Metric({ icon, label, value, caption, tone = "text-white" }) {
   );
 }
 
-export default function RiskCommandCenter({ assets }) {
+export default function RiskCommandCenter({ assets, snapshots }) {
   const analytics = calculatePortfolioAnalytics(assets);
   const topExposure = analytics.sectorExposure.slice(0, 4);
   const pnlTone = analytics.unrealizedPnl >= 0 ? "text-emerald-400" : "text-rose-400";
@@ -59,6 +60,8 @@ export default function RiskCommandCenter({ assets }) {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1fr] gap-4">
+        <PortfolioPerformanceChart snapshots={snapshots} />
+
         <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
           <div className="text-xs font-medium text-slate-400 mb-3">Exposition sectorielle</div>
           <div className="space-y-3">
@@ -80,7 +83,7 @@ export default function RiskCommandCenter({ assets }) {
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
+        <div className="p-4 rounded-xl bg-surface-800 border border-white/5 xl:col-span-2">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-3">
             <Repeat2 className="w-3.5 h-3.5" aria-hidden="true" />
             Rééquilibrage suggéré
