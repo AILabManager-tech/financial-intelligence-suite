@@ -82,4 +82,13 @@ describe('fetchDividends', () => {
       fetchDividends('AAPL', { finnhubApiKey: '', fetcher: vi.fn() }),
     ).rejects.toThrow(/FINNHUB_API_KEY/);
   });
+
+  it('does not leak the API token in error messages', async () => {
+    const fetcher = vi.fn(async () => ({ ok: false, status: 401, json: async () => ({}) }));
+    try {
+      await fetchDividends('AAPL', { finnhubApiKey: 'super-secret-token', fetcher });
+    } catch (error) {
+      expect(error.message).not.toContain('super-secret-token');
+    }
+  });
 });
