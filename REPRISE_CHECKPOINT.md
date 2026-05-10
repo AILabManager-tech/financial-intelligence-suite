@@ -18,9 +18,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## Etat git
 
-Tip de `main` au moment du checkpoint (post-bloc dépôts SEC, à committer dans le même bloc que ce docs) :
+Tip de `main` au moment du checkpoint (post-bloc comparaison sectorielle, à committer dans le même bloc que ce docs) :
 
 ```
+ed415bc feat: source SEC filings from Finnhub stock filings endpoint
 a363672 docs: prep next-session checkpoint after Buffett + theme merge
 1474ac6 docs: align checklist body with merged Buffett + theme blocks
 facf406 docs: refresh reprise checkpoint after parallel merge
@@ -53,9 +54,10 @@ Commits feature livrés sur `main` depuis le checkpoint précédent :
 - `2728f1c` — Outil DX: launcher one-click (`scripts/start-dev.sh` + icônes `assets/FIS_*.png`) pour démarrer Vite sur :20000 depuis un raccourci `.desktop` du bureau.
 - `3ef3bb2` — Analyse Buffett DCF (panel + math breakdown KaTeX) sourcée par `/api/fundamentals` (DCF Gordon-Shapiro pur côté client, pas de nouveau handler serveur).
 - `cc085e0` — Thèmes optionnels Matrix / Cyber / Clair via CSS-vars `:root[data-theme="…"]`; thème FIS par défaut conservé identique au pixel.
-- (à venir, ce bloc) — Dépôts SEC Finnhub: `/api/sec-filings` (TTL 24h) `/stock/filings`; `SecFilingsPanel` empilé tout en bas de la fiche actif (sous `CompanyNewsPanel`), groupé par type (10-K, 10-Q, 8-K, 4 insider, DEF 14A, S-1, 13F-HR, etc.) avec libellés FR + tone par catégorie + lien externe vers le PDF SEC; pas d'extension du healthcheck (la clé Finnhub est partagée).
+- `ed415bc` — Dépôts SEC Finnhub: `/api/sec-filings` (TTL 24h) `/stock/filings`; `SecFilingsPanel` empilé sous `CompanyNewsPanel`, groupé par type (10-K, 10-Q, 8-K, 4 insider, DEF 14A, S-1, 13F-HR, etc.) avec libellés FR + tone par catégorie + lien externe vers le PDF SEC; pas d'extension du healthcheck (la clé Finnhub est partagée).
+- (à venir, ce bloc) — Comparaison sectorielle Finnhub: `/api/peers` (TTL 24h) `/stock/peers`; `PeersComparisonPanel` empilé tout en bas de la fiche actif (sous `SecFilingsPanel`); livre prix + variation absolue + variation % + écart en points de pourcentage vs symbole de référence pour chaque pair, classement par variation % desc; quotes pairs récupérés via le batch `/api/quotes` existant; pas d'extension du healthcheck.
 
-État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 → 366 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -78,7 +80,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 331 tests
+- `npm test` OK, 366 tests
 - `npm run build` OK
 
 ## Serveur local
@@ -90,6 +92,32 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc comparaison sectorielle livré (2026-05-10, après dépôts SEC)
+
+`/stock/peers` Finnhub empilé tout en bas de la fiche actif, sous `SecFilingsPanel`. Pattern modulaire identique au bloc dépôts SEC — 7 fichiers neufs, zéro modif des panels existants (un seul ajout dans `IntelligenceCard.jsx` + un nouveau handler dans `vite.config.js`). 35 nouveaux tests.
+
+Fichiers ajoutés:
+
+- `server/peers.js` (+tests, 10) — `fetchPeers(symbol, {finnhubApiKey, limit})`, normalise la liste de symboles (uppercase, trim, dedup, exclut le symbole demandé case-insensitive, drop entries non-string ou vides), cap à 10 par défaut (max 25). Fetcher injectable, ne leak jamais le token.
+- `vite.config.js` — middleware `/api/peers` avec `readThroughCache` TTL 24h + handler Vercel `api/peers.js`.
+- `src/services/peers.{js,test.js}` (9 tests) — exporte `fetchPeers(symbol, {signal})` (client `/api/peers`) et `fetchPeerQuotes(symbols, {signal})` (wrapper sur `/api/quotes` batched, retourne `{quotes, errors}` ou shortcut vide quand symbols est vide).
+- `src/utils/peersFormatters.{js,test.js}` (8 tests) — `buildPeersTable(peers, quotes, baseQuote)` aligne les pairs avec leur quote et calcule `deltaVsBasePct` (différence de variation % en points), marque `status: 'missing'` quand la cotation manque; `rankPeersByChange(rows, {direction})` trie par `changePct` desc/asc en gardant les missing à la fin; `formatDeltaVsBase(value)` formate l'écart en `+/-X.XX pp`.
+- `src/components/PeersComparisonPanel.{jsx,test.jsx}` (8 tests) — pattern FIS standard (state {symbol, status, peers, quotes, fetchedAt, source, error} + AbortController + 4 états render). Table responsive (mobile: chip variation %; desktop: prix + var. abs. + var. % + Δ vs base). Empty-state explicite quand Finnhub ne retourne aucun pair.
+
+Fichiers étendus:
+
+- `src/components/IntelligenceCard.jsx` — `<PeersComparisonPanel asset={asset} />` empilé après `<SecFilingsPanel />`.
+
+Choix architecturaux:
+
+- **TTL 24h sur la liste de pairs** : la liste change rarement (quelques fois par an); les cotations elles passent par le cache 20s du `/api/quotes`.
+- **Réutilisation du batch `/api/quotes`** plutôt qu'un nouvel endpoint dédié — un seul fetch HTTP pour les N pairs au lieu de N appels parallèles, et bénéficie du fallback Stooq déjà en place.
+- **Δ vs base en points de pourcentage** : on compare des taux de variation (déjà en %), donc l'écart est en pp pour ne pas confondre avec une variation %.
+- **Classement par changePct desc** : permet à l'opérateur de voir d'un coup d'œil qui surperforme et qui sous-performe vs le symbole de référence.
+- **Pairs sans cotation marqués `missing`** : Finnhub liste parfois des pairs hors US (`MC.PA` Bouygues vs LVMH par ex.) que le quote upstream ne couvre pas; on l'affiche mais explicitement dégradé (« Cotation indisponible ») plutôt que de le filtrer silencieusement.
+- **Pas de healthcheck dédié** : la clé Finnhub est partagée; le probe existant suffit.
+- **Pas de fondamentaux comparés en V1** : N appels parallèles à `/api/fundamentals` chargerait sensiblement le panel et la liste utile dépendrait du secteur (P/E pour software, EV/EBITDA pour utilities, etc.). Reportable en V2 si l'usage le justifie.
 
 ## Bloc dépôts SEC livré (2026-05-10, après analyse Buffett + thèmes)
 
@@ -216,11 +244,12 @@ Choix architecturaux:
 
 L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-**Recommandation par défaut sur « on continue »** : §5 dépth — **comparaison sectorielle** (`/stock/peers` Finnhub). Pattern modulaire identique au bloc dépôts SEC qui vient d'être livré (~7 fichiers neufs, zéro modif des panels existants). Faible risque, factuel pur. Le panel listerait les peers Finnhub avec quote live (réutilise `liveQuotes`) + un mini-tableau de fondamentaux comparés (P/E, market cap, ROE) en récupérant chaque fondamental en parallèle via `/api/fundamentals`. Empilable sous `SecFilingsPanel` dans `IntelligenceCard`.
+**Recommandation par défaut sur « on continue »** : §11 — **préparer le déploiement Vercel**. Soulevé explicitement par l'utilisateur en fin de session précédente. Bloc de ~2h: créer `vercel.json`, gating SQLite si filesystem read-only en prod (le repo SQLite tombe en mode no-op et l'API portfolio bascule sur le client), liste documentée des ENV vars à configurer dans le dashboard Vercel (FINNHUB_API_KEY, TWELVE_DATA_API_KEY), README court de procédure (`npm run build` + drag dist/ ou via CLI). NE PAS lancer `vercel deploy` automatiquement (hard-stop) — préparer la config et laisser l'utilisateur déclencher le push prod.
 
 Candidats restants (du plus close-the-loop au plus structurel) :
 
-- §5 close-the-loop — comparaison sectorielle (`/stock/peers`), fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel).
+- §11 — déploiement Vercel (config + gating SQLite + ENV documentées).
+- §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel). Optionnellement, V2 du panel `PeersComparisonPanel` : ajouter une colonne P/E ou market cap récupérée en parallèle via N appels `/api/fundamentals`.
 - §4 visualisations — volume sous la courbe (extension `PriceHistoryChart`), comparaison benchmark/multi-actifs (panel séparé), candlesticks OHLC, drawdown réel, volatilité réalisée, corrélation.
 - §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
 - §7 — alertes volume inhabituel, notifications navigateur (Notification API), jobs planifiés serveur, résumé quotidien.

@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-10 (post-bloc dépôts SEC). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10 (post-bloc comparaison sectorielle). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -119,7 +119,8 @@ Légende:
   - Actuel: `/api/company-news` Finnhub (cache TTL 30 min, 14 jours, top 10); `CompanyNewsPanel` rend titre + source + date + lien externe + summary.
 - [x] Documents SEC / filings
   - Actuel: `/api/sec-filings` Finnhub `/stock/filings` (cache TTL 24h); `SecFilingsPanel` empilé en bas de la fiche actif, dépôts groupés par type (10-K, 10-Q, 8-K, 4 insider, DEF 14A, S-1, 13F, etc.) avec libellés FR + lien direct vers le report SEC (fallback `filingUrl`). Couvre uniquement les émetteurs cotés aux États-Unis (limitation source).
-- [ ] Comparaison sectorielle
+- [x] Comparaison sectorielle
+  - Actuel: `/api/peers` Finnhub `/stock/peers` (cache TTL 24h); `PeersComparisonPanel` empilé en bas de la fiche actif, table classée par variation % desc, livre prix + variation absolue + variation % + écart en points de pourcentage vs symbole de référence pour chaque pair (jusqu'à 10). Quotes pairs récupérés via le batch `/api/quotes` existant; pairs sans cotation marqués explicitement « Cotation indisponible ».
 - [x] Score interne explicable basé sur données réelles
   - Actuel: `BuffettAnalysisPanel` empilé sous `FundamentalsPanel` rend la valeur intrinsèque DCF (Gordon-Shapiro 10y), la marge de sécurité live, 6 critères qualitatifs déterministes (ROE, croissance EPS, dette/equity, FCF, P/E, moat heuristique) et une règle de décision Acheter/Conserver/Vendre, avec décomposition mathématique KaTeX. Calculs purs côté client à partir de `/api/fundamentals` (ROE TTM, EPS growth 5y, debt/equity, P/FCF), aucune valeur inventée — affiche « Données insuffisantes » si un champ requis manque.
 - [x] Audit de provenance par champ
@@ -305,6 +306,7 @@ Programmé aujourd'hui:
 - analyse Buffett DCF empilée sous fiche actif (port du module standalone fin_tech_buffet_module): valeur intrinsèque + marge de sécurité live + 6 critères + règle de décision + décomposition mathématique KaTeX, sourcée des fondamentaux Finnhub (ROE TTM, EPS growth 5y, dette/equity, price/FCF), curseurs r/g pour sensibilité;
 - thèmes visuels optionnels (Matrix / Cyber / Clair) en plus du thème FIS par défaut, persistés localement, basés sur override de variables CSS — apparence FIS originale conservée à l'identique tant que l'utilisateur ne change pas;
 - dépôts SEC Finnhub `/stock/filings` empilés en bas de la fiche actif, groupés par type avec libellés FR (rapports annuels/trimestriels, événements 8-K, transactions insider, procurations, inscriptions, positions institutionnelles…) et lien direct vers le PDF SEC, cache TTL 24h;
+- comparaison sectorielle Finnhub `/stock/peers` empilée tout en bas de la fiche actif, table de pairs avec quote live (prix + variation absolue + variation %) et écart en points de pourcentage vs symbole de référence, classement par variation % desc, cache TTL 24h sur la liste de pairs et batch via `/api/quotes` pour les cotations;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
@@ -314,7 +316,6 @@ Principaux manques pour devenir une plateforme complète:
 - authentification et portefeuilles multi-utilisateur;
 - alertes avancées (volume inhabituel, notifications email/navigateur, jobs planifiés);
 - repli Twelve Data sur les fondamentaux pour couvrir les non-US (V2 prévue);
-- comparaison sectorielle (peers Finnhub);
 - visualisations avancées (volume sous courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown, volatilité, corrélation);
 - rate limiting avancé, cache partagé et observabilité;
 - CI/CD et monitoring production;
