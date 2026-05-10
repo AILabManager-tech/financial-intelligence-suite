@@ -86,7 +86,8 @@ Légende:
 - [x] Vue top movers
 - [x] Graphique portefeuille
   - Actuel: courbe de valeur portefeuille basée sur snapshots SQLite.
-- [ ] Sélecteur de période: 1D, 5D, 1M, 6M, YTD, 1Y, 5Y
+- [x] Sélecteur de période: 1D, 5D, 1M, 6M, YTD, 1Y, 5Y
+  - Actuel: sélecteur dans la fiche actif, intraday 1h/30min, daily, weekly via Twelve Data avec interval visible.
 - [ ] Volume sous la courbe
 - [ ] Candlesticks OHLC
 - [ ] Comparaison benchmark
@@ -277,6 +278,7 @@ Programmé aujourd'hui:
 - healthcheck fournisseurs Finnhub/Twelve Data/Stooq;
 - alertes opérateur variation/drift/stale;
 - alertes configurables prix/variation/drift persistées localement et déclenchées sur tick;
+- sélecteur de période 1D/5D/1M/6M/YTD/1Y/5Y sur la courbe historique;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.

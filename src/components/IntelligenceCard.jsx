@@ -4,40 +4,97 @@ import { formatCurrency } from "../utils/scoreTranslator";
 import { CartesianGrid, LineChart, Line, ReferenceLine, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import ChartErrorBoundary from "./ChartErrorBoundary";
 import { fetchPriceHistory } from "../services/priceHistory";
+import { DEFAULT_PERIOD, PERIOD_OPTIONS } from "../services/priceHistoryPeriods";
+
+function formatTick(value, timeUnit) {
+  if (!value) return "";
+  if (timeUnit === "intraday") {
+    const datePart = value.includes(" ") ? value.split(" ")[1] : value;
+    return datePart.slice(0, 5);
+  }
+  if (timeUnit === "weekly") {
+    return value.slice(0, 7);
+  }
+  return value.slice(5);
+}
+
+function describePeriod(period) {
+  return PERIOD_OPTIONS.find((option) => option.key === period)?.description ?? "période";
+}
+
+function PeriodSelector({ value, onChange }) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-lg bg-surface-900/70 border border-white/5 p-1">
+      {PERIOD_OPTIONS.map((option) => {
+        const isActive = option.key === value;
+        return (
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => onChange?.(option.key)}
+            className={`px-2 py-1 rounded-md text-[11px] font-medium cursor-pointer ${
+              isActive ? "bg-violet-500/20 text-violet-200" : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+            aria-pressed={isActive}
+            aria-label={`Période ${option.description}`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function PriceHistoryChart({ asset }) {
-  const [history, setHistory] = useState({ symbol: asset.symbol, status: "loading", points: [], source: null, fetchedAt: null });
+  const [period, setPeriod] = useState(DEFAULT_PERIOD);
+  const [history, setHistory] = useState({ symbol: asset.symbol, period, status: "loading", points: [], source: null, fetchedAt: null, timeUnit: "daily" });
 
-  if (history.symbol !== asset.symbol && history.status !== "loading") {
-    setHistory({ symbol: asset.symbol, status: "loading", points: [], source: null, fetchedAt: null });
+  if ((history.symbol !== asset.symbol || history.period !== period) && history.status !== "loading") {
+    setHistory({ symbol: asset.symbol, period, status: "loading", points: [], source: null, fetchedAt: null, timeUnit: "daily" });
   }
 
   useEffect(() => {
     let active = true;
 
-    fetchPriceHistory(asset.symbol, 30)
+    fetchPriceHistory(asset.symbol, { period })
       .then((payload) => {
         if (active) {
-          setHistory({ symbol: asset.symbol, status: "ready", points: payload.points, source: payload.source, fetchedAt: payload.fetchedAt });
+          setHistory({
+            symbol: asset.symbol,
+            period,
+            status: "ready",
+            points: payload.points,
+            source: payload.source,
+            fetchedAt: payload.fetchedAt,
+            timeUnit: payload.timeUnit ?? "daily",
+            interval: payload.interval ?? null,
+          });
         }
       })
       .catch((error) => {
         if (active) {
-          setHistory({ symbol: asset.symbol, status: "error", points: [], source: null, fetchedAt: null, error: error.message });
+          setHistory({ symbol: asset.symbol, period, status: "error", points: [], source: null, fetchedAt: null, timeUnit: "daily", error: error.message });
         }
       });
 
     return () => {
       active = false;
     };
-  }, [asset.symbol]);
+  }, [asset.symbol, period]);
 
   if (history.status === "loading") {
     return (
-      <div className="p-4 rounded-xl bg-surface-800 border border-white/5 min-h-[260px] flex items-center justify-center">
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" />
-          Chargement historique Finnhub
+      <div className="p-4 rounded-xl bg-surface-800 border border-white/5 min-h-[260px]">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-xs text-slate-500">Prix — {describePeriod(period)}</span>
+          <PeriodSelector value={period} onChange={setPeriod} />
+        </div>
+        <div className="flex items-center justify-center min-h-[180px]">
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" />
+            Chargement historique
+          </div>
         </div>
       </div>
     );
@@ -45,10 +102,16 @@ function PriceHistoryChart({ asset }) {
 
   if (history.status === "error" || history.points.length < 2) {
     return (
-      <div className="p-4 rounded-xl bg-surface-800 border border-white/5 min-h-[260px] flex items-center justify-center text-center">
-        <div>
-          <div className="text-sm font-medium text-amber-400">Historique indisponible</div>
-          <div className="text-xs text-slate-500 mt-1">La courbe est masquée pour éviter d'afficher des valeurs simulées.</div>
+      <div className="p-4 rounded-xl bg-surface-800 border border-white/5 min-h-[260px]">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <span className="text-xs text-slate-500">Prix — {describePeriod(period)}</span>
+          <PeriodSelector value={period} onChange={setPeriod} />
+        </div>
+        <div className="flex items-center justify-center min-h-[180px] text-center">
+          <div>
+            <div className="text-sm font-medium text-amber-400">Historique indisponible</div>
+            <div className="text-xs text-slate-500 mt-1">La courbe est masquée pour éviter d'afficher des valeurs simulées.</div>
+          </div>
         </div>
       </div>
     );
@@ -67,9 +130,9 @@ function PriceHistoryChart({ asset }) {
 
   return (
     <div className="p-4 rounded-xl bg-surface-800 border border-white/5">
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
         <div>
-          <span className="text-xs text-slate-500 block">Prix de clôture — 30 jours</span>
+          <span className="text-xs text-slate-500 block">Prix — {describePeriod(period)}</span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-bold text-white">${last.toFixed(2)}</span>
             <span className={`text-xs font-semibold ${isImproving ? "text-emerald-400" : "text-rose-400"}`}>
@@ -77,9 +140,12 @@ function PriceHistoryChart({ asset }) {
             </span>
           </div>
         </div>
-        <div className="text-right text-[11px] text-slate-500">
-          <div>Min ${min.toFixed(2)}</div>
-          <div>Max ${max.toFixed(2)}</div>
+        <div className="flex flex-col items-end gap-2">
+          <PeriodSelector value={period} onChange={setPeriod} />
+          <div className="text-right text-[11px] text-slate-500">
+            <div>Min ${min.toFixed(2)}</div>
+            <div>Max ${max.toFixed(2)}</div>
+          </div>
         </div>
       </div>
 
@@ -93,7 +159,7 @@ function PriceHistoryChart({ asset }) {
               axisLine={false}
               tick={{ fill: "#64748b", fontSize: 11 }}
               interval="preserveStartEnd"
-              tickFormatter={(value) => value.slice(5)}
+              tickFormatter={(value) => formatTick(value, history.timeUnit)}
             />
             <YAxis
               domain={[domainMin, domainMax]}
@@ -122,7 +188,7 @@ function PriceHistoryChart({ asset }) {
         </ResponsiveContainer>
       </ChartErrorBoundary>
       <div className="mt-2 text-[11px] text-slate-500">
-        Source: {history.source}. Ligne pointillée: première clôture de la période.
+        Source: {history.source}{history.interval ? ` · interval ${history.interval}` : ""}. Ligne pointillée: première clôture de la période.
       </div>
     </div>
   );
