@@ -4,11 +4,17 @@ Mot magique: `FIS-REPRISE-FD01815`
 
 ## Instruction pour nouvelle session
 
-Quand l'utilisateur tape `FIS-REPRISE-FD01815`, commencer par lire ce fichier, puis continuer le développement dans:
+**Plug-and-play** : `CLAUDE.md` à la racine est auto-chargé à chaque session ouverte dans ce dossier — conventions modulaires + factualité + sécurité + cache TTL + hard-stops y sont déjà encodées.
 
-`/home/gear-code/02_projects/financial-intelligence-suite`
+Lecture obligatoire au démarrage :
 
-Ne modifier aucun fichier hors de ce dossier.
+1. `CLAUDE.md` (auto-chargé, déjà en contexte)
+2. `REPRISE_CHECKPOINT.md` (ce fichier — état post-dernière livraison + candidats)
+3. Synthèse de `PLATFORM_CHECKLIST.md`
+
+Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »), choisir SEUL le bloc le plus logique parmi les candidats ci-dessous et l'achever. Ne pas redemander quel axe attaquer (mémoire `feedback_no_decision_outsourcing.md`).
+
+`/home/gear-code/02_projects/financial-intelligence-suite` — ne modifier aucun fichier hors de ce dossier.
 
 ## Etat git
 
