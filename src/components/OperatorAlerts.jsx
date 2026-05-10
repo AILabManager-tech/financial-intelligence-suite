@@ -8,8 +8,23 @@ function alertTone(level) {
   return "text-slate-400 bg-white/5";
 }
 
-export default function OperatorAlerts({ assets }) {
-  const alerts = useMemo(() => buildOperatorAlerts(assets), [assets]);
+function userTriggerToAlert(trigger) {
+  return {
+    id: `user:${trigger.alertId}:${trigger.triggeredAt}`,
+    level: trigger.level ?? "medium",
+    type: `user_${trigger.type}`,
+    symbol: trigger.symbol,
+    title: trigger.title ?? "Alerte configurée",
+    detail: trigger.detail ?? `${trigger.symbol} a déclenché une alerte`,
+  };
+}
+
+export default function OperatorAlerts({ assets, userTriggers = [] }) {
+  const alerts = useMemo(() => {
+    const derived = buildOperatorAlerts(assets);
+    const userAlerts = (userTriggers ?? []).map(userTriggerToAlert);
+    return [...userAlerts, ...derived];
+  }, [assets, userTriggers]);
 
   return (
     <div className="animate-slide-up">

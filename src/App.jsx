@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, lazy, Suspense } from "react";
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { AlertTriangle, Brain, RefreshCw, Wifi } from "lucide-react";
 import { PORTFOLIO_ASSETS } from "./data/portfolioData";
 import TopPerformers from "./components/TopPerformers";
@@ -35,6 +35,16 @@ import {
   saveFavoriteSymbols,
   toggleFavoriteSymbol,
 } from "./services/favoriteStore";
+import {
+  addAlert,
+  loadAlerts,
+  markAlertTriggered,
+  removeAlert,
+  saveAlerts,
+  toggleAlertEnabled,
+} from "./services/alertStore";
+import { evaluateAlerts } from "./utils/alertEvaluator";
+import AlertManager from "./components/AlertManager";
 
 const IntelligenceCard = lazy(() => import("./components/IntelligenceCard"));
 
@@ -130,6 +140,8 @@ export default function App() {
   const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets(PORTFOLIO_ASSETS));
   const [watchlistAssets, setWatchlistAssets] = useState(() => loadWatchlistAssets([]));
   const [favoriteSymbols, setFavoriteSymbols] = useState(() => loadFavoriteSymbols([]));
+  const [alerts, setAlerts] = useState(() => loadAlerts());
+  const [alertTriggers, setAlertTriggers] = useState([]);
   const [assets, setAssets] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [portfolioSnapshots, setPortfolioSnapshots] = useState([]);
@@ -206,6 +218,54 @@ export default function App() {
     setFavoriteSymbols(nextSymbols);
   }, []);
 
+  const alertsRef = useRef(alerts);
+  const assetsRef = useRef(assets);
+
+  useEffect(() => {
+    alertsRef.current = alerts;
+  }, [alerts]);
+
+  useEffect(() => {
+    assetsRef.current = assets;
+  }, [assets]);
+
+  const evaluateAndPersistAlerts = useCallback((sourceAlerts, sourceAssets, evaluatedAt) => {
+    if (!sourceAssets?.length || !sourceAlerts?.length) {
+      setAlertTriggers([]);
+      return sourceAlerts ?? [];
+    }
+    const triggers = evaluateAlerts(sourceAlerts, sourceAssets, evaluatedAt);
+    setAlertTriggers(triggers);
+
+    let stamped = sourceAlerts;
+    triggers.forEach((trigger) => {
+      stamped = markAlertTriggered(stamped, trigger.alertId, trigger.triggeredAt);
+    });
+    if (stamped !== sourceAlerts) {
+      saveAlerts(stamped);
+      setAlerts(stamped);
+    }
+    return stamped;
+  }, []);
+
+  const persistAlerts = useCallback((nextAlerts) => {
+    saveAlerts(nextAlerts);
+    setAlerts(nextAlerts);
+    evaluateAndPersistAlerts(nextAlerts, assetsRef.current, new Date().toISOString());
+  }, [evaluateAndPersistAlerts]);
+
+  const handleAddAlert = useCallback((draft) => {
+    persistAlerts(addAlert(alertsRef.current, draft));
+  }, [persistAlerts]);
+
+  const handleRemoveAlert = useCallback((alertId) => {
+    persistAlerts(removeAlert(alertsRef.current, alertId));
+  }, [persistAlerts]);
+
+  const handleToggleAlert = useCallback((alertId) => {
+    persistAlerts(toggleAlertEnabled(alertsRef.current, alertId));
+  }, [persistAlerts]);
+
   const navigateTo = useCallback((nextPath) => {
     if (window.location.pathname === nextPath) return;
     window.history.pushState({}, "", nextPath);
@@ -253,6 +313,10 @@ export default function App() {
         cacheStatus: payload.cacheStatus,
       });
 
+      if (liveCount > 0) {
+        evaluateAndPersistAlerts(alertsRef.current, mergedAssets, payload.fetchedAt);
+      }
+
       if (liveCount > 0 && analytics.totalMarketValue > 0) {
         savePortfolioSnapshot({
           capturedAt: payload.fetchedAt,
@@ -278,7 +342,7 @@ export default function App() {
         error: "Impossible de récupérer les prix de marché. Tableau masqué pour éviter d'afficher des valeurs statiques.",
       });
     }
-  }, [portfolioAssets]);
+  }, [portfolioAssets, evaluateAndPersistAlerts]);
 
   useEffect(() => {
     const refreshTimer = window.setTimeout(loadLiveQuotes, 0);
@@ -453,7 +517,17 @@ export default function App() {
             </section>
 
             <section aria-label="Alertes opérateur">
-              <OperatorAlerts assets={assets} />
+              <OperatorAlerts assets={assets} userTriggers={alertTriggers} />
+            </section>
+
+            <section aria-label="Alertes configurables">
+              <AlertManager
+                alerts={alerts}
+                availableSymbols={portfolioAssets.map((asset) => asset.symbol)}
+                onAddAlert={handleAddAlert}
+                onRemoveAlert={handleRemoveAlert}
+                onToggleAlert={handleToggleAlert}
+              />
             </section>
 
             {/* Portfolio risk */}

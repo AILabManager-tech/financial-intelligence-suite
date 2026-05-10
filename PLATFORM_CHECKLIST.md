@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-08. Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-09. Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -131,19 +131,21 @@ Légende:
   - Actuel: watchlist indépendante du portefeuille via stockage local.
 - [x] Favoris
   - Actuel: favoris persistés localement, disponibles depuis la fiche actif et la watchlist.
-- [ ] Alertes configurables
+- [x] Alertes configurables
+  - Actuel: alertes opérateur configurables prix ≥/≤, variation % ≥/≤ et drift allocation, persistées localement et déclenchées sur le tick de quotes.
 - [ ] UX mobile avancée
 - [ ] Préférences utilisateur
 - [ ] Mode clair/sombre
 
 ## 7. Alertes et automatisation
 
-- [ ] Alertes prix
+- [x] Alertes prix
+  - Actuel: alertes configurables prix ≥/≤ seuil par symbole, persistées localement et évaluées à chaque tick.
 - [x] Alertes variation %
-  - Actuel: alertes opérateur dérivées des variations >= 5%.
+  - Actuel: alertes opérateur dérivées (>=5%) + alertes configurables variation ≥/≤ seuil par symbole.
 - [ ] Alertes volume inhabituel
 - [x] Alertes drift allocation
-  - Actuel: alertes opérateur dérivées des écarts >= 5 pts.
+  - Actuel: alertes opérateur dérivées (>=5 pts) + alertes configurables drift ≥ seuil (par symbole ou portefeuille).
 - [x] Alertes source stale
   - Actuel: alertes opérateur si une quote est stale.
 - [ ] Notifications email
@@ -274,6 +276,7 @@ Programmé aujourd'hui:
 - export CSV/JSON du portefeuille;
 - healthcheck fournisseurs Finnhub/Twelve Data/Stooq;
 - alertes opérateur variation/drift/stale;
+- alertes configurables prix/variation/drift persistées localement et déclenchées sur tick;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
