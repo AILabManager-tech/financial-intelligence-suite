@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-10 (post-bloc recommandations analystes). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10 (post-bloc analyse Buffett + thèmes optionnels). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -298,6 +298,8 @@ Programmé aujourd'hui:
 - historique des dividendes Finnhub sur 5 ans + somme TTM mise en évidence;
 - actualités société Finnhub sur 14 jours (titre + source + date + lien externe);
 - recommandations analystes Finnhub (consensus + distribution + tendance 6 mois);
+- analyse Buffett DCF empilée sous fiche actif (port du module standalone fin_tech_buffet_module): valeur intrinsèque + marge de sécurité live + 6 critères + règle de décision + décomposition mathématique KaTeX, sourcée des fondamentaux Finnhub (ROE TTM, EPS growth 5y, dette/equity, price/FCF), curseurs r/g pour sensibilité;
+- thèmes visuels optionnels (Matrix / Cyber / Clair) en plus du thème FIS par défaut, persistés localement, basés sur override de variables CSS — apparence FIS originale conservée à l'identique tant que l'utilisateur ne change pas;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.

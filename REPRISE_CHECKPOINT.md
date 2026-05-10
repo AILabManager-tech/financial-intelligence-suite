@@ -22,7 +22,7 @@ Checkpoint local principal:
 
 `fd01815 feat: import broker CSV files into the portfolio`
 
-Plus deux commits docs (`c64b536`, `3dc81e7`), le bloc fondamentaux (`e7a5e3b`), le bloc activité société (news + earnings + dividendes) livré le 2026-05-10 et le bloc recommandations analystes livré le 2026-05-10.
+Plus le bloc fondamentaux (`e7a5e3b`), le bloc activité société (news + earnings + dividendes) `115c91f`, le bloc recommandations analystes `ffcd6ff`, et le bloc analyse Buffett + thèmes optionnels livré le 2026-05-10.
 
 Branche: `main`. Aucun push à faire sans demande explicite.
 
@@ -39,7 +39,7 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 - `(committé)` — Activité société Finnhub: `/api/company-news` (TTL 30 min), `/api/earnings` (TTL 6h), `/api/dividends` (TTL 24h); panels `CompanyNewsPanel`, `EarningsCalendarPanel`, `DividendHistoryPanel` empilés sous fiche actif; healthcheck étendu à `/company-news`.
 - `(à committer)` — Recommandations analystes Finnhub: `/api/analyst-ratings` (TTL 6h) `/stock/recommendation`; `AnalystRatingsPanel` empilé sous `FundamentalsPanel` (consensus le plus récent + distribution % par bucket + tendance des 6 derniers relevés); pas d'extension du healthcheck (le probe Finnhub existant couvre la même clé).
 
-État tests: 52 → 124 → 162 → 206 → 230 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 → 206 → 230 → 299 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -74,6 +74,37 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc analyse Buffett + thèmes optionnels livré (2026-05-10, après recommandations analystes)
+
+Port du module standalone `fin_tech_buffet_module` (TS → JS) intégré comme panel empilé dans `IntelligenceCard` après `FundamentalsPanel`, et système de thèmes opt-in pour toute la suite.
+
+Fichiers ajoutés:
+
+- `src/utils/buffettCalculator.{js,test.js}` (29 tests) — `calcIntrinsicValue` (DCF Gordon-Shapiro 10y), `evaluateCriteria` (6 portes Buffett), `decideAction` (BUY/SELL/HOLD), `inferMoat` (heuristique ROE+growth+FCF+D/E), `resolveMoat` (overrides BRK.A/B). Pures, framework-agnostiques.
+- `src/utils/buffettFormatters.{js,test.js}` (13 tests) — `extractBuffettInputs` (fields normalisés + price → MoatInputs), conversions Finnhub raw → ratios (`/100` ROE et growth, ratio brut D/E, dérivation FCF via `price / pfcfShareTtm`), formatters %/USD/ratio/action FR.
+- `src/components/BuffettAnalysisPanel.{jsx,test.jsx}` (8 tests) — panel principal avec hero MoS, curseurs r/g, 6 critères, bandeau décision, math breakdown lazy. Pattern FIS standard (state {symbol, status, fields, fetchedAt, source, error} + AbortController + 4 états render).
+- `src/components/BuffettMathBreakdown.{jsx,test.jsx}` (3 tests) — décomposition KaTeX en 5 sections (DCF/Applied/MoS/Decision/Criteria), labels FR, warning si r ≤ g.
+- `src/services/themeStore.{js,test.js}` (10 tests) — `loadTheme/saveTheme/applyTheme/isValidTheme`, persistance localStorage `fis:theme:v1`, défaut `fis` (= aucun `data-theme` posé sur `<html>`).
+- `src/components/ThemeSelector.{jsx,test.jsx}` (4 tests) — radiogroup 4 options (FIS / Matrix / Cyber / Clair), monté dans le header de `App.jsx`.
+
+Fichiers étendus:
+
+- `src/utils/fundamentalsNormalizer.js` (+2 tests, total 9) — emit de 4 nouveaux champs Finnhub raw consommés par Buffett (`roeTtm`, `epsGrowth5y`, `debtEquityAnnual`, `pfcfShareTtm`) — invisibles dans `FundamentalsPanel` car non listés dans `FUNDAMENTALS_DEFINITIONS`.
+- `src/index.css` — ajout de 3 blocs `:root[data-theme="..."]` qui overrident les variables CSS du `@theme` block. Nouvelle var `--color-body-text` (était hardcodée `#e2e8f0`) pour permettre l'inversion en thème clair.
+- `src/App.jsx` — `applyTheme(loadTheme())` au module-load avant le premier paint, `<ThemeSelector />` placé dans le header avant `<MarketDataStatus />`.
+- `src/components/IntelligenceCard.jsx` — `<BuffettAnalysisPanel asset={asset} />` empilé entre `FundamentalsPanel` et `AnalystRatingsPanel`.
+- `package.json` — `katex@^0.16.45` ajouté en dépendance (rendu math du panel).
+
+Choix architecturaux:
+
+- **Apparence FIS conservée à l'identique** : le thème `fis` (par défaut) n'applique aucun `data-theme` sur `<html>`, donc le `:root` de base reste actif et toutes les couleurs FIS originales restent identiques au pixel près. Aucun composant FIS existant n'a été modifié pour les thèmes, seules les CSS-vars changent.
+- **Provenance par champ respectée** : le panel n'invente aucune valeur. Si un des 4 champs Buffett requis est absent (fréquent sur non-US Finnhub free), le panel affiche explicitement « Données insuffisantes » avec mention du fallback Twelve Data prévu V2 — aucun zéro ni placeholder.
+- **Pas de duplication serveur** : le panel réutilise `/api/fundamentals` (TTL 6h existant), pas de nouveau handler. Le calcul DCF se fait côté client (pure math).
+- **Pas de logique WS/cache propre** : le `livePrice` vient déjà de l'`asset.price` injecté par `App.jsx` via `liveQuotes`. Le module Buffett standalone embarquait sa propre WS Finnhub + cache — supprimé pour FIS car redondant.
+- **MathBreakdown KaTeX français** : labels traduits (Acheter/Vendre/Conserver, Marché, Croissance, Marge entrée…) pour cohérence avec le reste de FIS.
+- **Thème Light expérimental** : l'inversion sombre→clair fonctionne via les CSS-vars, mais certaines classes Tailwind utility hardcodées (text-white, text-slate-300/400/500) restent comme telles. Sur fond clair, le rendu est lisible mais sous-optimal — un raffinement viendra si l'usage le justifie.
+- **VITE_FORCE_MOCK pas applicable** : FIS n'a pas de MockSource, le panel se base directement sur les fundamentals Finnhub. Si pas de clé Finnhub configurée côté serveur, les fundamentals échouent et le panel rend l'état `error` standard.
 
 ## Bloc recommandations analystes livré (2026-05-10, après activité société)
 

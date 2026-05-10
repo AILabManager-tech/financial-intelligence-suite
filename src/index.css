@@ -12,13 +12,62 @@
   --color-accent-blue: #60a5fa;
   --color-accent-violet: #a78bfa;
   --color-gold: #d4a853;
+  --color-body-text: #e2e8f0;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* ───────── Optional themes (opt-in via data-theme on <html>) ───────── */
+/* Default: no data-theme attribute → FIS appearance preserved exactly. */
+
+:root[data-theme="matrix"] {
+  --color-surface-950: #000000;
+  --color-surface-900: #050a05;
+  --color-surface-800: #0a140a;
+  --color-surface-700: #102810;
+  --color-surface-600: #1a3a1a;
+  --color-accent-emerald: #6ee7b7;
+  --color-accent-amber: #fde68a;
+  --color-accent-rose: #fca5a5;
+  --color-accent-blue: #6ee7b7;
+  --color-accent-violet: #6ee7b7;
+  --color-gold: #6ee7b7;
+  --color-body-text: #6ee7b7;
+}
+
+:root[data-theme="cyber"] {
+  --color-surface-950: #020617;
+  --color-surface-900: #0f0a1f;
+  --color-surface-800: #1a1233;
+  --color-surface-700: #2a1d4d;
+  --color-surface-600: #3a2566;
+  --color-accent-emerald: #f0abfc;
+  --color-accent-amber: #fcd34d;
+  --color-accent-rose: #fb7185;
+  --color-accent-blue: #c084fc;
+  --color-accent-violet: #f0abfc;
+  --color-gold: #f0abfc;
+  --color-body-text: #f0abfc;
+}
+
+:root[data-theme="light"] {
+  --color-surface-950: #f8fafc;
+  --color-surface-900: #f1f5f9;
+  --color-surface-800: #e2e8f0;
+  --color-surface-700: #cbd5e1;
+  --color-surface-600: #94a3b8;
+  --color-accent-emerald: #047857;
+  --color-accent-amber: #b45309;
+  --color-accent-rose: #b91c1c;
+  --color-accent-blue: #1d4ed8;
+  --color-accent-violet: #6d28d9;
+  --color-gold: #92400e;
+  --color-body-text: #0f172a;
 }
 
 body {
   margin: 0;
   background: var(--color-surface-950);
-  color: #e2e8f0;
+  color: var(--color-body-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;

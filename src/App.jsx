@@ -45,6 +45,13 @@ import {
 } from "./services/alertStore";
 import { evaluateAlerts } from "./utils/alertEvaluator";
 import AlertManager from "./components/AlertManager";
+import ThemeSelector from "./components/ThemeSelector";
+import { applyTheme, loadTheme } from "./services/themeStore";
+
+// Apply persisted theme synchronously at module load so the first paint
+// already reflects the user's choice — avoids a flash of FIS default when
+// they previously selected Matrix/Cyber/Light.
+applyTheme(loadTheme());
 
 const IntelligenceCard = lazy(() => import("./components/IntelligenceCard"));
 
@@ -464,6 +471,7 @@ export default function App() {
                   Watchlist
                 </button>
               </div>
+              <ThemeSelector />
               <MarketDataStatus status={marketStatus} onRefresh={loadLiveQuotes} />
             </div>
           </div>
