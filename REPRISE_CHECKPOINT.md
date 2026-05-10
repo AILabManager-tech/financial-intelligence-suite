@@ -37,7 +37,10 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 - `fd01815` — Import CSV broker (parser RFC 4180, détection EN/FR, preview ligne par ligne).
 - `e7a5e3b` — Fondamentaux sourcés Finnhub V1 stricte: `/api/fundamentals` (cache TTL 6h), `FundamentalsPanel` sous fiche actif, audit de provenance par champ, healthcheck étendu à `/stock/metric`.
 - `(committé)` — Activité société Finnhub: `/api/company-news` (TTL 30 min), `/api/earnings` (TTL 6h), `/api/dividends` (TTL 24h); panels `CompanyNewsPanel`, `EarningsCalendarPanel`, `DividendHistoryPanel` empilés sous fiche actif; healthcheck étendu à `/company-news`.
-- `(à committer)` — Recommandations analystes Finnhub: `/api/analyst-ratings` (TTL 6h) `/stock/recommendation`; `AnalystRatingsPanel` empilé sous `FundamentalsPanel` (consensus le plus récent + distribution % par bucket + tendance des 6 derniers relevés); pas d'extension du healthcheck (le probe Finnhub existant couvre la même clé).
+- `ffcd6ff` — Recommandations analystes Finnhub: `/api/analyst-ratings` (TTL 6h) `/stock/recommendation`; `AnalystRatingsPanel` empilé sous `FundamentalsPanel` (consensus le plus récent + distribution % par bucket + tendance des 6 derniers relevés); pas d'extension du healthcheck (le probe Finnhub existant couvre la même clé).
+- `2728f1c` — Outil DX: launcher one-click (`scripts/start-dev.sh` + icônes `assets/FIS_*.png`) pour démarrer Vite sur :20000 depuis un raccourci `.desktop` du bureau.
+- `3ef3bb2` — Analyse Buffett DCF (panel + math breakdown KaTeX) sourcée par `/api/fundamentals` (DCF Gordon-Shapiro pur côté client, pas de nouveau handler serveur).
+- `cc085e0` — Thèmes optionnels Matrix / Cyber / Clair via CSS-vars `:root[data-theme="…"]`; thème FIS par défaut conservé identique au pixel.
 
 État tests: 52 → 124 → 162 → 206 → 230 → 299 tests verts. Lint et build verts.
 
@@ -62,7 +65,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 230 tests
+- `npm test` OK, 299 tests
 - `npm run build` OK
 
 ## Serveur local
