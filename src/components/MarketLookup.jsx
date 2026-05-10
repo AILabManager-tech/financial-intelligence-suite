@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { Clock, Search, Trash2, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Clock, Globe2, Search, Trash2, X } from "lucide-react";
 import { fetchLiveQuotes, normalizeQuote } from "../services/liveQuotes";
 import { searchSymbols } from "../services/symbolSearch";
 import {
@@ -9,6 +9,7 @@ import {
   removeSearchEntry,
   saveSearchHistory,
 } from "../services/searchHistoryStore";
+import { uniqueCountriesFromResults } from "../utils/symbolExchange";
 
 function buildLookupAsset(result, quote) {
   return {
@@ -37,6 +38,23 @@ export default function MarketLookup({ onSelect }) {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [history, setHistory] = useState(() => loadSearchHistory());
+  const [countryFilter, setCountryFilter] = useState(null);
+
+  const availableCountries = useMemo(() => uniqueCountriesFromResults(results), [results]);
+
+  const filteredResults = useMemo(() => {
+    if (!countryFilter) return results;
+    return results.filter((result) => result.country === countryFilter);
+  }, [results, countryFilter]);
+
+  const ambiguousDescriptions = useMemo(() => {
+    const counts = new Map();
+    results.forEach((result) => {
+      const key = (result.description ?? "").toUpperCase();
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+    return new Set([...counts.entries()].filter(([, count]) => count > 1).map(([key]) => key));
+  }, [results]);
 
   const persistHistory = useCallback((next) => {
     saveSearchHistory(next);
@@ -53,6 +71,7 @@ export default function MarketLookup({ onSelect }) {
     try {
       const payload = await searchSymbols(cleanQuery);
       setResults(payload.results);
+      setCountryFilter(null);
       setStatus("ready");
       persistHistory(recordSearch(history, { query: cleanQuery, resultsCount: payload.results.length }));
     } catch (searchError) {
@@ -174,18 +193,92 @@ export default function MarketLookup({ onSelect }) {
       )}
 
       {results.length > 0 && (
-        <div className="rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
-          {results.map((result) => (
-            <button key={`${result.symbol}-${result.description}`} onClick={() => openResult(result)} className="w-full px-4 py-3 text-left hover:bg-white/[0.03] transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="w-16 text-sm font-bold text-white">{result.symbol}</div>
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-slate-200 truncate">{result.description}</div>
-                  <div className="text-xs text-slate-500">{result.type || "Equity"}</div>
-                </div>
+        <div className="space-y-2">
+          {availableCountries.length > 1 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Globe2 className="w-4 h-4 text-slate-500" aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => setCountryFilter(null)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer ${
+                  countryFilter === null ? "bg-violet-500/20 text-violet-200" : "bg-surface-800 text-slate-400 hover:text-white hover:bg-white/5"
+                }`}
+                aria-pressed={countryFilter === null}
+              >
+                Tous ({results.length})
+              </button>
+              {availableCountries.map((country) => {
+                const count = results.filter((result) => result.country === country).length;
+                const isActive = countryFilter === country;
+                return (
+                  <button
+                    key={country}
+                    type="button"
+                    onClick={() => setCountryFilter(country)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer ${
+                      isActive ? "bg-violet-500/20 text-violet-200" : "bg-surface-800 text-slate-400 hover:text-white hover:bg-white/5"
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    {country} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">
+            {filteredResults.length === 0 ? (
+              <div className="px-4 py-3 text-xs text-slate-500">
+                Aucun résultat pour ce filtre pays. Réinitialise pour voir tous les marchés.
               </div>
-            </button>
-          ))}
+            ) : (
+              filteredResults.map((result) => {
+                const isAmbiguous = ambiguousDescriptions.has((result.description ?? "").toUpperCase());
+                return (
+                  <button
+                    key={result.symbol}
+                    onClick={() => openResult(result)}
+                    className="w-full px-4 py-3 text-left hover:bg-white/[0.03] transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-20 flex-shrink-0">
+                        <div className="text-sm font-bold text-white">{result.base || result.symbol}</div>
+                        {result.suffix && (
+                          <div className="text-[10px] text-slate-500 font-mono">{result.suffix}</div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-medium text-slate-200 truncate">{result.description}</div>
+                          {isAmbiguous && (
+                            <span
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 flex-shrink-0"
+                              title="Plusieurs marchés cotent ce titre"
+                            >
+                              Multi-marché
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
+                          <span>{result.type || "Equity"}</span>
+                          <span className="text-slate-600">·</span>
+                          <span className={result.exchange ? "text-slate-400" : "text-amber-400"}>
+                            {result.exchange ?? "Marché inconnu"}
+                          </span>
+                          {result.country && (
+                            <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300 text-[10px] font-medium">
+                              {result.country}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>

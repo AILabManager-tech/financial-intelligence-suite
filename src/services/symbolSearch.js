@@ -1,3 +1,17 @@
+import { parseSymbolExchange } from "../utils/symbolExchange";
+
+function enrichResult(result) {
+  const exchange = parseSymbolExchange(result.symbol);
+  return {
+    ...result,
+    base: exchange.base,
+    suffix: exchange.suffix,
+    exchange: exchange.exchange,
+    country: exchange.country,
+    countryLabel: exchange.countryLabel,
+  };
+}
+
 export async function searchSymbols(query) {
   const params = new URLSearchParams({ q: query });
   const response = await fetch(`/api/search?${params.toString()}`);
@@ -7,10 +21,11 @@ export async function searchSymbols(query) {
   }
 
   const payload = await response.json();
+  const results = Array.isArray(payload.results) ? payload.results.map(enrichResult) : [];
   return {
     source: payload.source,
     fetchedAt: payload.fetchedAt,
-    results: Array.isArray(payload.results) ? payload.results : [],
+    results,
   };
 }
 

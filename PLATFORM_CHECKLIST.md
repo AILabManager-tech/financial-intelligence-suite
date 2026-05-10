@@ -40,10 +40,12 @@ Légende:
   - Actuel: Finnhub `/search`.
 - [x] Ouverture d'une fiche hors portefeuille
 - [x] Ajout d'un titre recherché au portefeuille
-- [~] Résultats multi-exchanges
-  - Actuel: affichés, mais pas encore filtrés proprement.
-- [ ] Filtre par pays/exchange
-- [ ] Désambiguïsation visuelle des symboles similaires
+- [x] Résultats multi-exchanges
+  - Actuel: chaque résultat porte exchange + pays + suffixe parsés depuis le symbole Finnhub.
+- [x] Filtre par pays/exchange
+  - Actuel: chips de filtre par pays au-dessus des résultats, avec compte par marché.
+- [x] Désambiguïsation visuelle des symboles similaires
+  - Actuel: badge "Multi-marché" sur les titres cotés sur plusieurs places, suffixe et pays affichés sur chaque résultat.
 - [x] Historique des recherches
   - Actuel: 20 dernières recherches persistées localement, dédupliquées, relançables ou effaçables individuellement.
 - [x] Watchlist indépendante du portefeuille
@@ -281,6 +283,7 @@ Programmé aujourd'hui:
 - alertes configurables prix/variation/drift persistées localement et déclenchées sur tick;
 - sélecteur de période 1D/5D/1M/6M/YTD/1Y/5Y sur la courbe historique;
 - historique des recherches (20 dernières, dédupliquées, relançables);
+- enrichissement résultats de recherche avec exchange/pays + filtre par pays + désambiguïsation multi-marché;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
