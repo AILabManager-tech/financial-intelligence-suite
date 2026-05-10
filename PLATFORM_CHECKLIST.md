@@ -119,7 +119,8 @@ Légende:
   - Actuel: `/api/company-news` Finnhub (cache TTL 30 min, 14 jours, top 10); `CompanyNewsPanel` rend titre + source + date + lien externe + summary.
 - [ ] Documents SEC / filings
 - [ ] Comparaison sectorielle
-- [ ] Score interne explicable basé sur données réelles
+- [x] Score interne explicable basé sur données réelles
+  - Actuel: `BuffettAnalysisPanel` empilé sous `FundamentalsPanel` rend la valeur intrinsèque DCF (Gordon-Shapiro 10y), la marge de sécurité live, 6 critères qualitatifs déterministes (ROE, croissance EPS, dette/equity, FCF, P/E, moat heuristique) et une règle de décision Acheter/Conserver/Vendre, avec décomposition mathématique KaTeX. Calculs purs côté client à partir de `/api/fundamentals` (ROE TTM, EPS growth 5y, debt/equity, P/FCF), aucune valeur inventée — affiche « Données insuffisantes » si un champ requis manque.
 - [x] Audit de provenance par champ
   - Actuel: chaque KPI fondamental porte son propre `{value, source, asOf}` rendu en chip + tooltip; les champs absents sont strictement masqués.
 
@@ -146,8 +147,10 @@ Légende:
 - [x] Alertes configurables
   - Actuel: alertes opérateur configurables prix ≥/≤, variation % ≥/≤ et drift allocation, persistées localement et déclenchées sur le tick de quotes.
 - [ ] UX mobile avancée
-- [ ] Préférences utilisateur
-- [ ] Mode clair/sombre
+- [~] Préférences utilisateur
+  - Actuel: sélecteur de thème dans le header (`ThemeSelector` + `themeStore`), persisté `localStorage` `fis:theme:v1` et appliqué avant le premier paint. Pas encore d'autres préférences (densité, devise, langue).
+- [~] Mode clair/sombre
+  - Actuel: thème FIS sombre par défaut + option Clair via `:root[data-theme="light"]` (override CSS-vars). Inversion fonctionnelle mais expérimentale — quelques utilities Tailwind hardcodées (`text-white`, `text-slate-300/400`) restent telles quelles, le rendu sur fond clair est lisible mais sous-optimal.
 
 ## 7. Alertes et automatisation
 
@@ -309,7 +312,7 @@ Principaux manques pour devenir une plateforme complète:
 - authentification et portefeuilles multi-utilisateur;
 - alertes avancées (volume inhabituel, notifications email/navigateur, jobs planifiés);
 - repli Twelve Data sur les fondamentaux pour couvrir les non-US (V2 prévue);
-- filings SEC, comparaison sectorielle, score interne explicable;
+- filings SEC, comparaison sectorielle;
 - visualisations avancées (volume sous courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown, volatilité, corrélation);
 - rate limiting avancé, cache partagé et observabilité;
 - CI/CD et monitoring production;
