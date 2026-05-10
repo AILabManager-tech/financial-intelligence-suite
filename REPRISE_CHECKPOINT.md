@@ -18,17 +18,28 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## Etat git
 
-Checkpoint local principal:
+Tip de `main` au moment du checkpoint :
 
-`fd01815 feat: import broker CSV files into the portfolio`
+```
+1474ac6 docs: align checklist body with merged Buffett + theme blocks
+facf406 docs: refresh reprise checkpoint after parallel merge
+cc085e0 feat: optional Matrix / Cyber / Light themes (default FIS preserved)
+3ef3bb2 feat: buffett DCF analysis panel sourced from Finnhub fundamentals
+2728f1c chore: add one-click dev launcher and app icon assets
+ffcd6ff feat: source analyst recommendations from Finnhub
+57ffce6 docs: add project CLAUDE.md for plug-and-play sessions
+115c91f feat: source company news, earnings and dividends from Finnhub
+e7a5e3b feat: source company fundamentals from Finnhub
+fd01815 feat: import broker CSV files into the portfolio
+```
 
-Plus le bloc fondamentaux (`e7a5e3b`), le bloc activité société (news + earnings + dividendes) `115c91f`, le bloc recommandations analystes `ffcd6ff`, et le bloc analyse Buffett + thèmes optionnels livré le 2026-05-10.
+Working tree propre (seuls les 3 fichiers ignorés intentionnels listés plus bas restent untracked).
 
 Branche: `main`. Aucun push à faire sans demande explicite.
 
 ## Modules ajoutés depuis le checkpoint précédent (1f884eb)
 
-6 commits feature livrés sur `main`:
+Commits feature livrés sur `main` depuis le checkpoint précédent :
 
 - `4b49340` — Alertes configurables (prix ≥/≤, variation % ≥/≤, drift) persistées localement, déclenchées sur tick.
 - `da8d4ed` — Sélecteur de période 1D/5D/1M/6M/YTD/1Y/5Y sur la fiche actif (intraday/daily/weekly via Twelve Data).
@@ -36,7 +47,7 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 - `305e376` — Filtre pays/exchange + désambiguïsation multi-marché sur la recherche.
 - `fd01815` — Import CSV broker (parser RFC 4180, détection EN/FR, preview ligne par ligne).
 - `e7a5e3b` — Fondamentaux sourcés Finnhub V1 stricte: `/api/fundamentals` (cache TTL 6h), `FundamentalsPanel` sous fiche actif, audit de provenance par champ, healthcheck étendu à `/stock/metric`.
-- `(committé)` — Activité société Finnhub: `/api/company-news` (TTL 30 min), `/api/earnings` (TTL 6h), `/api/dividends` (TTL 24h); panels `CompanyNewsPanel`, `EarningsCalendarPanel`, `DividendHistoryPanel` empilés sous fiche actif; healthcheck étendu à `/company-news`.
+- `115c91f` — Activité société Finnhub: `/api/company-news` (TTL 30 min), `/api/earnings` (TTL 6h), `/api/dividends` (TTL 24h); panels `CompanyNewsPanel`, `EarningsCalendarPanel`, `DividendHistoryPanel` empilés sous fiche actif; healthcheck étendu à `/company-news`.
 - `ffcd6ff` — Recommandations analystes Finnhub: `/api/analyst-ratings` (TTL 6h) `/stock/recommendation`; `AnalystRatingsPanel` empilé sous `FundamentalsPanel` (consensus le plus récent + distribution % par bucket + tendance des 6 derniers relevés); pas d'extension du healthcheck (le probe Finnhub existant couvre la même clé).
 - `2728f1c` — Outil DX: launcher one-click (`scripts/start-dev.sh` + icônes `assets/FIS_*.png`) pour démarrer Vite sur :20000 depuis un raccourci `.desktop` du bureau.
 - `3ef3bb2` — Analyse Buffett DCF (panel + math breakdown KaTeX) sourcée par `/api/fundamentals` (DCF Gordon-Shapiro pur côté client, pas de nouveau handler serveur).
@@ -176,15 +187,19 @@ Choix architecturaux:
 
 L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-Candidats restants par section (du plus close-the-loop au plus structurel):
+**Recommandation par défaut sur « on continue »** : §5 dépth — **filings SEC** (`/stock/filings`). Pattern modulaire identique à analyst ratings (~7 fichiers neufs, zéro modif des panels existants), close-the-loop §5, faible risque, factuel pur. Empilable sous `CompanyNewsPanel` dans `IntelligenceCard`.
 
-- §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (déjà livré V1 stricte).
-- §5 dépth — filings SEC (`/stock/filings`), comparaison sectorielle, score interne explicable.
-- §4 visualisations — volume sous la courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown réel, volatilité réalisée, corrélation.
+Candidats restants (du plus close-the-loop au plus structurel) :
+
+- §5 dépth — filings SEC (`/stock/filings`), comparaison sectorielle (`/stock/peers`).
+- §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel).
+- §4 visualisations — volume sous la courbe (extension `PriceHistoryChart`), comparaison benchmark/multi-actifs (panel séparé), candlesticks OHLC, drawdown réel, volatilité réalisée, corrélation.
 - §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
-- §7 — alertes volume inhabituel, notifications email/navigateur, jobs planifiés serveur, résumé quotidien.
+- §7 — alertes volume inhabituel, notifications navigateur (Notification API), jobs planifiés serveur, résumé quotidien.
 - §3 — P&L réalisé, gestion frais, devises, lots fiscaux, multi-portefeuilles.
-- §8-11 — couche plateforme: PG/migrations/auth/CI/déploiement Vercel/monitoring (gros chantier).
+- §6 — raffiner le thème Clair (utilities Tailwind hardcodées à neutraliser), densité, devise, langue.
+- §11 déploiement Vercel — **soulevé explicitement par l'utilisateur en fin de session précédente**. Bloc de ~2h: `vercel.json`, gating SQLite si filesystem read-only, ENV vars dashboard, README court de procédure. Ne PAS lancer `vercel deploy` automatiquement (hard-stop) — préparer la config et laisser le user déclencher.
+- §8-9 — DB managée (Supabase/Neon Postgres), migrations versionnées, auth, multi-utilisateur (gros chantier; à attaquer après le déploiement Vercel pour avoir une cible de prod claire).
 
 Le mot magique `FIS-REPRISE-FD01815` reste valide pour relire ce fichier au prochain `claude`.
 
