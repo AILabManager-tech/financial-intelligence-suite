@@ -18,9 +18,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## Etat git
 
-Tip de `main` au moment du checkpoint :
+Tip de `main` au moment du checkpoint (post-bloc dépôts SEC, à committer dans le même bloc que ce docs) :
 
 ```
+a363672 docs: prep next-session checkpoint after Buffett + theme merge
 1474ac6 docs: align checklist body with merged Buffett + theme blocks
 facf406 docs: refresh reprise checkpoint after parallel merge
 cc085e0 feat: optional Matrix / Cyber / Light themes (default FIS preserved)
@@ -52,8 +53,9 @@ Commits feature livrés sur `main` depuis le checkpoint précédent :
 - `2728f1c` — Outil DX: launcher one-click (`scripts/start-dev.sh` + icônes `assets/FIS_*.png`) pour démarrer Vite sur :20000 depuis un raccourci `.desktop` du bureau.
 - `3ef3bb2` — Analyse Buffett DCF (panel + math breakdown KaTeX) sourcée par `/api/fundamentals` (DCF Gordon-Shapiro pur côté client, pas de nouveau handler serveur).
 - `cc085e0` — Thèmes optionnels Matrix / Cyber / Clair via CSS-vars `:root[data-theme="…"]`; thème FIS par défaut conservé identique au pixel.
+- (à venir, ce bloc) — Dépôts SEC Finnhub: `/api/sec-filings` (TTL 24h) `/stock/filings`; `SecFilingsPanel` empilé tout en bas de la fiche actif (sous `CompanyNewsPanel`), groupé par type (10-K, 10-Q, 8-K, 4 insider, DEF 14A, S-1, 13F-HR, etc.) avec libellés FR + tone par catégorie + lien externe vers le PDF SEC; pas d'extension du healthcheck (la clé Finnhub est partagée).
 
-État tests: 52 → 124 → 162 → 206 → 230 → 299 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -76,7 +78,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 299 tests
+- `npm test` OK, 331 tests
 - `npm run build` OK
 
 ## Serveur local
@@ -88,6 +90,33 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc dépôts SEC livré (2026-05-10, après analyse Buffett + thèmes)
+
+`/stock/filings` Finnhub empilé tout en bas de la fiche actif, sous `CompanyNewsPanel`. Pattern modulaire identique à analyst ratings — 7 fichiers neufs, zéro modif des panels existants (un seul ajout dans `IntelligenceCard.jsx` + un nouveau handler dans `vite.config.js`).
+
+Fichiers ajoutés:
+
+- `server/secFilings.js` (+tests, 10) — `fetchSecFilings(symbol, {finnhubApiKey, limit})`, normalise items Finnhub (form/filedDate/acceptedDate/reportUrl/filingUrl/cik/accessNumber), filtre les items sans form ou sans URL, sort desc par filedDate, cap à 15 (max 25). Fetcher injectable, testable hors HTTP, ne leak jamais le token dans les erreurs.
+- `vite.config.js` — middleware `/api/sec-filings` avec `readThroughCache` TTL 24h + handler Vercel `api/sec-filings.js`.
+- `src/services/secFilings.{js,test.js}` (5 tests) — client fetch + `AbortSignal`.
+- `src/utils/secFilingsFormatters.{js,test.js}` (10 tests) — `describeFormType` (mapping FR de 22 form types courants → `{key, label, tone}`), `formatFiledDate` (UTC `fr-CA`, mois court), `resolveFilingUrl` (préfère `reportUrl`, fallback `filingUrl`), `groupByForm` (préserve l'ordre most-recent-first).
+- `src/components/SecFilingsPanel.{jsx,test.jsx}` (7 tests) — pattern FIS standard (state {symbol, status, items, fetchedAt, source, error} + AbortController + 4 états render). Groupé par type avec chip de tone, lien externe `target="_blank" rel="noopener noreferrer"` vers le report SEC.
+
+Fichiers étendus:
+
+- `src/components/IntelligenceCard.jsx` — `<SecFilingsPanel asset={asset} />` empilé après `<CompanyNewsPanel />`.
+
+Choix architecturaux:
+
+- **TTL 24h** : les dépôts SEC arrivent par lots quotidiens, refetch plus fréquent inutile.
+- **Empilé en bas de la fiche** : un dépôt SEC est un complément documentaire, pas une donnée de pilotage primaire. Sous les news qui sont l'élément le plus volatile.
+- **Groupé par form type** : un même symbole peut avoir 5+ form 4 (insiders) sur 30 jours et un seul 10-K — la lecture par groupe est plus utile que par date brute.
+- **Mapping FR limité aux 22 forms les plus courants** + fallback neutre slate pour les autres (CORRESP, NT-NSAR, etc.) — couvre l'essentiel sans mode dictionnaire encyclopédique.
+- **Pas de healthcheck dédié** : la clé Finnhub est partagée avec quote/fundamentals/news/analyst-ratings; le probe existant suffit (Finnhub down ⇒ tout down).
+- **Limitation source affichée explicitement** : `/stock/filings` Finnhub ne couvre que les émetteurs cotés aux États-Unis. L'état vide affiche « Aucun dépôt SEC publié pour <symbol>. Les dépôts SEC ne couvrent que les émetteurs cotés aux États-Unis. » plutôt qu'un faux placeholder.
+- **`reportUrl` préféré à `filingUrl`** : `reportUrl` pointe vers le PDF/HTM du document, `filingUrl` pointe vers le browse-edgar SEC (page index). On fallback sur `filingUrl` quand `reportUrl` est absent (cas fréquent pour les form 4).
+- **Pas de pagination** : on cap à 15 par défaut (max 25). Au-delà, l'utilisateur va directement sur EDGAR.
 
 ## Bloc analyse Buffett + thèmes optionnels livré (2026-05-10, après recommandations analystes)
 
@@ -187,12 +216,11 @@ Choix architecturaux:
 
 L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-**Recommandation par défaut sur « on continue »** : §5 dépth — **filings SEC** (`/stock/filings`). Pattern modulaire identique à analyst ratings (~7 fichiers neufs, zéro modif des panels existants), close-the-loop §5, faible risque, factuel pur. Empilable sous `CompanyNewsPanel` dans `IntelligenceCard`.
+**Recommandation par défaut sur « on continue »** : §5 dépth — **comparaison sectorielle** (`/stock/peers` Finnhub). Pattern modulaire identique au bloc dépôts SEC qui vient d'être livré (~7 fichiers neufs, zéro modif des panels existants). Faible risque, factuel pur. Le panel listerait les peers Finnhub avec quote live (réutilise `liveQuotes`) + un mini-tableau de fondamentaux comparés (P/E, market cap, ROE) en récupérant chaque fondamental en parallèle via `/api/fundamentals`. Empilable sous `SecFilingsPanel` dans `IntelligenceCard`.
 
 Candidats restants (du plus close-the-loop au plus structurel) :
 
-- §5 dépth — filings SEC (`/stock/filings`), comparaison sectorielle (`/stock/peers`).
-- §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel).
+- §5 close-the-loop — comparaison sectorielle (`/stock/peers`), fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel).
 - §4 visualisations — volume sous la courbe (extension `PriceHistoryChart`), comparaison benchmark/multi-actifs (panel séparé), candlesticks OHLC, drawdown réel, volatilité réalisée, corrélation.
 - §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
 - §7 — alertes volume inhabituel, notifications navigateur (Notification API), jobs planifiés serveur, résumé quotidien.

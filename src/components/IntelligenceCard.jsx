@@ -11,6 +11,7 @@ import AnalystRatingsPanel from "./AnalystRatingsPanel";
 import CompanyNewsPanel from "./CompanyNewsPanel";
 import EarningsCalendarPanel from "./EarningsCalendarPanel";
 import DividendHistoryPanel from "./DividendHistoryPanel";
+import SecFilingsPanel from "./SecFilingsPanel";
 
 function formatTick(value, timeUnit) {
   if (!value) return "";
@@ -384,6 +385,8 @@ export default function IntelligenceCard({
       <DividendHistoryPanel asset={asset} />
 
       <CompanyNewsPanel asset={asset} />
+
+      <SecFilingsPanel asset={asset} />
     </div>
   );
 }
