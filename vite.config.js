@@ -8,6 +8,7 @@ import { fetchFundamentals } from './server/fundamentals.js'
 import { fetchCompanyNews } from './server/companyNews.js'
 import { fetchEarningsCalendar } from './server/earningsCalendar.js'
 import { fetchDividends } from './server/dividends.js'
+import { fetchAnalystRatings } from './server/analystRatings.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const fallbackQuoteSource = 'stooq.com'
@@ -21,6 +22,7 @@ const cacheTtlMs = {
   companyNews: 30 * 60 * 1000,
   earnings: 6 * 60 * 60 * 1000,
   dividends: 24 * 60 * 60 * 1000,
+  analystRatings: 6 * 60 * 60 * 1000,
 }
 
 async function readThroughCache(key, ttlMs, loadValue) {
@@ -426,6 +428,34 @@ export default defineConfig(({ mode }) => {
               cache: {
                 status: cacheStatus,
                 ttlMs: cacheTtlMs.companyNews,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
+          }
+        })
+
+        server.middlewares.use('/api/analyst-ratings', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const symbol = (requestUrl.searchParams.get('symbol') ?? '').trim().toUpperCase()
+
+          if (!symbol) {
+            sendJson(response, 400, { error: 'symbol query parameter is required' })
+            return
+          }
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `analyst-ratings:${symbol}`,
+              cacheTtlMs.analystRatings,
+              () => fetchAnalystRatings(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.analystRatings,
                 expiresAt: new Date(expiresAt).toISOString(),
               },
             })

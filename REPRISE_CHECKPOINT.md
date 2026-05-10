@@ -22,7 +22,7 @@ Checkpoint local principal:
 
 `fd01815 feat: import broker CSV files into the portfolio`
 
-Plus deux commits docs (`c64b536`, `3dc81e7`), le bloc fondamentaux (`e7a5e3b`) et le bloc activité société (news + earnings + dividendes) livré le 2026-05-10.
+Plus deux commits docs (`c64b536`, `3dc81e7`), le bloc fondamentaux (`e7a5e3b`), le bloc activité société (news + earnings + dividendes) livré le 2026-05-10 et le bloc recommandations analystes livré le 2026-05-10.
 
 Branche: `main`. Aucun push à faire sans demande explicite.
 
@@ -36,9 +36,10 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 - `305e376` — Filtre pays/exchange + désambiguïsation multi-marché sur la recherche.
 - `fd01815` — Import CSV broker (parser RFC 4180, détection EN/FR, preview ligne par ligne).
 - `e7a5e3b` — Fondamentaux sourcés Finnhub V1 stricte: `/api/fundamentals` (cache TTL 6h), `FundamentalsPanel` sous fiche actif, audit de provenance par champ, healthcheck étendu à `/stock/metric`.
-- `(à committer)` — Activité société Finnhub: `/api/company-news` (TTL 30 min), `/api/earnings` (TTL 6h), `/api/dividends` (TTL 24h); panels `CompanyNewsPanel`, `EarningsCalendarPanel`, `DividendHistoryPanel` empilés sous fiche actif; healthcheck étendu à `/company-news`.
+- `(committé)` — Activité société Finnhub: `/api/company-news` (TTL 30 min), `/api/earnings` (TTL 6h), `/api/dividends` (TTL 24h); panels `CompanyNewsPanel`, `EarningsCalendarPanel`, `DividendHistoryPanel` empilés sous fiche actif; healthcheck étendu à `/company-news`.
+- `(à committer)` — Recommandations analystes Finnhub: `/api/analyst-ratings` (TTL 6h) `/stock/recommendation`; `AnalystRatingsPanel` empilé sous `FundamentalsPanel` (consensus le plus récent + distribution % par bucket + tendance des 6 derniers relevés); pas d'extension du healthcheck (le probe Finnhub existant couvre la même clé).
 
-État tests: 52 → 124 → 162 → 206 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 → 206 → 230 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -61,7 +62,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 206 tests
+- `npm test` OK, 230 tests
 - `npm run build` OK
 
 ## Serveur local
@@ -73,6 +74,26 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc recommandations analystes livré (2026-05-10, après activité société)
+
+`/stock/recommendation` Finnhub empilé sous `FundamentalsPanel` (avant `EarningsCalendarPanel`).
+
+Fichiers ajoutés:
+
+- `server/analystRatings.js` (+tests, 7) — `fetchAnalystRatings(symbol, {finnhubApiKey})`, normalise par mois (strongBuy/buy/hold/sell/strongSell + total), filtre items vides ou hors symbole, sort desc par `period`.
+- `vite.config.js` — middleware `/api/analyst-ratings` avec `readThroughCache` TTL 6h + handler Vercel `api/analyst-ratings.js`.
+- `src/services/analystRatings.{js,test.js}` — client fetch + `AbortSignal` (5 tests).
+- `src/utils/analystRatingsFormatters.{js,test.js}` — `computeConsensus` (mean pondérée 1–5 → label FR + tone), `formatBreakdown` (count + pct par bucket), `formatPeriod` (mois court FR en UTC), `buildHistorySeries` (12 tests).
+- `src/components/AnalystRatingsPanel.jsx` — chip consensus + note moyenne + barres distribution + grille tendance 6 relevés. Empilé sous `FundamentalsPanel`.
+
+Choix architecturaux:
+
+- Convention de score: 5 = Achat fort → 1 = Vendre fort. Mean ≥ 4.5 = strong buy, ≥ 3.5 = buy, ≥ 2.5 = hold, ≥ 1.5 = sell, sinon strong sell.
+- Pas de healthcheck dédié: la clé Finnhub est partagée avec quote/fundamentals/news, le probe existant suffit (Finnhub down ⇒ tout down).
+- TTL 6h aligné sur fundamentals: les recommandations sont mensuelles côté source.
+- Format de date en UTC strict (`timeZone: "UTC"`) pour éviter qu'une période `2026-04-01` ne s'affiche en mars selon le fuseau du navigateur.
+- Empilé entre `FundamentalsPanel` et `EarningsCalendarPanel` car la lecture naturelle d'une fiche est: fondamentaux → consensus marché → calendrier → dividendes → news.
 
 ## Bloc activité société livré (2026-05-10, après fondamentaux)
 
@@ -124,7 +145,7 @@ L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de se
 Candidats restants par section (du plus close-the-loop au plus structurel):
 
 - §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (déjà livré V1 stricte).
-- §5 dépth — analyst ratings sourcés (`/stock/recommendation`), filings SEC (`/stock/filings`), comparaison sectorielle, score interne explicable.
+- §5 dépth — filings SEC (`/stock/filings`), comparaison sectorielle, score interne explicable.
 - §4 visualisations — volume sous la courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown réel, volatilité réalisée, corrélation.
 - §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
 - §7 — alertes volume inhabituel, notifications email/navigateur, jobs planifiés serveur, résumé quotidien.

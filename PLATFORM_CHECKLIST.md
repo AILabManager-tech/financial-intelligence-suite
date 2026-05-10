@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-10 (post-bloc activité société). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10 (post-bloc recommandations analystes). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -113,7 +113,8 @@ Légende:
   - Actuel: `/api/earnings` (cache TTL 6h) renvoie passé 12 mois + à venir 90 jours, surprise EPS calculée; `EarningsCalendarPanel` sépare visuellement à venir vs historique.
 - [x] Dividendes sourcés
   - Actuel: `/api/dividends` (cache TTL 24h) renvoie historique 5 ans; `DividendHistoryPanel` affiche montant + ex-date + paiement, somme TTM mise en évidence.
-- [ ] Analyst ratings sourcés
+- [x] Analyst ratings sourcés
+  - Actuel: `/api/analyst-ratings` Finnhub `/stock/recommendation` (cache TTL 6h); `AnalystRatingsPanel` rend le consensus le plus récent (Achat fort/Achat/Conserver/Vendre/Vendre fort + note moyenne /5), distribution % par bucket et tendance des 6 derniers relevés.
 - [x] News sourcées
   - Actuel: `/api/company-news` Finnhub (cache TTL 30 min, 14 jours, top 10); `CompanyNewsPanel` rend titre + source + date + lien externe + summary.
 - [ ] Documents SEC / filings
@@ -296,6 +297,7 @@ Programmé aujourd'hui:
 - earnings calendar Finnhub (passé + à venir) avec surprise EPS visible;
 - historique des dividendes Finnhub sur 5 ans + somme TTM mise en évidence;
 - actualités société Finnhub sur 14 jours (titre + source + date + lien externe);
+- recommandations analystes Finnhub (consensus + distribution + tendance 6 mois);
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
@@ -305,7 +307,7 @@ Principaux manques pour devenir une plateforme complète:
 - authentification et portefeuilles multi-utilisateur;
 - alertes avancées (volume inhabituel, notifications email/navigateur, jobs planifiés);
 - repli Twelve Data sur les fondamentaux pour couvrir les non-US (V2 prévue);
-- analyst ratings, filings SEC, comparaison sectorielle, score interne explicable;
+- filings SEC, comparaison sectorielle, score interne explicable;
 - visualisations avancées (volume sous courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown, volatilité, corrélation);
 - rate limiting avancé, cache partagé et observabilité;
 - CI/CD et monitoring production;
