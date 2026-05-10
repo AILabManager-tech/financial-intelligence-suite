@@ -77,7 +77,7 @@ src/components/<Feature>Panel.jsx  # empilé dans IntelligenceCard
 
 ## Déploiement
 
-Build production prêt (`npm run build` → `dist/`), handlers Vercel-compatibles dans `api/` (chacun avec son propre cache mémoire local). La procédure complète Vercel (config `vercel.json`, gating SQLite si filesystem read-only, configuration des ENV vars dans le dashboard) est planifiée comme prochain bloc — voir `REPRISE_CHECKPOINT.md` § candidats.
+`vercel.json` à la racine + 10 handlers `api/*.js` self-contained + build statique `dist/` → déploiement Vercel direct. SQLite reste 100% dev (jamais importé par les handlers `api/`), donc en prod le client retombe automatiquement sur `localStorage` pour le portefeuille. Procédure complète : voir [`DEPLOYMENT.md`](DEPLOYMENT.md). Hard-stop : Claude Code n'exécute jamais `vercel deploy` ni `vercel --prod` — l'opérateur déclenche chaque promotion manuellement.
 
 ## Licence
 

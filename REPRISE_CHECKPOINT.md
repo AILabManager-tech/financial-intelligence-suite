@@ -18,9 +18,11 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## Etat git
 
-Tip de `main` au moment du checkpoint (post-bloc comparaison sectorielle, à committer dans le même bloc que ce docs) :
+Tip de `main` au moment du checkpoint (post-bloc préparation Vercel, à committer dans le même bloc que ce docs) :
 
 ```
+3c40e43 chore: address security and audit findings
+71383fd feat: source sector peers from Finnhub stock peers endpoint
 ed415bc feat: source SEC filings from Finnhub stock filings endpoint
 a363672 docs: prep next-session checkpoint after Buffett + theme merge
 1474ac6 docs: align checklist body with merged Buffett + theme blocks
@@ -55,9 +57,11 @@ Commits feature livrés sur `main` depuis le checkpoint précédent :
 - `3ef3bb2` — Analyse Buffett DCF (panel + math breakdown KaTeX) sourcée par `/api/fundamentals` (DCF Gordon-Shapiro pur côté client, pas de nouveau handler serveur).
 - `cc085e0` — Thèmes optionnels Matrix / Cyber / Clair via CSS-vars `:root[data-theme="…"]`; thème FIS par défaut conservé identique au pixel.
 - `ed415bc` — Dépôts SEC Finnhub: `/api/sec-filings` (TTL 24h) `/stock/filings`; `SecFilingsPanel` empilé sous `CompanyNewsPanel`, groupé par type (10-K, 10-Q, 8-K, 4 insider, DEF 14A, S-1, 13F-HR, etc.) avec libellés FR + tone par catégorie + lien externe vers le PDF SEC; pas d'extension du healthcheck (la clé Finnhub est partagée).
-- (à venir, ce bloc) — Comparaison sectorielle Finnhub: `/api/peers` (TTL 24h) `/stock/peers`; `PeersComparisonPanel` empilé tout en bas de la fiche actif (sous `SecFilingsPanel`); livre prix + variation absolue + variation % + écart en points de pourcentage vs symbole de référence pour chaque pair, classement par variation % desc; quotes pairs récupérés via le batch `/api/quotes` existant; pas d'extension du healthcheck.
+- `71383fd` — Comparaison sectorielle Finnhub: `/api/peers` (TTL 24h) `/stock/peers`; `PeersComparisonPanel` empilé tout en bas de la fiche actif (sous `SecFilingsPanel`); livre prix + variation absolue + variation % + écart en points de pourcentage vs symbole de référence pour chaque pair, classement par variation % desc; quotes pairs récupérés via le batch `/api/quotes` existant; pas d'extension du healthcheck.
+- `3c40e43` — Audit fix: `.env.example` scrubé (placeholders documentés à la place des 3 vraies clés exposées depuis le commit initial), tests no-leak token ajoutés à `dividends` + `earnings`, README réécrit factuellement (stack actuel, ENV vars, architecture modulaire, posture sécurité). 366 → 368 tests. **ACTION REQUIRED** : rotation des 3 clés API (Finnhub, Twelve Data, Alpha Vantage) — purger l'historique git ne suffit pas, le repo a été public.
+- (à venir, ce bloc) — Préparation déploiement Vercel: `vercel.json` (framework vite, functions includeFiles, security headers), `DEPLOYMENT.md` (procédure complète CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies, stratégie SQLite documentée (pas de gating nécessaire, fallback `localStorage` côté client déjà en place). Aucun `vercel deploy` autonome.
 
-État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 → 366 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 → 366 → 368 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -80,7 +84,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 366 tests
+- `npm test` OK, 368 tests
 - `npm run build` OK
 
 ## Serveur local
@@ -92,6 +96,31 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc préparation déploiement Vercel livré (2026-05-10, après audit fix)
+
+§11 préparé end-to-end. Aucun déploiement effectif lancé (hard-stop). 4 fichiers ajoutés/modifiés, 0 nouveau test (changements infra/docs uniquement).
+
+Fichiers ajoutés:
+
+- `vercel.json` — framework vite + outputDirectory dist + functions config (memory 256, maxDuration 10s, `includeFiles: "server/**"` pour bundler le domaine avec chaque handler) + security headers (`X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`) + `ignoreCommand` skip-build sur les fichiers documentaires (root-copy/, financial-intelligence-suite/, *.pdf).
+- `DEPLOYMENT.md` — procédure complète: vue d'ensemble (statique + serverless + persistance localStorage), pré-requis, ENV vars à configurer dans le dashboard, premier deploy CLI (vercel link → env pull → vercel build → vercel preview → vercel --prod), redeploy auto GitHub, checklist post-deploy, limites connues, rollback (`vercel rollback`), coûts (Hobby gratuit + quotas upstream borderlinés par les TTL serveur).
+
+Fichiers étendus:
+
+- `package.json` — `better-sqlite3` déplacé de `dependencies` vers `devDependencies`. Aucun handler `api/*.js` ne l'importe en runtime, donc Vercel n'a plus à compiler son binding natif. `package-lock.json` régénéré.
+- `README.md` — section Déploiement réécrite avec pointeur vers `DEPLOYMENT.md` et hard-stop explicite.
+- `PLATFORM_CHECKLIST.md` — §11 mis à jour (entrées cochées + entrées résiduelles « action utilisateur » bien étiquetées).
+
+Choix architecturaux:
+
+- **Pas de gating SQLite côté serveur** : le constat clé est qu'aucun handler `api/*.js` n'importe `server/portfolioRepository.js` (vérifié par grep). Le repo SQLite n'existe que dans `vite.config.js` (devServer) et n'est jamais bundlé dans une Vercel Function. Pas besoin de mode no-op, pas besoin de variable d'environnement de bascule. Le client capture déjà gracieusement les 404 sur `/api/portfolio` (cf. `App.jsx` ligne 167-180 et 191-209).
+- **`includeFiles: "server/**"`** : chaque handler `api/<feature>.js` importe son module domaine `server/<feature>.js` via chemin relatif. Vercel a besoin d'inclure explicitement ces modules dans le bundle de la function (par défaut il ne suit pas les imports au-delà de `node_modules`). Confirmé par lecture des 7 imports `from "../server/*.js"` dans `api/`.
+- **`installCommand: "npm install --omit=optional"`** : `recharts` et certaines deps Tailwind ont des bindings optionnels que Vercel essaie de compiler par défaut, ce qui ralentit le build. Le flag les skip — aucune fonctionnalité utilisée n'en dépend.
+- **`Cache-Control: no-store` sur `/api/*`** : chaque handler gère son propre TTL via la mémoire de la Function (cache par invocation chaude). Mettre du cache CDN par-dessus créerait des conflits de fraîcheur.
+- **`X-Frame-Options: DENY`** : pas d'embed prévu, donc on ferme. Si un futur usage exigeait un iframe, à passer en `SAMEORIGIN`.
+- **Pas de CI GitHub Actions dans ce bloc** : le scope se limite à la config Vercel + docs. Une CI sur PR (lint+test) sera un bloc séparé.
+- **Endpoints `/api/portfolio` et `/api/portfolio/snapshots` 404 en prod** : assumé. La doc le précise. Stratégie multi-utilisateur viendra avec un Postgres managé (bloc §8-9 futur).
 
 ## Bloc comparaison sectorielle livré (2026-05-10, après dépôts SEC)
 
@@ -244,12 +273,17 @@ Choix architecturaux:
 
 L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-**Recommandation par défaut sur « on continue »** : §11 — **préparer le déploiement Vercel**. Soulevé explicitement par l'utilisateur en fin de session précédente. Bloc de ~2h: créer `vercel.json`, gating SQLite si filesystem read-only en prod (le repo SQLite tombe en mode no-op et l'API portfolio bascule sur le client), liste documentée des ENV vars à configurer dans le dashboard Vercel (FINNHUB_API_KEY, TWELVE_DATA_API_KEY), README court de procédure (`npm run build` + drag dist/ ou via CLI). NE PAS lancer `vercel deploy` automatiquement (hard-stop) — préparer la config et laisser l'utilisateur déclencher le push prod.
+**Recommandation par défaut sur « on continue »** : §12 — **CI GitHub Actions sur PR** (lint + test + build à chaque pull request, badge dans le README). Bloc court (<1h), bonne hygiène avant le premier deploy Vercel pour avoir un signal vert avant promotion. Pattern Actions standard, faible risque, pas d'autre dépendance.
+
+Alternative équivalente : **bloc cleanup F4 + F5** (retirer `src/data/portfolioData.js` mock + le code mort dans `portfolioAnalytics.js` + le dossier non-lié `n8n_batch-ops_diagnose/`). Identifié dans l'audit `3c40e43`, n'a aucune dépendance bloquante et clarifie le repo avant le premier deploy.
 
 Candidats restants (du plus close-the-loop au plus structurel) :
 
-- §11 — déploiement Vercel (config + gating SQLite + ENV documentées).
+- §12 — CI GitHub Actions (lint + test + build sur PR), badge README.
+- Cleanup audit F4 + F5 (mock data + code mort + dossier python orphelin).
+- §11 close-the-loop — déclenchement effectif `vercel --prod` (action utilisateur, Claude ne lance pas).
 - §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel). Optionnellement, V2 du panel `PeersComparisonPanel` : ajouter une colonne P/E ou market cap récupérée en parallèle via N appels `/api/fundamentals`.
+- §8-9 — DB managée (Supabase/Neon Postgres) + auth + multi-utilisateur. Gros chantier; à attaquer après que le déploiement Vercel ait été validé en preview au moins une fois par l'opérateur.
 - §4 visualisations — volume sous la courbe (extension `PriceHistoryChart`), comparaison benchmark/multi-actifs (panel séparé), candlesticks OHLC, drawdown réel, volatilité réalisée, corrélation.
 - §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
 - §7 — alertes volume inhabituel, notifications navigateur (Notification API), jobs planifiés serveur, résumé quotidien.

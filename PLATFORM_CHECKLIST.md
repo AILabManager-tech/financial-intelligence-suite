@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-10 (post-bloc comparaison sectorielle). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10 (post-bloc préparation déploiement Vercel). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -221,16 +221,20 @@ Légende:
 ## 11. Déploiement
 
 - [x] Build Vite production fonctionnel
-- [x] Fonctions API compatibles Vercel pour quotes/history/search
-- [~] Variables d'environnement préparées
-  - Actuel: `.env.example`, mais pas encore configurées côté hébergeur.
-- [ ] Déploiement production explicite
-- [ ] Environnements preview/staging/prod
-- [ ] CI GitHub Actions
-- [ ] Tests automatiques sur PR
+- [x] Fonctions API compatibles Vercel pour les 10 endpoints (quotes, history, search, fundamentals, company-news, earnings, dividends, analyst-ratings, sec-filings, peers)
+- [x] `vercel.json` configuré (framework vite, outputDirectory dist, functions memory/maxDuration/includeFiles, security headers, ignoreCommand pour skip les changements documentaires)
+- [x] `better-sqlite3` déplacé en `devDependencies` pour éviter la compilation native inutile au build Vercel (le module n'est pas chargé en runtime serverless)
+- [x] Stratégie SQLite documentée: pas de gating nécessaire, le repository SQLite reste 100% dev (jamais importé par les handlers `api/`); en prod Vercel les routes `/api/portfolio` et `/api/portfolio/snapshots` retournent 404 et le client retombe sur `localStorage` (fallback déjà en place dans `App.jsx`)
+- [x] Variables d'environnement documentées
+  - Actuel: `.env.example` placeholders + `DEPLOYMENT.md` § ENV vars + README § stack — `FINNHUB_API_KEY` et `TWELVE_DATA_API_KEY` à configurer dans le dashboard Vercel pour les 3 environnements.
+- [x] Procédure de déploiement documentée
+  - Actuel: `DEPLOYMENT.md` à la racine — premier deploy CLI, redeploy auto via push GitHub, vérifications post-deploy, rollback (`vercel rollback`).
+- [x] Rollback documenté
+- [ ] Déploiement production explicite (action utilisateur, hard-stop pour Claude Code)
+- [ ] Environnements preview/staging/prod (auto via Vercel + GitHub, à valider à la première promotion)
+- [ ] CI GitHub Actions (tests automatiques sur PR)
 - [ ] Monitoring uptime
 - [ ] Monitoring erreurs frontend/API
-- [ ] Rollback documenté
 
 ## 12. Tests et qualité
 
@@ -307,6 +311,7 @@ Programmé aujourd'hui:
 - thèmes visuels optionnels (Matrix / Cyber / Clair) en plus du thème FIS par défaut, persistés localement, basés sur override de variables CSS — apparence FIS originale conservée à l'identique tant que l'utilisateur ne change pas;
 - dépôts SEC Finnhub `/stock/filings` empilés en bas de la fiche actif, groupés par type avec libellés FR (rapports annuels/trimestriels, événements 8-K, transactions insider, procurations, inscriptions, positions institutionnelles…) et lien direct vers le PDF SEC, cache TTL 24h;
 - comparaison sectorielle Finnhub `/stock/peers` empilée tout en bas de la fiche actif, table de pairs avec quote live (prix + variation absolue + variation %) et écart en points de pourcentage vs symbole de référence, classement par variation % desc, cache TTL 24h sur la liste de pairs et batch via `/api/quotes` pour les cotations;
+- déploiement Vercel préparé: `vercel.json` (framework vite, functions includeFiles `server/**`, security headers, ignoreCommand sur les fichiers documentaires), `DEPLOYMENT.md` complet (ENV vars + procédure CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies pour build serverless propre, README mis à jour. Aucun `vercel deploy` autonome (hard-stop session) — l'opérateur déclenche manuellement;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
