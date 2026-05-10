@@ -5,6 +5,9 @@ import { checkMarketDataHealth } from './server/marketDataHealth.js'
 import { createPortfolioRepository } from './server/portfolioRepository.js'
 import { validatePortfolioAssets, validatePortfolioSnapshot } from './server/portfolioValidation.js'
 import { fetchFundamentals } from './server/fundamentals.js'
+import { fetchCompanyNews } from './server/companyNews.js'
+import { fetchEarningsCalendar } from './server/earningsCalendar.js'
+import { fetchDividends } from './server/dividends.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const fallbackQuoteSource = 'stooq.com'
@@ -15,6 +18,9 @@ const cacheTtlMs = {
   search: 10 * 60 * 1000,
   health: 60 * 1000,
   fundamentals: 6 * 60 * 60 * 1000,
+  companyNews: 30 * 60 * 1000,
+  earnings: 6 * 60 * 60 * 1000,
+  dividends: 24 * 60 * 60 * 1000,
 }
 
 async function readThroughCache(key, ttlMs, loadValue) {
@@ -340,6 +346,91 @@ export default defineConfig(({ mode }) => {
             response.statusCode = 503
             response.setHeader('Content-Type', 'application/json')
             response.end(JSON.stringify({ error: error.message, source: 'twelvedata.com' }))
+          }
+        })
+
+        server.middlewares.use('/api/dividends', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const symbol = (requestUrl.searchParams.get('symbol') ?? '').trim().toUpperCase()
+
+          if (!symbol) {
+            sendJson(response, 400, { error: 'symbol query parameter is required' })
+            return
+          }
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `dividends:${symbol}`,
+              cacheTtlMs.dividends,
+              () => fetchDividends(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.dividends,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
+          }
+        })
+
+        server.middlewares.use('/api/earnings', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const symbol = (requestUrl.searchParams.get('symbol') ?? '').trim().toUpperCase()
+
+          if (!symbol) {
+            sendJson(response, 400, { error: 'symbol query parameter is required' })
+            return
+          }
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `earnings:${symbol}`,
+              cacheTtlMs.earnings,
+              () => fetchEarningsCalendar(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.earnings,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
+          }
+        })
+
+        server.middlewares.use('/api/company-news', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const symbol = (requestUrl.searchParams.get('symbol') ?? '').trim().toUpperCase()
+          const limit = Math.min(Math.max(Number(requestUrl.searchParams.get('limit') ?? 10), 1), 25)
+
+          if (!symbol) {
+            sendJson(response, 400, { error: 'symbol query parameter is required' })
+            return
+          }
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `company-news:${symbol}:${limit}`,
+              cacheTtlMs.companyNews,
+              () => fetchCompanyNews(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY, limit }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.companyNews,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
           }
         })
 

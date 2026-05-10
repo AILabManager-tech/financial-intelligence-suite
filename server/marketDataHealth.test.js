@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  checkFinnhubCompanyNewsHealth,
   checkFinnhubFundamentalsHealth,
   checkFinnhubHealth,
   checkMarketDataHealth,
@@ -115,6 +116,61 @@ describe('marketDataHealth', () => {
     const fundamentals = result.providers.find((p) => p.capability === 'fundamentals');
     expect(fundamentals).toBeTruthy();
     expect(fundamentals.status).toBe('ok');
+  });
+
+  it('marks company news as missing_config when no Finnhub token is configured', async () => {
+    await expect(checkFinnhubCompanyNewsHealth('')).resolves.toEqual(expect.objectContaining({
+      provider: 'finnhub.io',
+      status: 'missing_config',
+      capability: 'company_news',
+      configured: false,
+    }));
+  });
+
+  it('reports company news as ok when /company-news returns an array', async () => {
+    const result = await checkFinnhubCompanyNewsHealth('news-token', async (url) => {
+      expect(String(url)).toContain('/company-news');
+      expect(String(url)).toContain('symbol=AAPL');
+      return okJson([{ id: 1, datetime: 1746704400, headline: 'x', source: 'y', url: 'https://z' }]);
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      provider: 'finnhub.io',
+      status: 'ok',
+      capability: 'company_news',
+      configured: true,
+      latencyMs: expect.any(Number),
+    }));
+    expect(JSON.stringify(result)).not.toContain('news-token');
+  });
+
+  it('reports company news as down when /company-news returns a non-array payload', async () => {
+    const result = await checkFinnhubCompanyNewsHealth('news-token', async () => okJson({ error: 'boom' }));
+    expect(result).toEqual(expect.objectContaining({
+      provider: 'finnhub.io',
+      status: 'down',
+      capability: 'company_news',
+    }));
+  });
+
+  it('includes company_news provider in checkMarketDataHealth output', async () => {
+    const okFetcher = async (url) => {
+      const u = String(url);
+      if (u.includes('/stock/metric')) return okJson({ metric: { peTTM: 32 } });
+      if (u.includes('/company-news')) return okJson([{ id: 1, datetime: 1746704400, headline: 'h', source: 's', url: 'https://x' }]);
+      if (u.includes('finnhub.io/api/v1/quote')) return okJson({ c: 293.32 });
+      if (u.includes('twelvedata')) return okJson({ values: [{ datetime: '2026-05-08', close: '293' }] });
+      if (u.includes('stooq')) return okJson({ symbols: [{ close: '293' }] });
+      throw new Error(`unexpected ${url}`);
+    };
+
+    const result = await checkMarketDataHealth({
+      finnhubApiKey: 'tok',
+      twelveDataApiKey: 'tok',
+      fetcher: okFetcher,
+    });
+
+    expect(result.providers.find((p) => p.capability === 'company_news')?.status).toBe('ok');
   });
 
   it('summarizes provider status', () => {

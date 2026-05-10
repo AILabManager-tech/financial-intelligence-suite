@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-10. Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10 (post-bloc activité société). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -32,7 +32,7 @@ Légende:
 - [ ] Support multi-devises
 - [ ] Mapping officiel symboles/exchanges
 - [x] Healthcheck détaillé par fournisseur
-  - Actuel: `/api/health/market-data` vérifie Finnhub quote, Finnhub fundamentals (`/stock/metric`), Twelve Data et Stooq avec cache TTL.
+  - Actuel: `/api/health/market-data` vérifie Finnhub quote, Finnhub fundamentals (`/stock/metric`), Finnhub company news (`/company-news`), Twelve Data et Stooq avec cache TTL.
 
 ## 2. Recherche marché
 
@@ -109,10 +109,13 @@ Légende:
   - Actuel: `marketCapitalization` Finnhub `/stock/profile2` converti en USD bruts.
 - [x] P/E, EPS, revenus, marges sourcés
   - Actuel: `peTTM`, `epsTTM`, `revenuePerShareTTM × shareOutstanding`, `grossMarginTTM`, `operatingMarginTTM`, `netProfitMarginTTM`, `dividendYieldIndicatedAnnual`, `beta` Finnhub `/stock/metric` exposés via `/api/fundamentals` (cache TTL 6h) et affichés dans `FundamentalsPanel` sous la fiche actif.
-- [ ] Earnings calendar
-- [ ] Dividendes sourcés
+- [x] Earnings calendar
+  - Actuel: `/api/earnings` (cache TTL 6h) renvoie passé 12 mois + à venir 90 jours, surprise EPS calculée; `EarningsCalendarPanel` sépare visuellement à venir vs historique.
+- [x] Dividendes sourcés
+  - Actuel: `/api/dividends` (cache TTL 24h) renvoie historique 5 ans; `DividendHistoryPanel` affiche montant + ex-date + paiement, somme TTM mise en évidence.
 - [ ] Analyst ratings sourcés
-- [ ] News sourcées
+- [x] News sourcées
+  - Actuel: `/api/company-news` Finnhub (cache TTL 30 min, 14 jours, top 10); `CompanyNewsPanel` rend titre + source + date + lien externe + summary.
 - [ ] Documents SEC / filings
 - [ ] Comparaison sectorielle
 - [ ] Score interne explicable basé sur données réelles
@@ -290,6 +293,9 @@ Programmé aujourd'hui:
 - enrichissement résultats de recherche avec exchange/pays + filtre par pays + désambiguïsation multi-marché;
 - import CSV broker avec détection automatique du mapping et preview ligne par ligne;
 - fondamentaux sourcés Finnhub (market cap, P/E, EPS, revenus, marges, dividende, bêta, pays, secteur) avec audit de provenance par champ et cache TTL 6h;
+- earnings calendar Finnhub (passé + à venir) avec surprise EPS visible;
+- historique des dividendes Finnhub sur 5 ans + somme TTM mise en évidence;
+- actualités société Finnhub sur 14 jours (titre + source + date + lien externe);
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
@@ -299,7 +305,8 @@ Principaux manques pour devenir une plateforme complète:
 - authentification et portefeuilles multi-utilisateur;
 - alertes avancées (volume inhabituel, notifications email/navigateur, jobs planifiés);
 - repli Twelve Data sur les fondamentaux pour couvrir les non-US (V2 prévue);
-- news, filings SEC, earnings calendar et analyst ratings sourcés;
+- analyst ratings, filings SEC, comparaison sectorielle, score interne explicable;
+- visualisations avancées (volume sous courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown, volatilité, corrélation);
 - rate limiting avancé, cache partagé et observabilité;
 - CI/CD et monitoring production;
 - conformité complète (politique confidentialité, mentions légales, conservation).

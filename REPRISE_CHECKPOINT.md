@@ -16,7 +16,7 @@ Checkpoint local principal:
 
 `fd01815 feat: import broker CSV files into the portfolio`
 
-Plus deux commits docs (`c64b536`, `3dc81e7`) et le bloc fondamentaux livré le 2026-05-10.
+Plus deux commits docs (`c64b536`, `3dc81e7`), le bloc fondamentaux (`e7a5e3b`) et le bloc activité société (news + earnings + dividendes) livré le 2026-05-10.
 
 Branche: `main`. Aucun push à faire sans demande explicite.
 
@@ -29,9 +29,10 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 - `a357a94` — Historique des 20 dernières recherches (déduplication, replay, suppression).
 - `305e376` — Filtre pays/exchange + désambiguïsation multi-marché sur la recherche.
 - `fd01815` — Import CSV broker (parser RFC 4180, détection EN/FR, preview ligne par ligne).
-- `(à committer)` — Fondamentaux sourcés Finnhub V1 stricte: `/api/fundamentals` (cache TTL 6h), `FundamentalsPanel` sous fiche actif, audit de provenance par champ, healthcheck étendu à `/stock/metric`.
+- `e7a5e3b` — Fondamentaux sourcés Finnhub V1 stricte: `/api/fundamentals` (cache TTL 6h), `FundamentalsPanel` sous fiche actif, audit de provenance par champ, healthcheck étendu à `/stock/metric`.
+- `(à committer)` — Activité société Finnhub: `/api/company-news` (TTL 30 min), `/api/earnings` (TTL 6h), `/api/dividends` (TTL 24h); panels `CompanyNewsPanel`, `EarningsCalendarPanel`, `DividendHistoryPanel` empilés sous fiche actif; healthcheck étendu à `/company-news`.
 
-État tests: 52 → 124 → 162 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 → 206 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -54,7 +55,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 162 tests
+- `npm test` OK, 206 tests
 - `npm run build` OK
 
 ## Serveur local
@@ -66,6 +67,27 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc activité société livré (2026-05-10, après fondamentaux)
+
+3 endpoints + 3 panels Finnhub empilés sous la fiche actif (sous `FundamentalsPanel`).
+
+Fichiers ajoutés:
+
+- `server/companyNews.js` (+tests, 9) — `/company-news?symbol=X&from=...&to=...`, fenêtre 14 jours, dedup + sort + limit 10.
+- `server/earningsCalendar.js` (+tests, 8) — `/calendar/earnings`, fenêtre passé 12 mois + à venir 90 jours, calcule `surprisePct` EPS, tag `when: past|upcoming`.
+- `server/dividends.js` (+tests, 6) — `/stock/dividend`, historique 5 ans, normalise ex-date/pay-date/amount/currency.
+- `vite.config.js` — middlewares `/api/company-news`, `/api/earnings`, `/api/dividends` (TTL 30 min / 6h / 24h respectivement); handlers Vercel équivalents dans `api/`.
+- `src/services/{companyNews,earningsCalendar,dividends}.{js,test.js}` — clients fetch + AbortSignal (5-7 tests chacun).
+- `src/components/{CompanyNewsPanel,EarningsCalendarPanel,DividendHistoryPanel}.jsx` — empilés sous `FundamentalsPanel` dans `IntelligenceCard`.
+- `server/marketDataHealth.js` — `checkFinnhubCompanyNewsHealth` ajouté à `checkMarketDataHealth` (un seul probe pour les 3 endpoints — Finnhub down ⇒ tout down).
+
+Choix architecturaux:
+
+- TTL différenciés selon volatilité de la donnée: news 30 min, earnings 6h, dividendes 24h.
+- Filtre par symbole côté server (Finnhub renvoie tout le calendrier earnings sur la fenêtre, pas que le symbole demandé).
+- Pas de mock/placeholder: si Finnhub renvoie vide, le panel le dit explicitement (« Aucun X pour les Y dernières années »).
+- Healthcheck: un seul probe `/company-news` (pas trois) — c'est le plus représentatif et minimise les appels.
 
 ## Bloc fondamentaux livré (2026-05-10)
 
@@ -89,15 +111,19 @@ Choix architecturaux:
 - Cache TTL 6h côté serveur (les fondamentaux changent peu); pas de cache client.
 - Fallback Twelve Data NON livré (différé en V2).
 
-## Prochaine priorité — à définir au prochain démarrage
+## Prochaine priorité — à choisir seul au prochain démarrage
 
-Candidats restants dans `PLATFORM_CHECKLIST.md` (par section):
+L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-- §1 — splits/dividendes, pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
-- §4 — volume sous la courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown/volatilité réalisée, corrélation.
-- §5 — earnings calendar, dividendes/analyst ratings/news sourcées, filings SEC, comparaison sectorielle.
-- §5+ — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US.
-- §7 — alertes volume inhabituel, notifications email/navigateur, jobs planifiés.
+Candidats restants par section (du plus close-the-loop au plus structurel):
+
+- §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (déjà livré V1 stricte).
+- §5 dépth — analyst ratings sourcés (`/stock/recommendation`), filings SEC (`/stock/filings`), comparaison sectorielle, score interne explicable.
+- §4 visualisations — volume sous la courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown réel, volatilité réalisée, corrélation.
+- §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
+- §7 — alertes volume inhabituel, notifications email/navigateur, jobs planifiés serveur, résumé quotidien.
+- §3 — P&L réalisé, gestion frais, devises, lots fiscaux, multi-portefeuilles.
+- §8-11 — couche plateforme: PG/migrations/auth/CI/déploiement Vercel/monitoring (gros chantier).
 
 Le mot magique `FIS-REPRISE-FD01815` reste valide pour relire ce fichier au prochain `claude`.
 

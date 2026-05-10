@@ -159,6 +159,47 @@ export async function checkFinnhubFundamentalsHealth(token, fetcher = fetchWithT
   return result;
 }
 
+export async function checkFinnhubCompanyNewsHealth(token, fetcher = fetchWithTimeout) {
+  if (!token) {
+    return providerResult("finnhub.io", "missing_config", {
+      configured: false,
+      capability: "company_news",
+    });
+  }
+
+  const result = await measureProvider("finnhub.io", async () => {
+    const today = new Date();
+    const from = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const url = new URL("https://finnhub.io/api/v1/company-news");
+    url.searchParams.set("symbol", "AAPL");
+    url.searchParams.set("from", from.toISOString().slice(0, 10));
+    url.searchParams.set("to", today.toISOString().slice(0, 10));
+    url.searchParams.set("token", token);
+
+    const response = await fetcher(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    if (!Array.isArray(payload)) {
+      throw new Error("invalid company-news payload");
+    }
+
+    return providerResult("finnhub.io", "ok", {
+      configured: true,
+      capability: "company_news",
+      sample: "AAPL last 7d",
+    });
+  });
+
+  if (!result.capability) {
+    result.capability = "company_news";
+    result.configured = true;
+  }
+  return result;
+}
+
 export async function checkStooqHealth(fetcher = fetchWithTimeout) {
   return measureProvider("stooq.com", async () => {
     const response = await fetcher("https://stooq.com/q/l/?s=aapl.us&f=sd2t2ohlcvn&h&e=json");
@@ -197,6 +238,7 @@ export async function checkMarketDataHealth({ finnhubApiKey, twelveDataApiKey, f
   const providers = await Promise.all([
     checkFinnhubHealth(finnhubApiKey, fetcher),
     checkFinnhubFundamentalsHealth(finnhubApiKey, fetcher),
+    checkFinnhubCompanyNewsHealth(finnhubApiKey, fetcher),
     checkTwelveDataHealth(twelveDataApiKey, fetcher),
     checkStooqHealth(fetcher),
   ]);
