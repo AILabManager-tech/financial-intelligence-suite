@@ -291,11 +291,11 @@ Programmé aujourd'hui:
 - build/test/lint propres.
 
 Principaux manques pour devenir une plateforme complète:
-- base de données réelle;
-- authentification;
-- portefeuilles multi-utilisateur;
-- alertes;
-- fondamentaux/news/filings sourcés;
+- base de données réelle (au-delà du SQLite local de dev);
+- authentification et portefeuilles multi-utilisateur;
+- alertes avancées (volume inhabituel, notifications email/navigateur, jobs planifiés);
+- fondamentaux sourcés (market cap, P/E, EPS, revenus, marges) — prochaine priorité;
+- news, filings SEC, earnings calendar et analyst ratings sourcés;
 - rate limiting avancé, cache partagé et observabilité;
 - CI/CD et monitoring production;
-- conformité complète.
+- conformité complète (politique confidentialité, mentions légales, conservation).
