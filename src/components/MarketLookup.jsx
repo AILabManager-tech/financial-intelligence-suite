@@ -1,7 +1,14 @@
-import { useState } from "react";
-import { Search, X } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Clock, Search, Trash2, X } from "lucide-react";
 import { fetchLiveQuotes, normalizeQuote } from "../services/liveQuotes";
 import { searchSymbols } from "../services/symbolSearch";
+import {
+  clearSearchHistory,
+  loadSearchHistory,
+  recordSearch,
+  removeSearchEntry,
+  saveSearchHistory,
+} from "../services/searchHistoryStore";
 
 function buildLookupAsset(result, quote) {
   return {
@@ -29,10 +36,15 @@ export default function MarketLookup({ onSelect }) {
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [history, setHistory] = useState(() => loadSearchHistory());
 
-  const runSearch = async (event) => {
-    event.preventDefault();
-    const cleanQuery = query.trim();
+  const persistHistory = useCallback((next) => {
+    saveSearchHistory(next);
+    setHistory(next);
+  }, []);
+
+  const performSearch = useCallback(async (rawQuery) => {
+    const cleanQuery = rawQuery.trim();
     if (cleanQuery.length < 2) return;
 
     setStatus("loading");
@@ -42,11 +54,30 @@ export default function MarketLookup({ onSelect }) {
       const payload = await searchSymbols(cleanQuery);
       setResults(payload.results);
       setStatus("ready");
+      persistHistory(recordSearch(history, { query: cleanQuery, resultsCount: payload.results.length }));
     } catch (searchError) {
       setResults([]);
       setStatus("error");
       setError(searchError.message);
     }
+  }, [history, persistHistory]);
+
+  const runSearch = (event) => {
+    event.preventDefault();
+    return performSearch(query);
+  };
+
+  const replaySearch = (entry) => {
+    setQuery(entry.query);
+    return performSearch(entry.query);
+  };
+
+  const removeHistoryEntry = (normalizedQuery) => {
+    persistHistory(removeSearchEntry(history, normalizedQuery));
+  };
+
+  const clearAllHistory = () => {
+    persistHistory(clearSearchHistory());
   };
 
   const openResult = async (result) => {
@@ -97,6 +128,50 @@ export default function MarketLookup({ onSelect }) {
       </form>
 
       {error && <div className="text-xs text-amber-400">{error}</div>}
+
+      {results.length === 0 && history.length > 0 && (
+        <div className="rounded-xl border border-white/5 bg-surface-900/40 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 bg-surface-800/70 border-b border-white/5">
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+              Recherches récentes ({history.length})
+            </div>
+            <button
+              type="button"
+              onClick={clearAllHistory}
+              className="text-[11px] text-slate-500 hover:text-rose-300 cursor-pointer"
+            >
+              Effacer tout
+            </button>
+          </div>
+          <ul className="divide-y divide-white/5">
+            {history.map((entry) => (
+              <li key={entry.normalizedQuery} className="flex items-center gap-2 px-4 py-2">
+                <button
+                  type="button"
+                  onClick={() => replaySearch(entry)}
+                  className="flex-1 text-left flex items-center justify-between gap-3 hover:text-white text-slate-300 cursor-pointer"
+                  aria-label={`Relancer la recherche "${entry.query}"`}
+                >
+                  <span className="text-sm">{entry.query}</span>
+                  <span className="text-[11px] text-slate-500">
+                    {entry.resultsCount} résultat{entry.resultsCount > 1 ? "s" : ""} ·{" "}
+                    {new Date(entry.recordedAt).toLocaleString("fr-CA", { dateStyle: "short", timeStyle: "short" })}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeHistoryEntry(entry.normalizedQuery)}
+                  className="p-1 rounded hover:bg-white/5 text-slate-500 hover:text-rose-400 cursor-pointer"
+                  aria-label={`Retirer "${entry.query}" de l'historique`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {results.length > 0 && (
         <div className="rounded-xl border border-white/5 divide-y divide-white/5 overflow-hidden">

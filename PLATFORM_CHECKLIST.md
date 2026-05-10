@@ -44,7 +44,8 @@ Légende:
   - Actuel: affichés, mais pas encore filtrés proprement.
 - [ ] Filtre par pays/exchange
 - [ ] Désambiguïsation visuelle des symboles similaires
-- [ ] Historique des recherches
+- [x] Historique des recherches
+  - Actuel: 20 dernières recherches persistées localement, dédupliquées, relançables ou effaçables individuellement.
 - [x] Watchlist indépendante du portefeuille
   - Actuel: route `"/watchlist"` avec stockage local et quotes synchronisées.
 
@@ -279,6 +280,7 @@ Programmé aujourd'hui:
 - alertes opérateur variation/drift/stale;
 - alertes configurables prix/variation/drift persistées localement et déclenchées sur tick;
 - sélecteur de période 1D/5D/1M/6M/YTD/1Y/5Y sur la courbe historique;
+- historique des recherches (20 dernières, dédupliquées, relançables);
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
