@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
-import { Download, FileJson, Save, Trash2, WalletCards } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { AlertTriangle, Check, Download, FileJson, Save, Trash2, Upload, WalletCards, X } from "lucide-react";
 import { enrichAssetsWithPositionMetrics } from "../utils/portfolioAnalytics";
 import { formatCurrency } from "../utils/scoreTranslator";
 import { buildPortfolioCsv, buildPortfolioJson, downloadTextFile } from "../services/portfolioExport";
+import { parseBrokerCsv } from "../services/csvImporter";
 
 function toDraft(asset) {
   return {
@@ -20,10 +21,13 @@ function parseDraft(draft) {
   };
 }
 
-export default function PortfolioManager({ assets, onSavePosition, onRemoveAsset }) {
+export default function PortfolioManager({ assets, onSavePosition, onRemoveAsset, onImportPositions }) {
   const positioned = useMemo(() => enrichAssetsWithPositionMetrics(assets), [assets]);
   const [drafts, setDrafts] = useState(() => Object.fromEntries(assets.map((asset) => [asset.symbol, toDraft(asset)])));
   const exportDate = new Date().toISOString().slice(0, 10);
+  const fileInputRef = useRef(null);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importError, setImportError] = useState("");
 
   const updateDraft = (symbol, field, value) => {
     setDrafts((current) => ({
@@ -35,6 +39,36 @@ export default function PortfolioManager({ assets, onSavePosition, onRemoveAsset
     }));
   };
 
+  const handleImportClick = () => {
+    setImportError("");
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const result = parseBrokerCsv(text);
+      setImportPreview({ ...result, fileName: file.name });
+    } catch (readError) {
+      setImportError(`Lecture impossible: ${readError.message}`);
+    }
+  };
+
+  const cancelImport = () => {
+    setImportPreview(null);
+    setImportError("");
+  };
+
+  const confirmImport = () => {
+    if (!importPreview) return;
+    onImportPositions?.(importPreview.positions);
+    setImportPreview(null);
+  };
+
   return (
     <div className="animate-slide-up">
       <div className="flex items-center gap-2 mb-4">
@@ -43,6 +77,22 @@ export default function PortfolioManager({ assets, onSavePosition, onRemoveAsset
         </div>
         <h2 className="text-lg font-semibold text-white">Positions sauvegardées</h2>
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleImportClick}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-violet-500/15 text-violet-200 hover:bg-violet-500/20 cursor-pointer text-xs font-medium"
+            aria-label="Importer des positions depuis un CSV broker"
+          >
+            <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+            Importer CSV
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="sr-only"
+            onChange={handleFileChange}
+          />
           <button
             type="button"
             onClick={() => downloadTextFile(`portfolio-${exportDate}.csv`, "text/csv;charset=utf-8", buildPortfolioCsv(assets))}
@@ -61,6 +111,91 @@ export default function PortfolioManager({ assets, onSavePosition, onRemoveAsset
           </button>
         </div>
       </div>
+
+      {importError && (
+        <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+          {importError}
+        </div>
+      )}
+
+      {importPreview && (
+        <div className="mb-4 p-4 rounded-xl bg-surface-800 border border-violet-500/20">
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div>
+              <div className="text-sm font-semibold text-white">
+                Aperçu d'import — {importPreview.fileName}
+              </div>
+              <div className="text-xs text-slate-400">
+                {importPreview.positions.length} ligne{importPreview.positions.length > 1 ? "s" : ""} valide{importPreview.positions.length > 1 ? "s" : ""}
+                {importPreview.errors.length > 0 && ` · ${importPreview.errors.length} erreur${importPreview.errors.length > 1 ? "s" : ""}`}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={cancelImport}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-900 text-slate-300 hover:text-white text-xs font-medium cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmImport}
+                disabled={importPreview.positions.length === 0}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                Importer {importPreview.positions.length} position{importPreview.positions.length > 1 ? "s" : ""}
+              </button>
+            </div>
+          </div>
+
+          {importPreview.positions.length > 0 && (
+            <div className="rounded-lg border border-white/5 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-surface-900/70">
+                  <tr className="text-left text-slate-500">
+                    <th className="px-3 py-2">Ligne</th>
+                    <th className="px-3 py-2">Symbol</th>
+                    <th className="px-3 py-2 text-right">Quantité</th>
+                    <th className="px-3 py-2 text-right">Coût moyen</th>
+                    <th className="px-3 py-2 text-right">Cible %</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {importPreview.positions.map((position) => (
+                    <tr key={`${position.symbol}-${position.sourceLine}`}>
+                      <td className="px-3 py-2 text-slate-500">{position.sourceLine}</td>
+                      <td className="px-3 py-2 text-white font-medium">{position.symbol}</td>
+                      <td className="px-3 py-2 text-right text-slate-200">{position.quantity}</td>
+                      <td className="px-3 py-2 text-right text-slate-200">${position.averageCost.toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right text-slate-400">{position.targetWeight.toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {importPreview.errors.length > 0 && (
+            <div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+              <div className="text-xs font-semibold text-amber-300 mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
+                Lignes ignorées
+              </div>
+              <ul className="space-y-1 text-xs text-amber-200/80 max-h-40 overflow-y-auto">
+                {importPreview.errors.map((errorEntry, index) => (
+                  <li key={`${errorEntry.line}-${index}`}>
+                    Ligne {errorEntry.line}: {errorEntry.reason}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="rounded-xl border border-white/5 overflow-x-auto">
         <table className="w-full min-w-[860px]">

@@ -72,7 +72,8 @@ Légende:
 - [ ] Gestion des devises
 - [ ] Dividendes
 - [ ] Lots fiscaux
-- [ ] Import CSV broker
+- [x] Import CSV broker
+  - Actuel: parser CSV générique (détection automatique des en-têtes EN/FR), preview avec lignes valides + erreurs ligne par ligne, upsert dans le portefeuille local et serveur.
 - [x] Export CSV/JSON
   - Actuel: export depuis le gestionnaire de positions avec métriques portefeuille.
 - [ ] Plusieurs portefeuilles par utilisateur
@@ -284,6 +285,7 @@ Programmé aujourd'hui:
 - sélecteur de période 1D/5D/1M/6M/YTD/1Y/5Y sur la courbe historique;
 - historique des recherches (20 dernières, dédupliquées, relançables);
 - enrichissement résultats de recherche avec exchange/pays + filtre par pays + désambiguïsation multi-marché;
+- import CSV broker avec détection automatique du mapping et preview ligne par ligne;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.

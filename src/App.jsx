@@ -371,6 +371,32 @@ export default function App() {
       : current);
   }, [assets, persistPortfolio, portfolioAssets]);
 
+  const handleImportPositions = useCallback((importedPositions) => {
+    if (!Array.isArray(importedPositions) || importedPositions.length === 0) return;
+
+    let nextPortfolio = portfolioAssets;
+    importedPositions.forEach((position) => {
+      const existing = nextPortfolio.find((asset) => asset.symbol === position.symbol);
+      const baseAsset = existing ?? {
+        symbol: position.symbol,
+        name: position.symbol,
+        sector: "Portefeuille — Importé",
+        price: position.averageCost,
+        change: 0,
+        changePct: 0,
+        volume: 0,
+      };
+      nextPortfolio = upsertPortfolioAsset(nextPortfolio, baseAsset, {
+        quantity: position.quantity,
+        averageCost: position.averageCost,
+        targetWeight: position.targetWeight,
+      });
+    });
+
+    persistPortfolio(nextPortfolio);
+    setPortfolioAssets(nextPortfolio);
+  }, [persistPortfolio, portfolioAssets]);
+
   const handleRemoveAsset = useCallback((symbol) => {
     const updatedPortfolio = removePortfolioAsset(portfolioAssets, symbol);
     persistPortfolio(updatedPortfolio);
@@ -536,7 +562,12 @@ export default function App() {
             </section>
 
             <section aria-label="Gestion des positions">
-              <PortfolioManager assets={assets} onSavePosition={handleSavePosition} onRemoveAsset={handleRemoveAsset} />
+              <PortfolioManager
+                assets={assets}
+                onSavePosition={handleSavePosition}
+                onRemoveAsset={handleRemoveAsset}
+                onImportPositions={handleImportPositions}
+              />
             </section>
 
             {/* Search & Filter */}
