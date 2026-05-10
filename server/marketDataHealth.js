@@ -118,6 +118,47 @@ export async function checkTwelveDataHealth(token, fetcher = fetchWithTimeout) {
   });
 }
 
+export async function checkFinnhubFundamentalsHealth(token, fetcher = fetchWithTimeout) {
+  if (!token) {
+    return providerResult("finnhub.io", "missing_config", {
+      configured: false,
+      capability: "fundamentals",
+    });
+  }
+
+  const result = await measureProvider("finnhub.io", async () => {
+    const url = new URL("https://finnhub.io/api/v1/stock/metric");
+    url.searchParams.set("symbol", "AAPL");
+    url.searchParams.set("metric", "all");
+    url.searchParams.set("token", token);
+
+    const response = await fetcher(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const metric = payload?.metric;
+    if (!metric || typeof metric !== "object" || Object.keys(metric).length === 0) {
+      throw new Error("empty metric payload");
+    }
+
+    return providerResult("finnhub.io", "ok", {
+      configured: true,
+      capability: "fundamentals",
+      sample: "AAPL /stock/metric",
+    });
+  });
+
+  // Capability is the audit handle for the healthcheck — the UI groups
+  // providers by capability, so it must be present even when the probe failed.
+  if (!result.capability) {
+    result.capability = "fundamentals";
+    result.configured = true;
+  }
+  return result;
+}
+
 export async function checkStooqHealth(fetcher = fetchWithTimeout) {
   return measureProvider("stooq.com", async () => {
     const response = await fetcher("https://stooq.com/q/l/?s=aapl.us&f=sd2t2ohlcvn&h&e=json");
@@ -152,11 +193,12 @@ export function summarizeMarketDataHealth(providers) {
   return "ok";
 }
 
-export async function checkMarketDataHealth({ finnhubApiKey, twelveDataApiKey }) {
+export async function checkMarketDataHealth({ finnhubApiKey, twelveDataApiKey, fetcher = fetchWithTimeout }) {
   const providers = await Promise.all([
-    checkFinnhubHealth(finnhubApiKey),
-    checkTwelveDataHealth(twelveDataApiKey),
-    checkStooqHealth(),
+    checkFinnhubHealth(finnhubApiKey, fetcher),
+    checkFinnhubFundamentalsHealth(finnhubApiKey, fetcher),
+    checkTwelveDataHealth(twelveDataApiKey, fetcher),
+    checkStooqHealth(fetcher),
   ]);
 
   return {

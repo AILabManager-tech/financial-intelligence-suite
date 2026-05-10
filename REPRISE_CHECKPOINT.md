@@ -16,19 +16,22 @@ Checkpoint local principal:
 
 `fd01815 feat: import broker CSV files into the portfolio`
 
+Plus deux commits docs (`c64b536`, `3dc81e7`) et le bloc fondamentaux livré le 2026-05-10.
+
 Branche: `main`. Aucun push à faire sans demande explicite.
 
 ## Modules ajoutés depuis le checkpoint précédent (1f884eb)
 
-5 commits feature livrés sur `main`:
+6 commits feature livrés sur `main`:
 
 - `4b49340` — Alertes configurables (prix ≥/≤, variation % ≥/≤, drift) persistées localement, déclenchées sur tick.
 - `da8d4ed` — Sélecteur de période 1D/5D/1M/6M/YTD/1Y/5Y sur la fiche actif (intraday/daily/weekly via Twelve Data).
 - `a357a94` — Historique des 20 dernières recherches (déduplication, replay, suppression).
 - `305e376` — Filtre pays/exchange + désambiguïsation multi-marché sur la recherche.
 - `fd01815` — Import CSV broker (parser RFC 4180, détection EN/FR, preview ligne par ligne).
+- `(à committer)` — Fondamentaux sourcés Finnhub V1 stricte: `/api/fundamentals` (cache TTL 6h), `FundamentalsPanel` sous fiche actif, audit de provenance par champ, healthcheck étendu à `/stock/metric`.
 
-État tests: 52 → 124 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -51,7 +54,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 124 tests
+- `npm test` OK, 162 tests
 - `npm run build` OK
 
 ## Serveur local
@@ -64,100 +67,39 @@ Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
 
-## Prochaine priorité — Données fondamentales sourcées
+## Bloc fondamentaux livré (2026-05-10)
 
-Section §5 de `PLATFORM_CHECKLIST.md`. C'est le seul gros bloc encore à `[ ]` parmi les priorités du REPRISE.
+V1 stricte Finnhub validée par l'utilisateur en début de session.
 
-### Champs cibles V1
+Fichiers ajoutés:
 
-Ne livrer que des champs vraiment factuels et présents dans la source. Si un champ est absent, le masquer (pas de placeholder, pas de mock).
+- `src/utils/fundamentalsNormalizer.js` (+tests) — normaliseur pur `profile2 + metric` → `{value, source, asOf}` avec USD bruts, omission stricte si champ absent.
+- `server/fundamentals.js` (+tests) — `fetchFundamentals(symbol, {finnhubApiKey})` orchestrant `/stock/profile2` + `/stock/metric` en parallèle (Promise.allSettled, partiel toléré).
+- `vite.config.js` — middleware `/api/fundamentals` avec cache TTL 6h + `api/fundamentals.js` (handler Vercel équivalent).
+- `src/services/fundamentals.js` (+tests) — client `fetchFundamentals(symbol, {signal})`.
+- `src/utils/fundamentalsFormatters.js` (+tests) — formatters par champ + `FUNDAMENTALS_DEFINITIONS` (ordre + libellés FR).
+- `src/components/FundamentalsPanel.jsx` — grille KPI sous fiche actif, chip de source par champ + asOf en tooltip, champs absents masqués (pas de placeholder).
+- `server/marketDataHealth.js` — `checkFinnhubFundamentalsHealth` ajouté à `checkMarketDataHealth` (probe `/stock/metric`).
 
-| Champ | Source primaire | Endpoint Finnhub |
-|---|---|---|
-| `marketCap` (USD) | Finnhub | `/stock/profile2` (`marketCapitalization`) |
-| `peRatio` (TTM) | Finnhub | `/stock/metric?metric=all` (`peTTM`) |
-| `epsTtm` (USD) | Finnhub | `/stock/metric` (`epsTTM`) |
-| `revenueTtm` (USD) | Finnhub | `/stock/metric` (`revenuePerShareTTM` × shares) |
-| `grossMargin` (%) | Finnhub | `/stock/metric` (`grossMarginTTM`) |
-| `operatingMargin` (%) | Finnhub | `/stock/metric` (`operatingMarginTTM`) |
-| `netMargin` (%) | Finnhub | `/stock/metric` (`netProfitMarginTTM`) |
-| `dividendYield` (%) | Finnhub | `/stock/metric` (`dividendYieldIndicatedAnnual`) |
-| `beta` | Finnhub | `/stock/metric` (`beta`) |
-| `country` / `industry` | Finnhub | `/stock/profile2` |
+Choix architecturaux:
 
-### Architecture proposée
+- Normalisation côté serveur (un seul `normalizeFundamentals`), client est pass-through.
+- `revenueTtm = revenuePerShareTTM × shareOutstanding × 1e6` uniquement si les deux sont présents (sinon omis).
+- `marketCapitalization` Finnhub est en millions → multiplié par 1e6 dans le normaliseur.
+- Cache TTL 6h côté serveur (les fondamentaux changent peu); pas de cache client.
+- Fallback Twelve Data NON livré (différé en V2).
 
-1. **`api/fundamentals.js`** — nouveau handler Vercel avec cache TTL 6h en mémoire. Source primaire Finnhub. Si 403/empty → fallback Twelve Data `/statistics` + `/profile`. Renvoyer chaque champ comme `{ value, source, asOf }` pour audit de provenance par champ.
+## Prochaine priorité — à définir au prochain démarrage
 
-2. **`src/services/fundamentals.js`** — fetcher + normaliseur côté client. Tests sur mock fetch.
+Candidats restants dans `PLATFORM_CHECKLIST.md` (par section):
 
-3. **`src/utils/fundamentalsNormalizer.js`** — normaliseur pur Finnhub metric payload → champs typés. Tests.
+- §1 — splits/dividendes, pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
+- §4 — volume sous la courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown/volatilité réalisée, corrélation.
+- §5 — earnings calendar, dividendes/analyst ratings/news sourcées, filings SEC, comparaison sectorielle.
+- §5+ — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US.
+- §7 — alertes volume inhabituel, notifications email/navigateur, jobs planifiés.
 
-4. **`src/components/FundamentalsPanel.jsx`** — grille de KPIs sous le graphique de la fiche actif. Chaque KPI affiche `value`, `source` (en chip ou hover), `asOf`.
-
-5. **`api/health/market-data.js`** — étendre le healthcheck pour vérifier `/stock/metric` et `/stock/profile2`.
-
-### Plan d'exécution recommandé (TDD)
-
-```
-Tâche 1 — Normaliseur fundamentals (pur, testé)
-Tâche 2 — Endpoint /api/fundamentals (cache TTL + provenance)
-Tâche 3 — Service client + tests
-Tâche 4 — UI FundamentalsPanel (grille KPIs + audit provenance)
-Tâche 5 — Healthcheck étendu
-Tâche 6 — Validation lint/test/build + checklist
-```
-
-### Sources documentaires
-
-- Finnhub `/stock/metric` : <https://finnhub.io/docs/api/company-basic-financials>
-- Finnhub `/stock/profile2` : <https://finnhub.io/docs/api/company-profile2>
-- Twelve Data `/statistics` : <https://twelvedata.com/docs#statistics>
-- Twelve Data `/profile` : <https://twelvedata.com/docs#profile>
-
-### Pièges connus à éviter
-
-- **Plan Finnhub free** : `/stock/metric` accepte les US stocks. Pour les non-US, fallback Twelve Data nécessaire.
-- **Unités** : Finnhub renvoie `marketCapitalization` en millions USD. Twelve Data renvoie en USD bruts. Normaliser en USD bruts dans la couche client.
-- **Champs absents** : Finnhub peut renvoyer `null` ou un objet partiel. Ne jamais inventer un fallback (ex: revenueTtm calculé). Marquer le champ "Indisponible" plutôt que d'afficher 0.
-- **Provenance par champ** : ne pas se contenter d'une source globale. Chaque KPI doit porter sa propre source (un mix Finnhub + Twelve Data possible).
-- **TTL cache** : fondamentaux changent peu, TTL 6h+ acceptable. Mais `/api/health/market-data` doit voir l'état réel — pas de cache ou TTL court (60s).
-
-### Marche à suivre exacte (nouvelle session)
-
-```bash
-# 1. Reprise
-cd /home/gear-code/02_projects/financial-intelligence-suite
-# Au prompt Claude Code:
-# Tape: FIS-REPRISE-FD01815
-# Claude lit ce fichier, puis confirme avant de coder.
-
-# 2. Vérifier l'état
-git status --short
-git log -1 --oneline   # doit afficher fd01815
-
-# 3. Vérifier les tests / lint / build (avant d'ajouter quoi que ce soit)
-npm run lint
-npm test
-npm run build
-
-# 4. Vérifier les clés API présentes
-grep -c "FINNHUB_API_KEY" .env
-grep -c "TWELVE_DATA_API_KEY" .env
-
-# 5. Démarrer le dev server (optionnel pour test manuel)
-npm run dev -- --host 127.0.0.1 --port 20000
-
-# 6. Demander à Claude de planifier les tâches puis attaquer Tâche 1.
-```
-
-### Question à poser à l'utilisateur en début de session
-
-Avant de coder, demander explicitement:
-
-> "On démarre les fondamentaux. V1 stricte (Finnhub seulement) ou V1+fallback Twelve Data dès le départ ?"
-
-Le fallback double le travail mais protège la couverture multi-marché. Recommander V1 stricte si l'utilisateur n'a pas d'avis, et différer le fallback en V2.
+Le mot magique `FIS-REPRISE-FD01815` reste valide pour relire ce fichier au prochain `claude`.
 
 ## Commandes utiles
 

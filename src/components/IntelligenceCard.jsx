@@ -5,6 +5,7 @@ import { CartesianGrid, LineChart, Line, ReferenceLine, ResponsiveContainer, Too
 import ChartErrorBoundary from "./ChartErrorBoundary";
 import { fetchPriceHistory } from "../services/priceHistory";
 import { DEFAULT_PERIOD, PERIOD_OPTIONS } from "../services/priceHistoryPeriods";
+import FundamentalsPanel from "./FundamentalsPanel";
 
 function formatTick(value, timeUnit) {
   if (!value) return "";
@@ -366,6 +367,8 @@ export default function IntelligenceCard({
           </div>
         </div>
       </div>
+
+      <FundamentalsPanel asset={asset} />
     </div>
   );
 }

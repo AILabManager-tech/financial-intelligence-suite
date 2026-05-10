@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-09. Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10. Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -32,7 +32,7 @@ Légende:
 - [ ] Support multi-devises
 - [ ] Mapping officiel symboles/exchanges
 - [x] Healthcheck détaillé par fournisseur
-  - Actuel: `/api/health/market-data` vérifie Finnhub, Twelve Data et Stooq avec cache TTL.
+  - Actuel: `/api/health/market-data` vérifie Finnhub quote, Finnhub fundamentals (`/stock/metric`), Twelve Data et Stooq avec cache TTL.
 
 ## 2. Recherche marché
 
@@ -105,8 +105,10 @@ Légende:
 - [x] Prix actuel, variation absolue et variation %
 - [x] Volume quand fourni par source
 - [x] Historique OHLCV daily
-- [ ] Market cap
-- [ ] P/E, EPS, revenus, marges sourcés
+- [x] Market cap
+  - Actuel: `marketCapitalization` Finnhub `/stock/profile2` converti en USD bruts.
+- [x] P/E, EPS, revenus, marges sourcés
+  - Actuel: `peTTM`, `epsTTM`, `revenuePerShareTTM × shareOutstanding`, `grossMarginTTM`, `operatingMarginTTM`, `netProfitMarginTTM`, `dividendYieldIndicatedAnnual`, `beta` Finnhub `/stock/metric` exposés via `/api/fundamentals` (cache TTL 6h) et affichés dans `FundamentalsPanel` sous la fiche actif.
 - [ ] Earnings calendar
 - [ ] Dividendes sourcés
 - [ ] Analyst ratings sourcés
@@ -114,7 +116,8 @@ Légende:
 - [ ] Documents SEC / filings
 - [ ] Comparaison sectorielle
 - [ ] Score interne explicable basé sur données réelles
-- [ ] Audit de provenance par champ
+- [x] Audit de provenance par champ
+  - Actuel: chaque KPI fondamental porte son propre `{value, source, asOf}` rendu en chip + tooltip; les champs absents sont strictement masqués.
 
 ## 6. Interface opérateur
 
@@ -286,6 +289,7 @@ Programmé aujourd'hui:
 - historique des recherches (20 dernières, dédupliquées, relançables);
 - enrichissement résultats de recherche avec exchange/pays + filtre par pays + désambiguïsation multi-marché;
 - import CSV broker avec détection automatique du mapping et preview ligne par ligne;
+- fondamentaux sourcés Finnhub (market cap, P/E, EPS, revenus, marges, dividende, bêta, pays, secteur) avec audit de provenance par champ et cache TTL 6h;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
@@ -294,7 +298,7 @@ Principaux manques pour devenir une plateforme complète:
 - base de données réelle (au-delà du SQLite local de dev);
 - authentification et portefeuilles multi-utilisateur;
 - alertes avancées (volume inhabituel, notifications email/navigateur, jobs planifiés);
-- fondamentaux sourcés (market cap, P/E, EPS, revenus, marges) — prochaine priorité;
+- repli Twelve Data sur les fondamentaux pour couvrir les non-US (V2 prévue);
 - news, filings SEC, earnings calendar et analyst ratings sourcés;
 - rate limiting avancé, cache partagé et observabilité;
 - CI/CD et monitoring production;

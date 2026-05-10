@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { checkMarketDataHealth } from './server/marketDataHealth.js'
 import { createPortfolioRepository } from './server/portfolioRepository.js'
 import { validatePortfolioAssets, validatePortfolioSnapshot } from './server/portfolioValidation.js'
+import { fetchFundamentals } from './server/fundamentals.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const fallbackQuoteSource = 'stooq.com'
@@ -13,6 +14,7 @@ const cacheTtlMs = {
   history: 6 * 60 * 60 * 1000,
   search: 10 * 60 * 1000,
   health: 60 * 1000,
+  fundamentals: 6 * 60 * 60 * 1000,
 }
 
 async function readThroughCache(key, ttlMs, loadValue) {
@@ -338,6 +340,34 @@ export default defineConfig(({ mode }) => {
             response.statusCode = 503
             response.setHeader('Content-Type', 'application/json')
             response.end(JSON.stringify({ error: error.message, source: 'twelvedata.com' }))
+          }
+        })
+
+        server.middlewares.use('/api/fundamentals', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const symbol = (requestUrl.searchParams.get('symbol') ?? '').trim().toUpperCase()
+
+          if (!symbol) {
+            sendJson(response, 400, { error: 'symbol query parameter is required' })
+            return
+          }
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `fundamentals:${symbol}`,
+              cacheTtlMs.fundamentals,
+              () => fetchFundamentals(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.fundamentals,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
           }
         })
 

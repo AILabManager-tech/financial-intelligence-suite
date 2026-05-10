@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  checkFinnhubFundamentalsHealth,
   checkFinnhubHealth,
+  checkMarketDataHealth,
   checkStooqHealth,
   checkTwelveDataHealth,
   summarizeMarketDataHealth,
@@ -56,6 +58,63 @@ describe('marketDataHealth', () => {
       status: 'ok',
       capability: 'quote_fallback',
     }));
+  });
+
+  it('marks fundamentals as missing_config when no Finnhub token is configured', async () => {
+    await expect(checkFinnhubFundamentalsHealth('')).resolves.toEqual(expect.objectContaining({
+      provider: 'finnhub.io',
+      status: 'missing_config',
+      capability: 'fundamentals',
+      configured: false,
+    }));
+  });
+
+  it('reports fundamentals as ok when /stock/metric returns a usable payload', async () => {
+    const result = await checkFinnhubFundamentalsHealth('fundamentals-token', async (url) => {
+      expect(String(url)).toContain('/stock/metric');
+      expect(String(url)).toContain('symbol=AAPL');
+      return okJson({ metric: { peTTM: 32.5, beta: 1.27 } });
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      provider: 'finnhub.io',
+      status: 'ok',
+      capability: 'fundamentals',
+      configured: true,
+      latencyMs: expect.any(Number),
+    }));
+    expect(JSON.stringify(result)).not.toContain('fundamentals-token');
+  });
+
+  it('reports fundamentals as down when /stock/metric returns an empty metric object', async () => {
+    const result = await checkFinnhubFundamentalsHealth('fundamentals-token', async () => okJson({ metric: {} }));
+    expect(result).toEqual(expect.objectContaining({
+      provider: 'finnhub.io',
+      status: 'down',
+      capability: 'fundamentals',
+    }));
+  });
+
+  it('includes fundamentals provider in checkMarketDataHealth output', async () => {
+    const calls = [];
+    const okFetcher = async (url) => {
+      calls.push(String(url));
+      if (String(url).includes('/stock/metric')) return okJson({ metric: { peTTM: 32.5 } });
+      if (String(url).includes('finnhub.io/api/v1/quote')) return okJson({ c: 293.32 });
+      if (String(url).includes('twelvedata')) return okJson({ values: [{ datetime: '2026-05-08', close: '293' }] });
+      if (String(url).includes('stooq')) return okJson({ symbols: [{ close: '293' }] });
+      throw new Error(`unexpected ${url}`);
+    };
+
+    const result = await checkMarketDataHealth({
+      finnhubApiKey: 'tok',
+      twelveDataApiKey: 'tok',
+      fetcher: okFetcher,
+    });
+
+    const fundamentals = result.providers.find((p) => p.capability === 'fundamentals');
+    expect(fundamentals).toBeTruthy();
+    expect(fundamentals.status).toBe('ok');
   });
 
   it('summarizes provider status', () => {
