@@ -46,6 +46,14 @@ export function normalizeFundamentals({ profile, metric, asOf } = {}) {
   emit(result, 'dividendYield', toFiniteNumber(metricData.dividendYieldIndicatedAnnual), asOf);
   emit(result, 'beta', toFiniteNumber(metricData.beta), asOf);
 
+  // Buffett-analysis fields (consumed by BuffettAnalysisPanel; not surfaced
+  // by FundamentalsPanel because FUNDAMENTALS_DEFINITIONS does not list them).
+  // All emitted as raw Finnhub values, scaling handled by the consumer.
+  emit(result, 'roeTtm', toFiniteNumber(metricData.roeTTM), asOf);                          // pct, e.g. 43.62
+  emit(result, 'epsGrowth5y', toFiniteNumber(metricData.epsGrowth5Y), asOf);                // pct, e.g. 11.14
+  emit(result, 'debtEquityAnnual', toFiniteNumber(metricData['totalDebt/totalEquityAnnual']), asOf); // ratio, e.g. 1.41
+  emit(result, 'pfcfShareTtm', toFiniteNumber(metricData.pfcfShareTTM), asOf);              // ratio price/FCF/share, e.g. 26.86
+
   emit(result, 'country', nonEmptyString(profileData.country), asOf);
   emit(result, 'industry', nonEmptyString(profileData.finnhubIndustry), asOf);
 
@@ -64,6 +72,10 @@ export const FUNDAMENTALS_FIELDS = [
   'netMargin',
   'dividendYield',
   'beta',
+  'roeTtm',
+  'epsGrowth5y',
+  'debtEquityAnnual',
+  'pfcfShareTtm',
   'country',
   'industry',
 ];

@@ -118,4 +118,35 @@ describe('normalizeFundamentals', () => {
     expect(result.country.asOf).toBe('2025-01-01T00:00:00.000Z');
     expect(result.beta.asOf).toBe('2025-01-01T00:00:00.000Z');
   });
+
+  it('emits Buffett-analysis fields when present (raw Finnhub values)', () => {
+    const result = normalizeFundamentals({
+      profile: { country: 'US' },
+      metric: {
+        metric: {
+          roeTTM: 43.62,
+          epsGrowth5Y: 11.14,
+          'totalDebt/totalEquityAnnual': 1.4142,
+          pfcfShareTTM: 26.86,
+        },
+      },
+      asOf: ASOF,
+    });
+    expect(result.roeTtm).toEqual({ value: 43.62, source: 'finnhub.io', asOf: ASOF });
+    expect(result.epsGrowth5y).toEqual({ value: 11.14, source: 'finnhub.io', asOf: ASOF });
+    expect(result.debtEquityAnnual).toEqual({ value: 1.4142, source: 'finnhub.io', asOf: ASOF });
+    expect(result.pfcfShareTtm).toEqual({ value: 26.86, source: 'finnhub.io', asOf: ASOF });
+  });
+
+  it('omits each Buffett field independently when its source value is absent', () => {
+    const result = normalizeFundamentals({
+      profile: {},
+      metric: { metric: { roeTTM: 12.5 } },
+      asOf: ASOF,
+    });
+    expect(result).toHaveProperty('roeTtm');
+    expect(result).not.toHaveProperty('epsGrowth5y');
+    expect(result).not.toHaveProperty('debtEquityAnnual');
+    expect(result).not.toHaveProperty('pfcfShareTtm');
+  });
 });

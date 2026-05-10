@@ -6,6 +6,7 @@ import ChartErrorBoundary from "./ChartErrorBoundary";
 import { fetchPriceHistory } from "../services/priceHistory";
 import { DEFAULT_PERIOD, PERIOD_OPTIONS } from "../services/priceHistoryPeriods";
 import FundamentalsPanel from "./FundamentalsPanel";
+import BuffettAnalysisPanel from "./BuffettAnalysisPanel";
 import AnalystRatingsPanel from "./AnalystRatingsPanel";
 import CompanyNewsPanel from "./CompanyNewsPanel";
 import EarningsCalendarPanel from "./EarningsCalendarPanel";
@@ -373,6 +374,8 @@ export default function IntelligenceCard({
       </div>
 
       <FundamentalsPanel asset={asset} />
+
+      <BuffettAnalysisPanel asset={asset} />
 
       <AnalystRatingsPanel asset={asset} />
 
