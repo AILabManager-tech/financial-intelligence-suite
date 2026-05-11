@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-10 (post-bloc préparation déploiement Vercel). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10 (post-bloc CI GitHub Actions). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -232,7 +232,10 @@ Légende:
 - [x] Rollback documenté
 - [ ] Déploiement production explicite (action utilisateur, hard-stop pour Claude Code)
 - [ ] Environnements preview/staging/prod (auto via Vercel + GitHub, à valider à la première promotion)
-- [ ] CI GitHub Actions (tests automatiques sur PR)
+- [x] CI GitHub Actions (tests automatiques sur PR)
+  - Actuel: `.github/workflows/ci.yml` enchaîne lint + test + build sur Node 20 LTS, déclenché à chaque pull request et à chaque push sur `main`, avec cache npm et concurrency cancel-in-progress. Badge live affiché dans le README.
+- [x] Tests automatiques sur PR
+  - Actuel: même workflow, événement `pull_request` couvre les PR depuis n'importe quelle branche.
 - [ ] Monitoring uptime
 - [ ] Monitoring erreurs frontend/API
 
@@ -244,8 +247,9 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert
+- [x] `npm test` vert (368 tests)
 - [x] `npm run build` vert
+- [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [ ] Tests composants UI
 - [ ] Tests API endpoints
 - [ ] Tests e2e Playwright
@@ -312,6 +316,7 @@ Programmé aujourd'hui:
 - dépôts SEC Finnhub `/stock/filings` empilés en bas de la fiche actif, groupés par type avec libellés FR (rapports annuels/trimestriels, événements 8-K, transactions insider, procurations, inscriptions, positions institutionnelles…) et lien direct vers le PDF SEC, cache TTL 24h;
 - comparaison sectorielle Finnhub `/stock/peers` empilée tout en bas de la fiche actif, table de pairs avec quote live (prix + variation absolue + variation %) et écart en points de pourcentage vs symbole de référence, classement par variation % desc, cache TTL 24h sur la liste de pairs et batch via `/api/quotes` pour les cotations;
 - déploiement Vercel préparé: `vercel.json` (framework vite, functions includeFiles `server/**`, security headers, ignoreCommand sur les fichiers documentaires), `DEPLOYMENT.md` complet (ENV vars + procédure CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies pour build serverless propre, README mis à jour. Aucun `vercel deploy` autonome (hard-stop session) — l'opérateur déclenche manuellement;
+- CI GitHub Actions: `.github/workflows/ci.yml` enchaîne lint + test + build sur Node 20 LTS à chaque pull request et à chaque push sur `main`, avec cache npm, concurrency cancel-in-progress et permissions minimales `contents: read`. Badge live dans le README;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.

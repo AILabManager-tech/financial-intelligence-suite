@@ -1,5 +1,7 @@
 # Financial Intelligence Suite
 
+[![CI](https://github.com/AILabManager-tech/financial-intelligence-suite/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AILabManager-tech/financial-intelligence-suite/actions/workflows/ci.yml)
+
 Tableau de bord factuel d'analyse de portefeuille et de fiches actifs : quotes live, historique de prix, fondamentaux, dépôts SEC, comparaison sectorielle, calendrier earnings, dividendes, news société, recommandations analystes et analyse Buffett DCF — toutes les données sourcées en direct depuis Finnhub et Twelve Data, jamais de mock visible, provenance par champ.
 
 > Pour les conventions de développement (factualité stricte, pattern modulaire feature × couche, hard-stops, port local 20000), voir [`CLAUDE.md`](CLAUDE.md). Pour l'état d'avancement de la plateforme, voir [`PLATFORM_CHECKLIST.md`](PLATFORM_CHECKLIST.md). Pour la reprise de session, voir [`REPRISE_CHECKPOINT.md`](REPRISE_CHECKPOINT.md).
@@ -51,6 +53,8 @@ npm run build
 ```
 
 Suite de tests : ~370 cas, ~1.4 s. Coverage par couche (domain server, handlers, services client, formatters, composants UI).
+
+Les trois commandes tournent aussi en CI à chaque pull request et à chaque push sur `main` via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (Node 20 LTS, cache npm, concurrency groupée). Le badge en haut du README reflète le dernier run sur `main`.
 
 ## Architecture
 

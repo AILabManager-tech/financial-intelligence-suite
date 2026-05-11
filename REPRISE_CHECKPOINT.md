@@ -18,9 +18,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## Etat git
 
-Tip de `main` au moment du checkpoint (post-bloc préparation Vercel, à committer dans le même bloc que ce docs) :
+Tip de `main` au moment du checkpoint (post-bloc CI GitHub Actions, à committer dans le même bloc que ce docs) :
 
 ```
+b5a0ac4 chore: prepare Vercel deployment config and procedure
 3c40e43 chore: address security and audit findings
 71383fd feat: source sector peers from Finnhub stock peers endpoint
 ed415bc feat: source SEC filings from Finnhub stock filings endpoint
@@ -59,7 +60,8 @@ Commits feature livrés sur `main` depuis le checkpoint précédent :
 - `ed415bc` — Dépôts SEC Finnhub: `/api/sec-filings` (TTL 24h) `/stock/filings`; `SecFilingsPanel` empilé sous `CompanyNewsPanel`, groupé par type (10-K, 10-Q, 8-K, 4 insider, DEF 14A, S-1, 13F-HR, etc.) avec libellés FR + tone par catégorie + lien externe vers le PDF SEC; pas d'extension du healthcheck (la clé Finnhub est partagée).
 - `71383fd` — Comparaison sectorielle Finnhub: `/api/peers` (TTL 24h) `/stock/peers`; `PeersComparisonPanel` empilé tout en bas de la fiche actif (sous `SecFilingsPanel`); livre prix + variation absolue + variation % + écart en points de pourcentage vs symbole de référence pour chaque pair, classement par variation % desc; quotes pairs récupérés via le batch `/api/quotes` existant; pas d'extension du healthcheck.
 - `3c40e43` — Audit fix: `.env.example` scrubé (placeholders documentés à la place des 3 vraies clés exposées depuis le commit initial), tests no-leak token ajoutés à `dividends` + `earnings`, README réécrit factuellement (stack actuel, ENV vars, architecture modulaire, posture sécurité). 366 → 368 tests. **ACTION REQUIRED** : rotation des 3 clés API (Finnhub, Twelve Data, Alpha Vantage) — purger l'historique git ne suffit pas, le repo a été public.
-- (à venir, ce bloc) — Préparation déploiement Vercel: `vercel.json` (framework vite, functions includeFiles, security headers), `DEPLOYMENT.md` (procédure complète CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies, stratégie SQLite documentée (pas de gating nécessaire, fallback `localStorage` côté client déjà en place). Aucun `vercel deploy` autonome.
+- `b5a0ac4` — Préparation déploiement Vercel: `vercel.json` (framework vite, functions includeFiles, security headers), `DEPLOYMENT.md` (procédure complète CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies, stratégie SQLite documentée (pas de gating nécessaire, fallback `localStorage` côté client déjà en place). Aucun `vercel deploy` autonome.
+- (à venir, ce bloc) — CI GitHub Actions: `.github/workflows/ci.yml` enchaîne `npm ci` → `npm run lint` → `npm test` → `npm run build` sur Node 20 LTS, déclenché à chaque pull request et à chaque push sur `main`, avec cache npm + concurrency cancel-in-progress + permissions minimales `contents: read`. Badge live ajouté en haut du README. Aucun nouveau test (changement infra).
 
 État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 → 366 → 368 tests verts. Lint et build verts.
 
@@ -86,6 +88,7 @@ Dernière validation complète avant reprise:
 - `npm run lint` OK
 - `npm test` OK, 368 tests
 - `npm run build` OK
+- CI: `.github/workflows/ci.yml` enchaîne les trois mêmes commandes sur Node 20 LTS à chaque PR et chaque push sur `main`. Badge live dans le README.
 
 ## Serveur local
 
@@ -96,6 +99,37 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc CI GitHub Actions livré (2026-05-10, après préparation Vercel)
+
+§12 close-the-loop sur la CI. Workflow simple, fait tourner lint + test + build à chaque pull request et à chaque push sur `main`. Pré-requis hygiénique au futur déploiement Vercel (signal vert à valider avant `vercel --prod` côté opérateur).
+
+Fichiers ajoutés:
+
+- `.github/workflows/ci.yml` — un seul job `ci: lint + test + build` qui :
+  - tourne sur `ubuntu-latest` avec `timeout-minutes: 10`,
+  - utilise `actions/checkout@v4` + `actions/setup-node@v4` Node 20 LTS avec `cache: 'npm'`,
+  - exécute `npm ci` puis `npm run lint` puis `npm test` puis `npm run build`,
+  - se déclenche sur `pull_request` (toute branche) et `push: branches: [main]`,
+  - groupe les runs par `${{ github.workflow }}-${{ github.ref }}` avec `cancel-in-progress: true` pour ne pas garder de runs obsolètes sur les PR à force-push,
+  - demande uniquement `permissions: contents: read` (pas de write GitHub, pas d'accès secrets — la suite est entièrement publique-friendly).
+
+Fichiers étendus:
+
+- `README.md` — badge GitHub Actions ajouté juste sous le titre (`branch=main`), et un paragraphe explicite après la section "Validation avant commit" qui indique que les trois commandes tournent aussi en CI.
+- `PLATFORM_CHECKLIST.md` — §11 "CI GitHub Actions" et "Tests automatiques sur PR" cochés, §12 "CI GitHub Actions" ajouté, synthèse mise à jour.
+
+Choix architecturaux:
+
+- **Un seul job linéaire** plutôt qu'une matrice lint/test/build séparée. Le coût total est < 2 min — split en jobs parallèles paierait surtout en complexité (fan-in, plus de slots GH Actions) sans gain de temps significatif.
+- **Node 20 LTS uniquement** (pas de matrice 20+22). Toujours possible d'élargir plus tard si on veut une garantie multi-version, mais Vercel runtime Node = 20 par défaut → pas d'urgence de tester 22 pour l'instant.
+- **`npm ci` strict** plutôt que `npm install` → garantit la reproductibilité depuis `package-lock.json` et fail-fast si le lockfile est désynchronisé.
+- **`cache: 'npm'`** géré nativement par `setup-node@v4` (clé `package-lock.json`). Pas besoin d'`actions/cache` séparé.
+- **Concurrency cancel-in-progress** : sur les PR très actives (force-push fréquents), ça évite la file d'attente de runs périmés. Pas activé sur `push: main` parce qu'on veut tout l'historique.
+- **`permissions: contents: read`** explicite (au lieu du défaut implicite write) → principe du moindre privilège, et fail-safe si un futur job tente une opération inattendue.
+- **Pas de matrix `os` (Windows/macOS)** : le projet ne cible que Linux (Vercel runtime + dev gear-code Linux). Couvrir d'autres OS n'apporterait rien.
+- **Pas de cache de build artifacts (`dist/`) ni de couverture de tests publiée** : ces ajouts viendraient plus tard si on intègre Codecov / un job de release.
+- **`pull_request` sans filtre de branche** : couvre les PR depuis fork aussi (GitHub Actions ne donne pas accès aux secrets sur PR de fork, donc safe par défaut).
 
 ## Bloc préparation déploiement Vercel livré (2026-05-10, après audit fix)
 
@@ -273,16 +307,14 @@ Choix architecturaux:
 
 L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-**Recommandation par défaut sur « on continue »** : §12 — **CI GitHub Actions sur PR** (lint + test + build à chaque pull request, badge dans le README). Bloc court (<1h), bonne hygiène avant le premier deploy Vercel pour avoir un signal vert avant promotion. Pattern Actions standard, faible risque, pas d'autre dépendance.
-
-Alternative équivalente : **bloc cleanup F4 + F5** (retirer `src/data/portfolioData.js` mock + le code mort dans `portfolioAnalytics.js` + le dossier non-lié `n8n_batch-ops_diagnose/`). Identifié dans l'audit `3c40e43`, n'a aucune dépendance bloquante et clarifie le repo avant le premier deploy.
+**Recommandation par défaut sur « on continue »** : **bloc cleanup audit F4 + F5** — retirer `src/data/portfolioData.js` (seed mock avec valeurs fictives `aiVerdict`/`score`/`recommendation` non utilisées dans l'UI), nettoyer le code mort dans `portfolioAnalytics.js` (`avgScore`, `qualityRisk`, `highConviction`, `weakAssets` calculés mais jamais rendus), retirer le dossier `n8n_batch-ops_diagnose/` (5 fichiers Python sans rapport). Identifié dans l'audit `3c40e43` comme dette à éponger avant le premier deploy. Bloc court (<1h), risque mesuré : il faut updater quelques tests `portfolioAnalytics.test.js` qui pointent vers ces champs.
 
 Candidats restants (du plus close-the-loop au plus structurel) :
 
-- §12 — CI GitHub Actions (lint + test + build sur PR), badge README.
 - Cleanup audit F4 + F5 (mock data + code mort + dossier python orphelin).
 - §11 close-the-loop — déclenchement effectif `vercel --prod` (action utilisateur, Claude ne lance pas).
 - §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel). Optionnellement, V2 du panel `PeersComparisonPanel` : ajouter une colonne P/E ou market cap récupérée en parallèle via N appels `/api/fundamentals`.
+- §10 — rate limiting applicatif (`/api/*` middleware), security headers déjà en place via `vercel.json`. Peut s'attaquer une fois la CI verte sur main.
 - §8-9 — DB managée (Supabase/Neon Postgres) + auth + multi-utilisateur. Gros chantier; à attaquer après que le déploiement Vercel ait été validé en preview au moins une fois par l'opérateur.
 - §4 visualisations — volume sous la courbe (extension `PriceHistoryChart`), comparaison benchmark/multi-actifs (panel séparé), candlesticks OHLC, drawdown réel, volatilité réalisée, corrélation.
 - §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
