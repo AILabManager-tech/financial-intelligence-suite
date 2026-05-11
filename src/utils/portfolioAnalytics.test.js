@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildStressScenarios,
   calculatePortfolioAnalytics,
   enrichAssetsWithPositionMetrics,
   getSectorFamily,
@@ -11,34 +10,30 @@ const assets = [
     symbol: 'AAA',
     sector: 'Technologie — Logiciels',
     price: 100,
-    score: 90,
     position: { quantity: 2, averageCost: 80, targetWeight: 40 },
-    history: [80, 84, 88, 90],
-    integrity: { verified: true },
   },
   {
     symbol: 'BBB',
     sector: 'Technologie — Semi-conducteurs',
     price: 50,
-    score: 68,
     position: { quantity: 2, averageCost: 60, targetWeight: 25 },
-    history: [76, 72, 70, 68],
-    integrity: { verified: true },
   },
   {
     symbol: 'CCC',
     sector: 'Finance — Banque',
     price: 100,
-    score: 76,
     position: { quantity: 1, averageCost: 90, targetWeight: 35 },
-    history: [74, 75, 76, 76],
-    integrity: { verified: false },
   },
 ];
 
 describe('getSectorFamily', () => {
   it('extracts the top-level sector', () => {
     expect(getSectorFamily('Technologie — Logiciels')).toBe('Technologie');
+  });
+
+  it('falls back to "Non classé" on empty input', () => {
+    expect(getSectorFamily('')).toBe('Non classé');
+    expect(getSectorFamily()).toBe('Non classé');
   });
 });
 
@@ -52,34 +47,34 @@ describe('enrichAssetsWithPositionMetrics', () => {
     expect(first.positionMetrics.weight).toBe(50);
     expect(first.positionMetrics.targetDrift).toBe(10);
   });
-});
 
-describe('calculatePortfolioAnalytics', () => {
-  it('computes portfolio-level risk and exposure', () => {
-    const result = calculatePortfolioAnalytics(assets);
-
-    expect(result.methodology).toBe('market-value-weighted');
-    expect(result.totalMarketValue).toBe(400);
-    expect(result.unrealizedPnl).toBe(30);
-    expect(result.unrealizedPnlPct).toBeCloseTo(8.11, 1);
-    expect(result.avgScore).toBe(81);
-    expect(result.topSector.sector).toBe('Technologie');
-    expect(result.topSector.weight).toBe(75);
-    expect(result.weakAssets).toHaveLength(1);
-    expect(result.highConviction).toHaveLength(1);
-    expect(result.driftedAssets).toHaveLength(2);
-    expect(result.rebalanceActions[0]).toMatchObject({ symbol: 'AAA', action: 'Vendre' });
-    expect(result.alerts.some((alert) => alert.title === 'Concentration sectorielle')).toBe(true);
+  it('returns an empty array when given no assets', () => {
+    expect(enrichAssetsWithPositionMetrics([])).toEqual([]);
   });
 });
 
-describe('buildStressScenarios', () => {
-  it('builds actionable downside scenarios', () => {
-    const analytics = calculatePortfolioAnalytics(assets);
-    const scenarios = buildStressScenarios(analytics);
+describe('calculatePortfolioAnalytics', () => {
+  it('computes market value, P&L, sector exposure and rebalance actions', () => {
+    const result = calculatePortfolioAnalytics(assets);
 
-    expect(scenarios).toHaveLength(3);
-    expect(scenarios[0].impact).toBeLessThan(0);
-    expect(scenarios.map((scenario) => scenario.name)).toContain('Correction tech -12%');
+    expect(result.totalMarketValue).toBe(400);
+    expect(result.totalCost).toBe(370);
+    expect(result.unrealizedPnl).toBe(30);
+    expect(result.unrealizedPnlPct).toBeCloseTo(8.11, 1);
+    expect(result.topSector.sector).toBe('Technologie');
+    expect(result.topSector.weight).toBe(75);
+    expect(result.sectorExposure).toHaveLength(2);
+    expect(result.rebalanceActions[0]).toMatchObject({ symbol: 'AAA', action: 'Vendre' });
+  });
+
+  it('handles an empty portfolio without crashing', () => {
+    const result = calculatePortfolioAnalytics([]);
+    expect(result.totalMarketValue).toBe(0);
+    expect(result.totalCost).toBe(0);
+    expect(result.unrealizedPnl).toBe(0);
+    expect(result.unrealizedPnlPct).toBe(0);
+    expect(result.sectorExposure).toEqual([]);
+    expect(result.topSector).toEqual({ sector: 'Non classé', count: 0, marketValue: 0, weight: 0 });
+    expect(result.rebalanceActions).toEqual([]);
   });
 });

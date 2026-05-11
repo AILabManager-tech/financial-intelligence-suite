@@ -1,6 +1,6 @@
 # Financial Intelligence Suite — checklist plateforme cible
 
-Statut au 2026-05-10 (post-bloc CI GitHub Actions). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
+Statut au 2026-05-10 (post-bloc cleanup audit F4 + F5). Objectif: mesurer l'écart entre l'application actuelle et une plateforme financière complète, factuelle, exploitable et déployable.
 
 Légende:
 - [x] Programmé dans le modèle actuel
@@ -317,6 +317,7 @@ Programmé aujourd'hui:
 - comparaison sectorielle Finnhub `/stock/peers` empilée tout en bas de la fiche actif, table de pairs avec quote live (prix + variation absolue + variation %) et écart en points de pourcentage vs symbole de référence, classement par variation % desc, cache TTL 24h sur la liste de pairs et batch via `/api/quotes` pour les cotations;
 - déploiement Vercel préparé: `vercel.json` (framework vite, functions includeFiles `server/**`, security headers, ignoreCommand sur les fichiers documentaires), `DEPLOYMENT.md` complet (ENV vars + procédure CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies pour build serverless propre, README mis à jour. Aucun `vercel deploy` autonome (hard-stop session) — l'opérateur déclenche manuellement;
 - CI GitHub Actions: `.github/workflows/ci.yml` enchaîne lint + test + build sur Node 20 LTS à chaque pull request et à chaque push sur `main`, avec cache npm, concurrency cancel-in-progress et permissions minimales `contents: read`. Badge live dans le README;
+- cleanup audit F4 + F5: retrait de `src/data/portfolioData.js` (seed mock avec valeurs fictives `aiVerdict`/`score`/`recommendation`/`aiAnalysis`/`deterministic` non rendues dans l'UI), suppression du code mort dans `portfolioAnalytics.js` (`avgScore`, `riskScore`, `riskLabel`, `scoreVolatility`, `maxDrawdown`, `weakAssets`, `highConviction`, `driftedAssets`, `alerts`, `buildStressScenarios` et tous les helpers internes associés — jamais consommés par la UI vérifié par grep), portefeuille par défaut désormais vide (factualité maximale, l'utilisateur ajoute via `MarketLookup` ou import CSV broker), retrait du dossier orphelin `n8n_batch-ops_diagnose/` (5 fichiers Python sans rapport avec FIS). Tests portfolioAnalytics ré-écrits pour les API restantes (totalMarketValue, sectorExposure, rebalanceActions, empty-portfolio safety).
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.

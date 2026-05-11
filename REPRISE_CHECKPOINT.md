@@ -18,9 +18,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## Etat git
 
-Tip de `main` au moment du checkpoint (post-bloc CI GitHub Actions, à committer dans le même bloc que ce docs) :
+Tip de `main` au moment du checkpoint (post-bloc cleanup audit F4+F5, à committer dans le même bloc que ce docs) :
 
 ```
+1c789cb ci: add GitHub Actions workflow for lint + test + build
 b5a0ac4 chore: prepare Vercel deployment config and procedure
 3c40e43 chore: address security and audit findings
 71383fd feat: source sector peers from Finnhub stock peers endpoint
@@ -61,9 +62,10 @@ Commits feature livrés sur `main` depuis le checkpoint précédent :
 - `71383fd` — Comparaison sectorielle Finnhub: `/api/peers` (TTL 24h) `/stock/peers`; `PeersComparisonPanel` empilé tout en bas de la fiche actif (sous `SecFilingsPanel`); livre prix + variation absolue + variation % + écart en points de pourcentage vs symbole de référence pour chaque pair, classement par variation % desc; quotes pairs récupérés via le batch `/api/quotes` existant; pas d'extension du healthcheck.
 - `3c40e43` — Audit fix: `.env.example` scrubé (placeholders documentés à la place des 3 vraies clés exposées depuis le commit initial), tests no-leak token ajoutés à `dividends` + `earnings`, README réécrit factuellement (stack actuel, ENV vars, architecture modulaire, posture sécurité). 366 → 368 tests. **ACTION REQUIRED** : rotation des 3 clés API (Finnhub, Twelve Data, Alpha Vantage) — purger l'historique git ne suffit pas, le repo a été public.
 - `b5a0ac4` — Préparation déploiement Vercel: `vercel.json` (framework vite, functions includeFiles, security headers), `DEPLOYMENT.md` (procédure complète CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies, stratégie SQLite documentée (pas de gating nécessaire, fallback `localStorage` côté client déjà en place). Aucun `vercel deploy` autonome.
-- (à venir, ce bloc) — CI GitHub Actions: `.github/workflows/ci.yml` enchaîne `npm ci` → `npm run lint` → `npm test` → `npm run build` sur Node 20 LTS, déclenché à chaque pull request et à chaque push sur `main`, avec cache npm + concurrency cancel-in-progress + permissions minimales `contents: read`. Badge live ajouté en haut du README. Aucun nouveau test (changement infra).
+- `1c789cb` — CI GitHub Actions: `.github/workflows/ci.yml` enchaîne `npm ci` → `npm run lint` → `npm test` → `npm run build` sur Node 20 LTS, déclenché à chaque pull request et à chaque push sur `main`, avec cache npm + concurrency cancel-in-progress + permissions minimales `contents: read`. Badge live ajouté en haut du README.
+- (à venir, ce bloc) — Cleanup audit F4 + F5: retrait du seed mock `src/data/portfolioData.js`, épuration du code mort dans `portfolioAnalytics.js` et de `buildStressScenarios`, retrait du dossier orphelin `n8n_batch-ops_diagnose/`. Portefeuille par défaut désormais vide. Tests portfolioAnalytics ré-écrits.
 
-État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 → 366 → 368 tests verts. Lint et build verts.
+État tests: 52 → 124 → 162 → 206 → 230 → 299 → 331 → 366 → 368 → 370 tests verts. Lint et build verts.
 
 ## Fichiers non suivis a ignorer
 
@@ -86,7 +88,7 @@ Ne pas inclure sans demande explicite:
 Dernière validation complète avant reprise:
 
 - `npm run lint` OK
-- `npm test` OK, 368 tests
+- `npm test` OK, 370 tests
 - `npm run build` OK
 - CI: `.github/workflows/ci.yml` enchaîne les trois mêmes commandes sur Node 20 LTS à chaque PR et chaque push sur `main`. Badge live dans le README.
 
@@ -99,6 +101,30 @@ URL locale:
 Verifier si le serveur tourne:
 
 `pgrep -a -f "vite --host 127.0.0.1 --port 20000"`
+
+## Bloc cleanup audit F4 + F5 livré (2026-05-10, après CI)
+
+Éponge la dette identifiée dans l'audit `3c40e43`. Cleanup, pas de feature. 370 → 370 tests (net +2 : -1 test `buildStressScenarios`, +3 tests `getSectorFamily empty` / `enrichAssetsWithPositionMetrics empty` / `calculatePortfolioAnalytics empty portfolio`).
+
+Fichiers supprimés:
+
+- `src/data/portfolioData.js` (~440 lignes) — seed avec 11 actifs et valeurs fictives `aiVerdict`, `aiAnalysis`, `deterministic.rsi/macd`, `recommendation`, `score`. Aucune n'était rendue dans l'UI (vérifié par grep avant suppression), mais polluait la mémoire et le seed. Le portefeuille par défaut est désormais vide.
+- `n8n_batch-ops_diagnose/` (5 fichiers Python : `__init__.py`, `batch_ops.py`, `config.py`, `credentials.py`, `workflows.py`) — module d'opérations batch n8n sans rapport avec FIS, vraisemblablement orphelin d'un autre projet.
+
+Fichiers modifiés:
+
+- `src/App.jsx` — l'import `PORTFOLIO_ASSETS` retiré; `useState(() => loadPortfolioAssets([]))` initialise désormais avec un seed vide. Le code descendant gère déjà l'état vide (App.jsx ligne 290 `if (!portfolioAssets.length)` → status "Aucun actif suivi"; les composants `RiskCommandCenter`, `TopPerformers`, `SafetyBadge`, `PortfolioManager` itèrent sur des arrays vides sans crash).
+- `src/utils/portfolioAnalytics.js` — épuré de ~140 lignes. `calculatePortfolioAnalytics` retourne désormais uniquement les 7 champs effectivement consommés par l'UI (`totalMarketValue`, `totalCost`, `unrealizedPnl`, `unrealizedPnlPct`, `topSector`, `sectorExposure`, `rebalanceActions`). Tous les helpers internes du code mort (`average`, `standardDeviation`, `maxDrawdown`, `statusFromRisk`, `scoreRiskLabel`) supprimés. `buildStressScenarios` retiré (consommé seulement par son test).
+- `src/utils/portfolioAnalytics.test.js` — ré-écrit pour ne couvrir que les API restantes, plus deux nouveaux cas (`getSectorFamily` empty-string fallback, `enrichAssetsWithPositionMetrics` empty array, `calculatePortfolioAnalytics` empty portfolio).
+
+Choix architecturaux:
+
+- **Seed vide vs seed factuel minimal** : on a choisi seed vide pour 3 raisons. (1) Factualité maximale alignée avec CLAUDE.md « zéro mock visible » — un seed avec NVDA/AAPL/MSFT inventait quand même les positions (quantité, coût moyen). (2) UX : `MarketLookup` est déjà l'élément principal de la page d'accueil, l'utilisateur ajoute via search en quelques clics. (3) En prod Vercel sur un nouvel utilisateur, le seed ne correspondrait pas à son vrai portefeuille.
+- **Aucune migration localStorage** : les utilisateurs qui ont déjà un portefeuille sauvegardé dans `localStorage` conservent leurs positions. Seuls les nouveaux utilisateurs (ou ceux qui clear leur cache) verront l'état vide.
+- **Pas de `enrichedAssets` dans le return de `calculatePortfolioAnalytics`** : il n'était pas consommé (PortfolioManager + AssetTable appellent `enrichAssetsWithPositionMetrics` directement). Suppression nette.
+- **Garder `enrichAssetsWithPositionMetrics` exporté** : utilisé par 2 composants. Non touché.
+- **`methodology: "market-value-weighted"` retiré du retour** : c'était un label décoratif jamais rendu.
+- **Tests empty-portfolio ajoutés** : maintenant que le seed est vide, le path `assets = []` est le path par défaut. Couvrir explicitement évite une régression silencieuse.
 
 ## Bloc CI GitHub Actions livré (2026-05-10, après préparation Vercel)
 
@@ -307,15 +333,17 @@ Choix architecturaux:
 
 L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-**Recommandation par défaut sur « on continue »** : **bloc cleanup audit F4 + F5** — retirer `src/data/portfolioData.js` (seed mock avec valeurs fictives `aiVerdict`/`score`/`recommendation` non utilisées dans l'UI), nettoyer le code mort dans `portfolioAnalytics.js` (`avgScore`, `qualityRisk`, `highConviction`, `weakAssets` calculés mais jamais rendus), retirer le dossier `n8n_batch-ops_diagnose/` (5 fichiers Python sans rapport). Identifié dans l'audit `3c40e43` comme dette à éponger avant le premier deploy. Bloc court (<1h), risque mesuré : il faut updater quelques tests `portfolioAnalytics.test.js` qui pointent vers ces champs.
+**Recommandation par défaut sur « on continue »** : **§10 — rate limiting applicatif sur `/api/*`**. Repo est désormais nettoyé (audit éponge dans `1c789cb`+cleanup à venir), CI active, déploiement Vercel préparé. Le prochain renforcement utile avant le premier `vercel --prod` est la protection des handlers contre les abus (60-rpm Finnhub free se vide vite si quelqu'un automatise des appels). Bloc court (~1h): middleware shared rate-limiter (en mémoire par IP, fenêtre glissante, header `Retry-After`), appliqué à tous les `/api/*` côté `vite.config.js` et clonage dans les handlers Vercel (chaque function a son propre limiteur in-memory — pas idéal en cluster, mais cohérent avec le reste de l'architecture serverless stateless).
 
 Candidats restants (du plus close-the-loop au plus structurel) :
 
-- Cleanup audit F4 + F5 (mock data + code mort + dossier python orphelin).
+- §10 — rate limiting applicatif `/api/*` (par IP, fenêtre glissante, retour 429 + `Retry-After`).
 - §11 close-the-loop — déclenchement effectif `vercel --prod` (action utilisateur, Claude ne lance pas).
 - §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel). Optionnellement, V2 du panel `PeersComparisonPanel` : ajouter une colonne P/E ou market cap récupérée en parallèle via N appels `/api/fundamentals`.
-- §10 — rate limiting applicatif (`/api/*` middleware), security headers déjà en place via `vercel.json`. Peut s'attaquer une fois la CI verte sur main.
+- §4 visualisations — volume sous la courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown, volatilité.
 - §8-9 — DB managée (Supabase/Neon Postgres) + auth + multi-utilisateur. Gros chantier; à attaquer après que le déploiement Vercel ait été validé en preview au moins une fois par l'opérateur.
+- §1 — splits/dividendes intégrés aux courbes, pre/after-hours, multi-devises.
+- §13 — politique confidentialité, mentions légales, conservation des données.
 - §4 visualisations — volume sous la courbe (extension `PriceHistoryChart`), comparaison benchmark/multi-actifs (panel séparé), candlesticks OHLC, drawdown réel, volatilité réalisée, corrélation.
 - §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
 - §7 — alertes volume inhabituel, notifications navigateur (Notification API), jobs planifiés serveur, résumé quotidien.

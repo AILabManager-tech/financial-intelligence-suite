@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { AlertTriangle, Brain, RefreshCw, Wifi } from "lucide-react";
-import { PORTFOLIO_ASSETS } from "./data/portfolioData";
 import TopPerformers from "./components/TopPerformers";
 import SafetyBadge from "./components/SafetyBadge";
 import AssetTable from "./components/AssetTable";
@@ -144,7 +143,7 @@ function HeaderSubtitle() {
 
 export default function App() {
   const [selected, setSelected] = useState(null);
-  const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets(PORTFOLIO_ASSETS));
+  const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets([]));
   const [watchlistAssets, setWatchlistAssets] = useState(() => loadWatchlistAssets([]));
   const [favoriteSymbols, setFavoriteSymbols] = useState(() => loadFavoriteSymbols([]));
   const [alerts, setAlerts] = useState(() => loadAlerts());
