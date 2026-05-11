@@ -3,7 +3,6 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "npm install --omit=optional",
   "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':!root-copy/' ':!financial-intelligence-suite/' ':!*.pdf'",
   "functions": {
     "api/*.js": {

@@ -21,8 +21,10 @@ cd "$REPO_ROOT"
 echo "[fis-deploy] $(date -Iseconds) — start (cwd=$REPO_ROOT, ref=$(git rev-parse --short HEAD))"
 
 # 1. Install dependencies cleanly from the lockfile.
+# NB: do NOT add --omit=optional — rollup needs @rollup/rollup-linux-x64-gnu
+# (an optional native binding) to build the production bundle.
 echo "[fis-deploy] installing dependencies"
-npm ci --omit=optional
+npm ci
 
 # 2. Build the production bundle into dist/.
 echo "[fis-deploy] building dist/"
