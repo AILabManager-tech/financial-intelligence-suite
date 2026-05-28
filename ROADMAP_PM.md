@@ -26,8 +26,11 @@ Au-delà de la **Phase 5**, la valeur marginale décroît pour un PM solo ou pet
 | M0.2 Multi-portefeuilles | UI sélecteur de portefeuille en header + CRUD mandat (nom, client, devise base, date d'ouverture). Table `portfolios` déjà présente, juste exposer. | M | M0.1 |
 | M0.3 Transactions + lots fiscaux | Table `transactions` (achat/vente/dividende/frais/apport/retrait), engine FIFO/LIFO/spec ID, P&L réalisé par lot, frais imputés | L | M0.1, M0.2 |
 | M0.4 Multi-devises + FX | Table `fx_rates` (daily), nouveau provider FX (ECB ou exchangerate.host gratuit), conversion P&L vers devise base du portefeuille. Chaque position porte sa devise native. | L | M0.1, M0.2 |
+| M0.5 Préférences UI (Niveau 1) | Store `uiPreferences` (localStorage) + hook `useUiPreferences` + route `/settings` avec toggles on/off des 8 panels de la fiche actif + 6 sections du dashboard + 4 réglages d'affichage (densité, période défaut, devise d'affichage, locale). Défauts = tout visible (zéro régression UX). Généralise le pattern existant `themeStore` / `ThemeSelector`. Niveaux 2 (drag-and-drop) et 3 (toggle par KPI) écartés volontairement comme scope creep — à reconsidérer après Phase 1. | M | M0.2 |
 
-**Livrable phase 0** : un PM peut gérer N mandats clients, chacun en CAD ou USD, avec historique transactionnel complet et P&L réalisé + latent.
+**Livrable phase 0** : un PM peut gérer N mandats clients, chacun en CAD ou USD, avec historique transactionnel complet et P&L réalisé + latent. Chaque PM choisit son layout d'affichage parmi les panels disponibles.
+
+**Convention transverse à inscrire dans `CLAUDE.md`** : tout nouveau panel ajouté après M0.5 doit déclarer sa clé `uiPreferences` correspondante (défaut `true`) et être lu conditionnellement par son containeur (`IntelligenceCard`, dashboard, etc.). Coût marginal par feature : +2 lignes dans le store + 1 ligne dans le containeur.
 
 ---
 
@@ -144,14 +147,14 @@ Au-delà de la **Phase 5**, la valeur marginale décroît pour un PM solo ou pet
 
 ## Chemin recommandé sans détour
 
-1. **Phase 0 entière** (M0.1 → M0.4) — ~10-15 j. Socle, rien d'autre n'a de sens avant.
+1. **Phase 0 entière** (M0.1 → M0.5) — ~13-18 j. Socle, rien d'autre n'a de sens avant.
 2. **Phase 1 jusqu'à M1.6** — ~12 j. Returns, TWR/MWR annualisés, vol/drawdown, Sharpe/Sortino/Calmar, beta, benchmark. À ce stade l'app est déjà un outil PM utilisable solo.
 3. **Phase 1 reste (M1.7 → M1.11)** — ~10 j. Attribution Brinson + alpha/IR/tracking error + VaR/CVaR + distribution returns + stats opérationnelles. À ce stade le factsheet mensuel est complet.
 4. **Phase 2 entière + M3.1 (canadien) + M4.1 (PDF)** — ~10 j. C'est le point où l'app devient livrable à un vrai client.
 5. **Phase 5** seulement si tu vises un cabinet multi-PM. Sinon s'arrêter à Phase 4 et capitaliser.
 6. **Phases 6-7-8** — à challenger projet par projet, pas en bloc.
 
-**Total Phase 0 → 4 minimal viable PM** : ~45-55 jours de dev solo, ~22 nouveaux modules feature × couche, ~150 fichiers neufs cohérents avec le pattern actuel. Aucune refonte des features existantes (le pattern garantit l'isolation).
+**Total Phase 0 → 4 minimal viable PM** : ~48-58 jours de dev solo, ~23 nouveaux modules feature × couche, ~160 fichiers neufs cohérents avec le pattern actuel. Aucune refonte des features existantes (le pattern garantit l'isolation).
 
 ---
 
