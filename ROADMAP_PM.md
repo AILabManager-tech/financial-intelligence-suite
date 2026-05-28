@@ -35,15 +35,22 @@ Au-delà de la **Phase 5**, la valeur marginale décroît pour un PM solo ou pet
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M1.1 TWR (time-weighted return) | Calcul GIPS à partir des snapshots + flux d'apports/retraits. Remplace l'actuel `PortfolioPerformanceChart` valeur brute. | M | M0.3 |
-| M1.2 MWR / IRR | Newton-Raphson sur flux nets. Complète M1.1, surtout pour mandats avec apports irréguliers. | S | M1.1 |
-| M1.3 Volatilité réalisée + drawdown max | À partir des historiques Twelve Data déjà en cache. Fenêtres 30 j / 90 j / 1 y / inception. | M | M1.1 |
-| M1.4 Sharpe + Sortino + Calmar | Taux sans risque configurable (BoC ou 10y Treasury). Formules pures côté serveur. | S | M1.3 |
-| M1.5 Beta portefeuille + corrélation inter-positions | Matrice de corrélation Pearson sur returns daily. Beta vs benchmark choisi. | M | M1.3, M1.6 |
-| M1.6 Benchmark (S&P 500, TSX, MSCI ACWI, custom) | Choix par portefeuille. Courbe overlay. Alpha = TWR – TWR(benchmark). | M | M1.1 |
-| M1.7 Attribution de performance | Décomposition Brinson-Hood-Beebower (sélection + allocation + interaction) par secteur et par devise. | L | M1.6, M0.4 |
+| M1.0 Returns standards | CAGR (rendement annualisé), return cumulé, matrice par période (1J, 1S, MTD, 3M, 6M, YTD, 1A, 3A, 5A, depuis création), table monthly returns. Base de tout factsheet PM. | M | M0.3 |
+| M1.1 TWR (time-weighted return) | Calcul GIPS à partir des snapshots + flux d'apports/retraits. Affichage en annualisé (TWR(geo) ^ (252/n) – 1) et cumulé. Remplace l'actuel `PortfolioPerformanceChart` valeur brute. | M | M1.0 |
+| M1.2 MWR / IRR (money-weighted return) | Newton-Raphson sur flux nets. Annualisé. Complète M1.1, surtout pour mandats avec apports irréguliers (différence TWR-MWR = effet timing client vs effet PM). | S | M1.1 |
+| M1.3 Volatilité annualisée + drawdown max + duration | σ × √252 sur returns daily. Fenêtres 30 j / 90 j / 1 y / inception. Drawdown max + duration de récupération en jours. | M | M1.1 |
+| M1.4 Sharpe + Sortino + Calmar (annualisés) | Taux sans risque configurable (BoC overnight ou 10y Treasury). Sortino utilise la downside deviation. Calmar = CAGR / |max DD|. Formules pures côté serveur. | S | M1.3 |
+| M1.5 Beta portefeuille + corrélation inter-positions | Régression OLS returns daily vs benchmark. Matrice de corrélation Pearson entre positions. | M | M1.3, M1.6 |
+| M1.6 Benchmark (S&P 500, TSX, MSCI ACWI, custom blend) | Choix par portefeuille. Courbe overlay sur graphe portefeuille. Excess return = TWR(porte) – TWR(bench), annualisé. | M | M1.1 |
+| M1.7 Attribution de performance Brinson | Décomposition Brinson-Hood-Beebower : sélection + allocation + interaction. Par secteur et par devise. | L | M1.6, M0.4 |
+| M1.8 Ratios étendus vs benchmark | Jensen's alpha (CAPM), tracking error annualisé, information ratio, R², up capture / down capture ratio, Treynor ratio. C'est le cœur d'un factsheet institutionnel. | M | M1.5, M1.6 |
+| M1.9 Distribution des returns | Best/worst day/month/quarter/year. Pourcentage de mois positifs. Skewness + kurtosis (queues lourdes). Heatmap monthly returns (table couleur années × mois). | M | M1.0 |
+| M1.10 VaR / CVaR | VaR paramétrique (normale) + VaR historique (empirique). Horizons 1 J et 10 J, niveaux 95 % et 99 %. CVaR (Expected Shortfall) pour la queue. | M | M1.3 |
+| M1.11 Stats portefeuille opérationnelles | Turnover annualisé (somme |trades| / 2 / AUM moyen), average holding period par position, hit ratio (% trades gagnants), win/loss ratio (gain moyen / perte moyenne), yield-on-cost (dividendes annuels / coût de base). | M | M0.3 |
 
-**Livrable phase 1** : reporting de risque/rendement aux standards CFA Institute. L'app devient un vrai outil PM.
+**Livrable phase 1** : factsheet portefeuille aux standards GIPS / CFA Institute. À ce stade, tous les chiffres qu'un PM met sur la fiche mensuelle d'un mandat sont calculables et exportables. L'app devient un vrai outil PM.
+
+**Ratios écartés volontairement** : Omega ratio, Kappa ratio, Modified Sharpe, Burke ratio — folklore académique, jamais demandés en pratique. Si un client les réclame, ajouter au cas par cas.
 
 ---
 
@@ -138,12 +145,13 @@ Au-delà de la **Phase 5**, la valeur marginale décroît pour un PM solo ou pet
 ## Chemin recommandé sans détour
 
 1. **Phase 0 entière** (M0.1 → M0.4) — ~10-15 j. Socle, rien d'autre n'a de sens avant.
-2. **Phase 1 jusqu'à M1.6** — ~10 j. À ce stade l'app est déjà un outil PM utilisable solo.
-3. **Phase 2 entière + M3.1 (canadien) + M4.1 (PDF)** — ~10 j. C'est le point où l'app devient livrable à un vrai client.
-4. **Phase 5** seulement si tu vises un cabinet multi-PM. Sinon s'arrêter à Phase 4 et capitaliser.
-5. **Phases 6-7-8** — à challenger projet par projet, pas en bloc.
+2. **Phase 1 jusqu'à M1.6** — ~12 j. Returns, TWR/MWR annualisés, vol/drawdown, Sharpe/Sortino/Calmar, beta, benchmark. À ce stade l'app est déjà un outil PM utilisable solo.
+3. **Phase 1 reste (M1.7 → M1.11)** — ~10 j. Attribution Brinson + alpha/IR/tracking error + VaR/CVaR + distribution returns + stats opérationnelles. À ce stade le factsheet mensuel est complet.
+4. **Phase 2 entière + M3.1 (canadien) + M4.1 (PDF)** — ~10 j. C'est le point où l'app devient livrable à un vrai client.
+5. **Phase 5** seulement si tu vises un cabinet multi-PM. Sinon s'arrêter à Phase 4 et capitaliser.
+6. **Phases 6-7-8** — à challenger projet par projet, pas en bloc.
 
-**Total Phase 0 → 4 minimal viable PM** : ~35-45 jours de dev solo, ~15 nouveaux modules feature × couche, ~100 fichiers neufs cohérents avec le pattern actuel. Aucune refonte des features existantes (le pattern garantit l'isolation).
+**Total Phase 0 → 4 minimal viable PM** : ~45-55 jours de dev solo, ~22 nouveaux modules feature × couche, ~150 fichiers neufs cohérents avec le pattern actuel. Aucune refonte des features existantes (le pattern garantit l'isolation).
 
 ---
 
