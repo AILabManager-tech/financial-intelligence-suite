@@ -4,15 +4,18 @@
 
 ## Au démarrage de chaque session
 
-1. Lire `REPRISE_CHECKPOINT.md` (état post-dernière livraison + candidats prochain bloc).
-2. Lire la section « Synthèse état actuel » de `PLATFORM_CHECKLIST.md` pour la vue d'ensemble.
-3. Si l'utilisateur dit « on continue / continue / poursuis », **choisir SEUL le bloc le plus logique** parmi les candidats listés dans `REPRISE_CHECKPOINT.md` puis l'achever (code + tests + lint + build + docs + commit). Ne JAMAIS poser « axe A vs B vs C ? ». Voir `feedback_no_decision_outsourcing.md` (mémoire projet).
+1. Lire `ROADMAP_PM.md` — **cap produit (source de vérité de la direction)**. Modèle de phases `P0.x → P9.x`, ordonné par la vision « studio personnalisable » (cf. ses 4 piliers). Réécrit 2026-05-29.
+2. Lire `REPRISE_CHECKPOINT.md` (état post-dernière livraison + candidats prochain bloc, exprimés en IDs `P0.x`).
+3. Lire la section « Synthèse état actuel » de `PLATFORM_CHECKLIST.md` pour la vue d'ensemble (inventaire granulaire).
+4. Si l'utilisateur dit « on continue / continue / poursuis », **choisir SEUL le bloc le plus logique** parmi les candidats listés dans `REPRISE_CHECKPOINT.md` puis l'achever (code + tests + lint + build + docs + commit). Ne JAMAIS poser « axe A vs B vs C ? ». Voir `feedback_no_decision_outsourcing.md` (mémoire projet).
 
 ## Principes intangibles
 
-- **Factualité stricte** : zéro mock visible, zéro prédiction présentée comme fait, zéro analyse sans donnée sourcée. Champ absent ⇒ masqué (pas de `0`, pas de `n/d` inventé).
+- **Factualité stricte** : zéro mock visible, zéro prédiction présentée comme fait, zéro analyse sans donnée sourcée. Champ absent ⇒ masqué (pas de `0`, pas de `n/d` inventé). Les simulations « what-if » (roadmap P2) sont autorisées MAIS toujours étiquetées « hypothèse à partir de données factuelles, pas un conseil ».
+- **Palette de couleurs gelée** : la palette FIS (`@theme` dans `src/index.css` : 5 surfaces `--color-surface-950→600`, accents `emerald/amber/rose/blue/violet`, `gold`, `body-text`) est **intangible**. Le travail est structurel (back-end, layout, agencement), jamais chromatique. Aucune nouvelle couleur en dur sans validation explicite. Thèmes optionnels `matrix/cyber/light` inchangés. Cf. ROADMAP_PM « Contrainte transversale ».
 - **Provenance par champ** : chaque KPI / item porte son propre `{value, source, asOf}`. Jamais « source globale » par panel.
 - **Modularité par feature × par couche** : voir tableau ci-dessous. Ajouter une nouvelle source de données ⇒ ~7 fichiers neufs, zéro modif des features existantes (sauf orchestrateurs centraux : `vite.config.js`, `App.jsx`, `IntelligenceCard.jsx`).
+- **Registre de features (à partir de la livraison de P0.1)** : toute feature montable (panel fiche actif, section dashboard, widget) doit s'enregistrer dans `src/core/featureRegistry.js` (id + catégorie + surface + défaut visible). Un panel non enregistré n'est pas montable — le registre est la porte d'entrée unique. Le rendu est piloté par `featureRegistry` + `layoutStore`, pas par un empilage en dur.
 - **Sécurité** : `.env` jamais affiché, jamais committé. Tokens jamais leakés dans les messages d'erreur (vérifié par test `expect(JSON.stringify(result)).not.toContain('secret-token')`). Validation des inputs côté API (symbol uppercase + trim, limits clampés).
 - **Efficacité** : cache TTL côté serveur ajusté à la volatilité (quotes 20s, news 30 min, fundamentals 6h, earnings 6h, dividendes 24h, history 6h, search 10 min, health 60s). `AbortController` côté client pour annuler les fetches obsolètes au changement de symbole.
 - **Optimisation** : un panel = un fetch par changement de symbole, pas de refetch redondant. Tests rapides (cible : full suite < 2s).

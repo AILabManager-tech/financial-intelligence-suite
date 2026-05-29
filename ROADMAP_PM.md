@@ -1,176 +1,232 @@
 # Roadmap PM — Financial Intelligence Suite
 
-> Plan de transformation de l'app, aujourd'hui terminal d'analyse par titre, en outil de gestion de portefeuille pro multi-mandats. Ordonné par dépendances. Pattern feature × couche pour chaque module (server + tests + api + service + tests + formatters + tests + panel) tel que défini dans `CLAUDE.md`.
+> **Vision (réécrite 2026-05-29).** Faire de l'app un **studio d'analyse financière personnalisable à 100 %**. Un noyau fort autour duquel n'importe quel gestionnaire attache, retire et **positionne librement** les features qu'il veut — quelles que soient ses habitudes. On livre un squelette + un catalogue de features ; le gestionnaire compose son interface. Un onglet Paramètres permet d'activer/désactiver chaque feature et de la placer où il veut. Un moteur d'agencement (déterministe d'abord, suggestion IA ensuite) propose un placement optimal d'après les features cochées et le profil. Un simulateur de démo (« 100 000 $ investis en 2017 dans X → valeur aujourd'hui ») sert les démonstrations client sur données factuelles avec hypothèses fictives clairement étiquetées. Tout doit être lisible au premier coup d'œil, graphique **et** tableau, par une personne non familière du domaine.
 >
-> Effort en jours-équivalent solo : S = 1 j, M = 2-3 j, L = 4-7 j, XL = 8+ j.
+> Pattern feature × couche pour chaque module (server + tests + api + service + tests + formatters + tests + panel) tel que défini dans `CLAUDE.md`. Effort en jours-équivalent solo : S = 1 j, M = 2-3 j, L = 4-7 j, XL = 8+ j.
 >
-> Source de vérité du périmètre : `PLATFORM_CHECKLIST.md` pour le détail des cases [ ] / [~] / [x]. Cette roadmap regroupe les manques en modules cohérents et leur donne un ordre d'exécution.
+> Source de vérité du périmètre granulaire : `PLATFORM_CHECKLIST.md`. Cette roadmap regroupe les manques en modules cohérents et leur donne un ordre d'exécution **dicté par la vision ci-dessus**, pas par la complétude analytique.
 
-## Diagnostic de départ (2026-05-27)
+## Les 4 piliers de la vision (par quoi tout est jugé)
 
-L'app est aujourd'hui un excellent terminal d'analyse par titre (10 panels factuels par fiche actif : quotes, history, fundamentals, news, earnings, dividends, analyst ratings, SEC filings, peers, Buffett DCF). Côté gestion de portefeuille, le socle est mince : un seul portefeuille, mono-devise, sans lots fiscaux, sans benchmark, sans mesures de risque réelles, sans rapport client. Un PM qui veut gérer 5 mandats clients ne peut pas s'en servir aujourd'hui.
+1. **Noyau + features attachables** — modularité totale. *Déjà en place architecturalement* (pattern feature × couche, 10 panels isolés). Le squelette existe ; il faut le rendre pilotable.
+2. **Personnalisation 100 %** — activer/désactiver chaque feature + la **positionner librement**. C'est le cœur produit, promu en Phase 0.
+3. **Agencement optimal** — l'app propose un layout. Déterministe (règles + presets) d'abord, **suggestion IA en surcouche opt-in** ensuite (jamais bloquante).
+4. **Simulateur de démo + lisibilité néophyte** — what-if historique factuel, restitution graphique + tableau compréhensible sans expertise.
 
-Les vraies mesures de risque (volatilité, drawdown, Sharpe) ont été retirées au commit `96e057a` parce qu'elles étaient inertes / non câblées dans l'UI. À reconstruire **réelles** à partir des historiques Twelve Data déjà en cache.
+## Contrainte transversale — palette de couleurs gelée (intangible)
 
-## Note de challenge
+**La palette de couleurs FIS actuelle est conservée à l'identique. On n'y touche pas.** Le travail de cette roadmap est **structurel** (back-end, registre, layout, agencement) — jamais chromatique.
 
-Au-delà de la **Phase 5**, la valeur marginale décroît pour un PM solo ou petit cabinet. Les phases 6-8 ne sont rentables que si l'app sert un cabinet multi-PM ou est commercialisée. Avant chaque phase tardive, repasser le filtre `CLAUDE.md` : « ça fait fonctionner un projet, ou ça documente juste une exécution ? ».
+- Source de vérité : le bloc `@theme` de `src/index.css` (lignes 4-15) — 5 teintes de surface (`--color-surface-950` → `--color-surface-600`), 5 accents (`emerald`, `amber`, `rose`, `blue`, `violet`), `gold`, `body-text`. Ces valeurs sont **gelées**.
+- L'architecture le garantit nativement : les couleurs sont 100 % en variables CSS, **découplées du layout**. Réagencer/activer/positionner des features ne modifie aucune valeur chromatique. Les composants consomment `--color-*` (ou les utilities Tailwind correspondantes), jamais de nouvelles couleurs en dur.
+- Les thèmes optionnels existants (`matrix` / `cyber` / `light`, via `:root[data-theme="…"]`) restent **tels quels** — ni ajout, ni retrait, ni modification, sauf demande explicite.
+- Règle pour toute nouvelle feature : réutiliser exclusivement les variables/teintes existantes. **Aucune nouvelle couleur introduite** sans validation explicite de l'utilisateur.
+
+## Diagnostic de départ (2026-05-29)
+
+L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels factuels par fiche actif (quotes, history, fundamentals, news, earnings, dividends, analyst ratings, SEC filings, peers, Buffett DCF), provenance par champ, zéro mock, ~370 tests, CI verte, déploiement Vercel préparé.
+
+**Ce qui sert la vision, déjà là** : l'architecture modulaire feature × couche (le « noyau + features » est une réalité technique, pas un vœu) ; `themeStore` + `ThemeSelector` (modèle exact d'un store de préférences versionné, persisté, à défaut no-op) ; `IntelligenceCard` qui agrège les panels.
+
+**Ce qui manque pour la vision** : les panels sont **empilés en dur** dans `IntelligenceCard.jsx` (lignes 378-392) et le dashboard — aucune sélection, aucun repositionnement. Pas de registre de features. Pas de profils. Pas de moteur d'agencement. Pas de simulateur. La personnalisation n'existe pas encore.
+
+**Écart vs le code mort retiré** : les vraies mesures de risque (volatilité, drawdown, Sharpe) avaient été retirées au commit `96e057a` car inertes. À reconstruire **réelles** — mais désormais comme **features attachables du catalogue**, pas comme du contenu figé.
+
+## Note de challenge (à relire avant chaque phase)
+
+- Filtre `CLAUDE.md` permanent : « ça fait fonctionner un projet, ou ça documente juste une exécution ? ».
+- **Sur l'agencement IA** : un LLM qui génère du layout est non-déterministe, lent et coûte un appel par réorganisation. 90 % du résultat s'obtient avec des **presets par profil + règles de placement**. L'IA est un *bonus suggestif* par-dessus un système déterministe qui marche toujours — jamais la fondation. Cf. Phase 1.
+- **Sur les features PM lourdes** (attribution Brinson, VaR…) : utiles, mais ce sont des **entrées de catalogue**, pas le cœur. Elles viennent après le noyau personnalisable et son socle de données. Ne pas inverser l'ordre sous prétexte de « complétude analytique ».
+- **Au-delà de la Phase 6**, valeur marginale décroissante pour un PM solo / petit cabinet. Les phases multi-utilisateur ne sont rentables qu'en cabinet multi-PM ou en produit commercialisé.
 
 ---
 
-## Phase 0 — Socle modèle (bloquant pour tout le reste)
+## Phase 0 — Le noyau personnalisable (cœur de la vision, priorité absolue)
+
+> Rien d'autre n'a de sens avant. C'est ce qui transforme un terminal figé en studio composable.
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M0.1 Migrations SQLite versionnées | Système `migrations/NNN_*.sql` + runner; remplacer le `CREATE TABLE IF NOT EXISTS` au démarrage | S | — |
-| M0.2 Multi-portefeuilles | UI sélecteur de portefeuille en header + CRUD mandat (nom, client, devise base, date d'ouverture). Table `portfolios` déjà présente, juste exposer. | M | M0.1 |
-| M0.3 Transactions + lots fiscaux | Table `transactions` (achat/vente/dividende/frais/apport/retrait), engine FIFO/LIFO/spec ID, P&L réalisé par lot, frais imputés | L | M0.1, M0.2 |
-| M0.4 Multi-devises + FX | Table `fx_rates` (daily), nouveau provider FX (ECB ou exchangerate.host gratuit), conversion P&L vers devise base du portefeuille. Chaque position porte sa devise native. | L | M0.1, M0.2 |
-| M0.5 Préférences UI (Niveau 1) | Store `uiPreferences` (localStorage) + hook `useUiPreferences` + route `/settings` avec toggles on/off des 8 panels de la fiche actif + 6 sections du dashboard + 4 réglages d'affichage (densité, période défaut, devise d'affichage, locale). Défauts = tout visible (zéro régression UX). Généralise le pattern existant `themeStore` / `ThemeSelector`. Niveaux 2 (drag-and-drop) et 3 (toggle par KPI) écartés volontairement comme scope creep — à reconsidérer après Phase 1. | M | M0.2 |
+| P0.1 Registre de features | Catalogue central `src/core/featureRegistry.js` : chaque feature (panel fiche actif, section dashboard, widget) déclare `{id, label, catégorie, surface ('asset'\|'dashboard'), composant, deps données, défaut visible}`. Source unique de vérité. Les 10 panels existants y sont enregistrés sans modifier leur code interne. | M | — |
+| P0.2 Store de préférences + layout | `src/services/layoutStore.js` généralisant `themeStore` (localStorage versionné `fis:layout:v1`, `load/save/reset`, défaut = tout visible dans l'ordre canonique → **zéro régression**). Persiste par feature : visibilité on/off, ordre, colonnage (1/2 colonnes). | M | P0.1 |
+| P0.3 Rendu piloté par le layout | Refactor de `IntelligenceCard.jsx` et du dashboard : remplacer l'empilage en dur par un rendu qui lit `featureRegistry` + `layoutStore`. **Seul gros touch d'orchestrateur central.** Les panels eux-mêmes ne changent pas (le pattern garantit l'isolation). Défaut identique au pixel à l'actuel. | L | P0.1, P0.2 |
+| P0.4 Onglet Paramètres | Route `/settings` : liste des features par catégorie avec toggle on/off **+ réorganisation par glisser-déposer** (drag-and-drop, `@dnd-kit` ou natif HTML5). Aperçu live. Bouton « réinitialiser ». C'est l'interface que le gestionnaire utilise pour composer son espace. | L | P0.3 |
+| P0.5 Profils de gestionnaire (presets) | Bundles nommés livrés d'origine : « Vue d'ensemble », « Value investor », « Trader », « Conseiller client ». Chaque profil = un set de features + un layout préconfigurés, applicable en 1 clic, puis ajustable. Base de l'accessibilité « ça marche dès l'ouverture ». Profils custom sauvegardables. | M | P0.4 |
 
-**Livrable phase 0** : un PM peut gérer N mandats clients, chacun en CAD ou USD, avec historique transactionnel complet et P&L réalisé + latent. Chaque PM choisit son layout d'affichage parmi les panels disponibles.
+**Livrable Phase 0** : n'importe quel gestionnaire ouvre l'app, choisit un profil (ou compose), active/désactive et **repositionne** ses features, et retrouve son espace à la prochaine session. Le noyau est composable.
 
-**Convention transverse à inscrire dans `CLAUDE.md`** : tout nouveau panel ajouté après M0.5 doit déclarer sa clé `uiPreferences` correspondante (défaut `true`) et être lu conditionnellement par son containeur (`IntelligenceCard`, dashboard, etc.). Coût marginal par feature : +2 lignes dans le store + 1 ligne dans le containeur.
+**Convention transverse (à inscrire dans `CLAUDE.md`)** : toute feature ajoutée après P0.1 **doit** s'enregistrer dans `featureRegistry` (id + catégorie + surface + défaut visible). Coût marginal : +1 entrée de registre. Un panel non enregistré n'est pas montable — le registre devient la porte d'entrée unique.
 
 ---
 
-## Phase 1 — Mesures portefeuille factuelles
+## Phase 1 — Agencement optimal (le « l'IA positionne », fait correctement)
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M1.0 Returns standards | CAGR (rendement annualisé), return cumulé, matrice par période (1J, 1S, MTD, 3M, 6M, YTD, 1A, 3A, 5A, depuis création), table monthly returns. Base de tout factsheet PM. | M | M0.3 |
-| M1.1 TWR (time-weighted return) | Calcul GIPS à partir des snapshots + flux d'apports/retraits. Affichage en annualisé (TWR(geo) ^ (252/n) – 1) et cumulé. Remplace l'actuel `PortfolioPerformanceChart` valeur brute. | M | M1.0 |
-| M1.2 MWR / IRR (money-weighted return) | Newton-Raphson sur flux nets. Annualisé. Complète M1.1, surtout pour mandats avec apports irréguliers (différence TWR-MWR = effet timing client vs effet PM). | S | M1.1 |
-| M1.3 Volatilité annualisée + drawdown max + duration | σ × √252 sur returns daily. Fenêtres 30 j / 90 j / 1 y / inception. Drawdown max + duration de récupération en jours. | M | M1.1 |
-| M1.4 Sharpe + Sortino + Calmar (annualisés) | Taux sans risque configurable (BoC overnight ou 10y Treasury). Sortino utilise la downside deviation. Calmar = CAGR / |max DD|. Formules pures côté serveur. | S | M1.3 |
-| M1.5 Beta portefeuille + corrélation inter-positions | Régression OLS returns daily vs benchmark. Matrice de corrélation Pearson entre positions. | M | M1.3, M1.6 |
-| M1.6 Benchmark (S&P 500, TSX, MSCI ACWI, custom blend) | Choix par portefeuille. Courbe overlay sur graphe portefeuille. Excess return = TWR(porte) – TWR(bench), annualisé. | M | M1.1 |
-| M1.7 Attribution de performance Brinson | Décomposition Brinson-Hood-Beebower : sélection + allocation + interaction. Par secteur et par devise. | L | M1.6, M0.4 |
-| M1.8 Ratios étendus vs benchmark | Jensen's alpha (CAPM), tracking error annualisé, information ratio, R², up capture / down capture ratio, Treynor ratio. C'est le cœur d'un factsheet institutionnel. | M | M1.5, M1.6 |
-| M1.9 Distribution des returns | Best/worst day/month/quarter/year. Pourcentage de mois positifs. Skewness + kurtosis (queues lourdes). Heatmap monthly returns (table couleur années × mois). | M | M1.0 |
-| M1.10 VaR / CVaR | VaR paramétrique (normale) + VaR historique (empirique). Horizons 1 J et 10 J, niveaux 95 % et 99 %. CVaR (Expected Shortfall) pour la queue. | M | M1.3 |
-| M1.11 Stats portefeuille opérationnelles | Turnover annualisé (somme |trades| / 2 / AUM moyen), average holding period par position, hit ratio (% trades gagnants), win/loss ratio (gain moyen / perte moyenne), yield-on-cost (dividendes annuels / coût de base). | M | M0.3 |
+| P1.1 Moteur d'agencement déterministe | `src/core/layoutEngine.js` (pur, testable) : à partir des features cochées + le profil, génère un ordre + colonnage selon des règles (KPI de pilotage en haut, panels documentaires en bas, groupage par catégorie, panels lourds en pleine largeur, responsive). C'est **ça** qui « positionne optimalement » — fiable, instantané, gratuit. | M | P0.5 |
+| P1.2 Suggestion IA opt-in | Bouton « Suggérer un agencement » : un appel LLM (Qwen-gencore local dispo chez gear-code, ou provider configuré) reçoit la liste des features + le profil et **propose** un layout que l'utilisateur accepte/ajuste. **Fallback déterministe (P1.1) si l'IA échoue/lente/absente.** Jamais bloquant, jamais automatique. Garde-fou : sortie validée contre le registre (aucune feature inventée). | M | P1.1 |
 
-**Livrable phase 1** : factsheet portefeuille aux standards GIPS / CFA Institute. À ce stade, tous les chiffres qu'un PM met sur la fiche mensuelle d'un mandat sont calculables et exportables. L'app devient un vrai outil PM.
+**Livrable Phase 1** : l'utilisateur clique « optimise mon espace » et obtient un agencement sensé sans rien glisser à la main — par règles, avec l'IA en bonus.
 
-**Ratios écartés volontairement** : Omega ratio, Kappa ratio, Modified Sharpe, Burke ratio — folklore académique, jamais demandés en pratique. Si un client les réclame, ajouter au cas par cas.
+**Challenge intégré** : si P1.1 suffit en pratique (retours utilisateurs), P1.2 reste optionnel et peut être gelé. Ne pas faire de l'IA un prérequis.
 
 ---
 
-## Phase 2 — Décisions et conviction
+## Phase 2 — Simulateur de démo (argument de vente client)
+
+> Livrable tôt **parce qu'il ne dépend que de l'historique de prix déjà disponible** (Twelve Data `/api/history`), pas du socle transactionnel. C'est l'outil de démonstration.
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M2.1 Journal d'investissement par position | Thèse d'achat (markdown), conviction 1-5, prix cible, stop, date de revue prévue | M | M0.2 |
-| M2.2 Contraintes / compliance par portefeuille | Max % par titre, max % par secteur, exclusions ESG (liste noire), devise base, cash floor. Validations bloquantes lors de l'ajout / import. | M | M0.2 |
-| M2.3 Rééquilibrage avec coûts | Suggestion d'ordres pour ramener au target en minimisant les transactions + frais simulés. Respecte les contraintes M2.2. | M | M2.2, M0.3 |
-| M2.4 Watchlists thématiques | Plusieurs watchlists nommées (ex : « Energy à surveiller », « Candidats Buffett ») au lieu d'une seule. | S | — |
-| M2.5 Notes datées par actif | Timeline de notes courtes (audit decision-making). | S | — |
+| P2.1 Moteur what-if historique | `server/simulation.js` + `src/utils/simulationCalculator.js` (purs) : « montant M investi à la date D dans le symbole S → valeur aujourd'hui », à partir de l'historique factuel. Rendement total, annualisé, courbe de croissance. Données réelles, hypothèse fictive **étiquetée**. | M | — (réutilise history existant) |
+| P2.2 Portefeuille de démo multi-positions | Composer un portefeuille fictif (N positions, dates et montants d'entrée), projeter sa valeur agrégée dans le temps, comparer à un benchmark (ex. S&P 500). Pour démos client convaincantes. | M | P2.1 |
+| P2.3 Restitution claire graphique + tableau | Feature de catalogue `SimulationPanel` : courbe de croissance + table année par année + KPIs (capital initial, valeur finale, gain, CAGR). Libellés accessibles néophyte. **Bandeau permanent « Simulation — hypothèse à partir de données factuelles, pas un conseil ».** | M | P2.1, P0.1 |
+
+**Livrable Phase 2** : un gestionnaire fait une démo à un prospect — « si vous aviez investi 100 000 $ en 2017 dans ce titre, vous auriez X aujourd'hui » — graphique + tableau, clair pour un néophyte, factuellement honnête.
 
 ---
 
-## Phase 3 — Données complémentaires
+## Phase 3 — Socle de données PM (prérequis des features analytiques)
+
+> Ce qui était la « Phase 0 » de l'ancien roadmap. Désormais en **support des features analytiques**, pas en tête : un gestionnaire peut déjà composer, présenter et simuler sans ça.
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M3.1 Couverture canadienne | Symboles `.TO` / `.V` / `.CN`, dividendes en CAD avec brut/net, filings SEDAR+ via le portail CSA, exclusion retenue 15 % USA pour comptes enregistrés. | L | M0.4 |
-| M3.2 Macro (taux, inflation, courbe) | BoC + Fed via FRED API (gratuit). Panel macro global. Tags d'exposition macro par secteur. | M | — |
-| M3.3 ESG ratings | MSCI ESG (payant) ou Sustainalytics ou fallback Yahoo `esgScores` (gratuit, limité). Panel ESG par fiche actif. | M | — |
-| M3.4 Options chain + grecques | Finnhub `/stock/option-chain` (premium) ou Yahoo. Delta / gamma / theta / vega. Positions options dans portefeuille. | XL | M0.3 |
-| M3.5 Insider transactions | Finnhub `/stock/insider-transactions` (US) + SEDI scraping (CA). Panel insider activity. | M | — |
-| M3.6 Short interest + put/call ratio | Indicateurs sentiment marché. Finnhub `/stock/short-interest`. | S | — |
+| P3.1 Migrations SQLite versionnées | Système `migrations/NNN_*.sql` + runner ; remplace le `CREATE TABLE IF NOT EXISTS` au démarrage. Déverrouille proprement tous les ajouts de tables suivants. | S | — |
+| P3.2 Multi-portefeuilles | Sélecteur de portefeuille en header + CRUD mandat (nom, client, devise base, date d'ouverture). Exposer la table `portfolios` déjà présente. | M | P3.1 |
+| P3.3 Transactions + lots fiscaux | Table `transactions` (achat/vente/dividende/frais/apport/retrait), engine FIFO/LIFO/spec ID, P&L réalisé par lot, frais imputés. | L | P3.1, P3.2 |
+| P3.4 Multi-devises + FX | Table `fx_rates` (daily), provider FX gratuit (ECB / exchangerate.host), conversion P&L vers devise base. Chaque position porte sa devise native. | L | P3.1, P3.2 |
+
+**Livrable Phase 3** : un PM gère N mandats clients, chacun en CAD ou USD, historique transactionnel complet, P&L réalisé + latent.
 
 ---
 
-## Phase 4 — Exploitation client
+## Phase 4 — Features PM analytiques attachables (catalogue)
+
+> Les mesures du roadmap institutionnel original, devenues des **entrées du registre** qu'on coche au besoin. Chacune respecte le pattern et déclare sa clé de registre.
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M4.1 Reporting PDF mensuel/trimestriel | Génération via `@react-pdf/renderer` ou typst. Sections : sommaire, positions, perf vs benchmark, attribution, commentaire PM. Template personnalisable par mandat. | L | M1.7 |
-| M4.2 Snapshots fiscaux annuels | Export structuré pour T5008 (CA) ou 1099-B (US) : gains/pertes par lot par année fiscale. | M | M0.3 |
-| M4.3 Commentaire PM par période | Champ markdown daté, attaché au snapshot mensuel. Intégré au PDF M4.1. | S | M4.1 |
-| M4.4 Portail client lecture-seule | URL signée temporaire par mandat. Vue read-only des positions + perf + dernier PDF. | M | M4.1, M5.1 |
+| P4.1 Returns standards | CAGR, return cumulé, matrice par période (1J→inception), monthly returns. Base de tout factsheet. | M | P3.3 |
+| P4.2 TWR (time-weighted return) | Calcul GIPS à partir des snapshots + flux. Annualisé + cumulé. Remplace la valeur brute actuelle. | M | P4.1 |
+| P4.3 MWR / IRR | Newton-Raphson sur flux nets, annualisé. Effet timing client vs effet PM. | S | P4.2 |
+| P4.4 Volatilité + drawdown + duration | σ × √252, fenêtres 30j/90j/1a/inception, max DD + duration de récupération. | M | P4.2 |
+| P4.5 Sharpe + Sortino + Calmar | Taux sans risque configurable. Formules pures côté serveur. | S | P4.4 |
+| P4.6 Benchmark (S&P 500, TSX, MSCI ACWI, custom) | Choix par portefeuille, overlay sur graphe, excess return annualisé. | M | P4.2 |
+| P4.7 Beta + corrélation inter-positions | Régression OLS vs benchmark, matrice Pearson. | M | P4.4, P4.6 |
+| P4.8 Ratios étendus vs benchmark | Jensen's alpha, tracking error, information ratio, R², up/down capture, Treynor. Cœur du factsheet institutionnel. | M | P4.7 |
+| P4.9 Attribution Brinson | Sélection + allocation + interaction, par secteur et devise. | L | P4.6, P3.4 |
+| P4.10 Distribution des returns | Best/worst périodes, % mois positifs, skewness/kurtosis, heatmap monthly. | M | P4.1 |
+| P4.11 VaR / CVaR | VaR paramétrique + historique, horizons 1j/10j, 95/99 %, CVaR. | M | P4.4 |
+| P4.12 Stats opérationnelles | Turnover, holding period moyen, hit ratio, win/loss, yield-on-cost. | M | P3.3 |
+
+**Livrable Phase 4** : le catalogue contient un factsheet complet aux standards GIPS / CFA — mais chaque gestionnaire choisit lesquels afficher.
+
+**Ratios écartés volontairement** : Omega, Kappa, Modified Sharpe, Burke — folklore académique, jamais demandés. Au cas par cas si un client les réclame.
 
 ---
 
-## Phase 5 — Infrastructure multi-utilisateur
-
-> Bloquant pour passer d'outil solo à outil cabinet. Avant la Phase 5, l'app reste single-tenant local.
+## Phase 5 — Décisions, conviction et données complémentaires (catalogue)
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M5.1 Auth | Sessions httpOnly + bcrypt, ou Clerk/Auth0 (build vs buy). Pas de SSO au début. | L | — |
-| M5.2 Rôles | PM (full), client (read-only sur ses mandats), compliance (read-all + audit logs), admin. | M | M5.1 |
-| M5.3 Audit trail | Table `audit_log` : chaque mutation portefeuille horodatée avec user_id + diff JSON. | M | M5.1 |
-| M5.4 Multi-tenant (cabinet) | Table `organizations`, scope toutes les requêtes par `org_id`. Un PM = un user dans une org. | L | M5.2 |
-| M5.5 Migration SQLite → Postgres | Si M5.4 livré, SQLite local devient insuffisant. Supabase ou Postgres self-hosted. | L | M5.4 |
+| P5.1 Journal d'investissement par position | Thèse d'achat (markdown), conviction 1-5, prix cible, stop, date de revue. | M | P3.2 |
+| P5.2 Contraintes / compliance par portefeuille | Max % titre/secteur, exclusions ESG, cash floor. Validations bloquantes à l'ajout/import. | M | P3.2 |
+| P5.3 Rééquilibrage avec coûts | Suggestion d'ordres au target en minimisant transactions + frais, respecte P5.2. | M | P5.2, P3.3 |
+| P5.4 Watchlists thématiques | Plusieurs watchlists nommées au lieu d'une seule. | S | — |
+| P5.5 Couverture canadienne | `.TO`/`.V`/`.CN`, dividendes CAD brut/net, SEDAR+, retenue 15 % US comptes enregistrés. | L | P3.4 |
+| P5.6 Macro (taux, inflation, courbe) | BoC + Fed via FRED (gratuit). Panel macro global, tags d'exposition. | M | — |
+| P5.7 ESG / insider / short interest | Fallback Yahoo `esgScores` gratuit ; Finnhub insider + short interest. Panels de catalogue. | M | — |
 
 ---
 
-## Phase 6 — Automatisation et observabilité (valeur marginale décroissante en solo)
+## Phase 6 — Exploitation client
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M6.1 Jobs cron serveur | Snapshots quotidiens auto, refresh FX, refresh fundamentals à expiration. Via Vercel Cron ou GitHub Actions scheduled. | M | M0.1 |
-| M6.2 Alertes email / SMS / webhook | Resend ou Mailgun pour email, Twilio pour SMS. Les alertes config déjà existantes deviennent serveur-side. | M | M6.1, M5.1 |
-| M6.3 Rate limiting + cache partagé | Upstash Redis (serverless) pour cache TTL partagé entre fonctions Vercel + rate limit par IP / user. | M | M5.1 |
-| M6.4 Logs structurés + tracing | OpenTelemetry + provider (Honeycomb / Axiom free tier). Spans par requête API. | M | — |
-| M6.5 Monitoring uptime + errors | UptimeRobot (gratuit) pour endpoints, Sentry free tier pour frontend. | S | — |
+| P6.1 Reporting PDF mensuel/trimestriel | `@react-pdf/renderer` ou typst. Sommaire, positions, perf vs benchmark, attribution, commentaire PM. Template par mandat. | L | P4.9 |
+| P6.2 Snapshots fiscaux annuels | Export T5008 (CA) / 1099-B (US) : gains/pertes par lot par année fiscale. | M | P3.3 |
+| P6.3 Commentaire PM par période | Champ markdown daté, attaché au snapshot, intégré au PDF. | S | P6.1 |
+| P6.4 Portail client lecture-seule | URL signée temporaire par mandat, vue read-only positions + perf + dernier PDF. | M | P6.1, P7.1 |
 
 ---
 
-## Phase 7 — Intelligence avancée (à challenger fortement)
+## Phase 7 — Infrastructure multi-utilisateur (seulement si cabinet / produit)
 
-> Avant d'attaquer cette phase : est-ce que tu vas vraiment l'utiliser, ou est-ce que QuantConnect / Backtrader / Portfolio Visualizer fait déjà mieux ? Beaucoup de PM achètent ces outils plutôt que de les rebuilder.
+> Bloquant pour passer d'outil solo à outil cabinet. Avant, l'app reste single-tenant local.
 
-| Module | Périmètre | Effort | Valeur réelle |
+| Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| M7.1 Backtesting de stratégies | Engine d'événements sur historiques OHLCV. Règles d'entrée / sortie codées. | XL | Faible — outils dédiés mieux |
-| M7.2 Optimisation Markowitz / Black-Litterman | Frontière efficiente. Min variance / max Sharpe. Allocation tangente. | L | Moyenne — utile en pédagogie client |
-| M7.3 Stress tests / scénarios macro | Scénarios paramétrables (taux +200 pb, baisse pétrole, etc.). P&L choqué par position. | L | Élevée si M3.2 livré |
-| M7.4 LLM résumé news + Q&A factuel | Qwen-gencore local (déjà disponible chez gear-code) résume daily news par titre. Q&A grounded sur les données portefeuille avec garde-fous anti-hallucination. | L | Moyenne — gadget si pas grounded |
-| M7.5 Détection d'anomalies portefeuille | Concentration excessive, drift > 2σ, corrélation grimpante, dividende coupé. | M | Élevée |
+| P7.1 Auth | Sessions httpOnly + bcrypt, ou Clerk/Auth0. Pas de SSO au début. | L | — |
+| P7.2 Rôles | PM (full), client (read-only), compliance (read-all + audit), admin. | M | P7.1 |
+| P7.3 Audit trail | Table `audit_log` : chaque mutation horodatée, user_id + diff JSON. | M | P7.1 |
+| P7.4 Multi-tenant | Table `organizations`, scope par `org_id`. | L | P7.2 |
+| P7.5 Migration SQLite → Postgres | Supabase ou Postgres self-hosted, si P7.4 livré. | L | P7.4 |
 
 ---
 
-## Phase 8 — UX paroxystique (cosmétique, faire en dernier ou jamais)
+## Phase 8 — Automatisation, observabilité, conformité (close-the-loop)
+
+| Module | Périmètre | Effort | Dépend de |
+|---|---|---|---|
+| P8.1 Rate limiting applicatif `/api/*` | Middleware par IP, fenêtre glissante, 429 + `Retry-After`. Protège le quota Finnhub free avant la prod. Bloc court (~1h). | S | — |
+| P8.2 Jobs cron serveur | Snapshots quotidiens, refresh FX, refresh fundamentals. Vercel Cron ou GH Actions. | M | P3.1 |
+| P8.3 Alertes email / webhook | Resend/Mailgun ; rendre serveur-side les alertes config existantes. | M | P8.2, P7.1 |
+| P8.4 Observabilité | Logs structurés, OpenTelemetry, Sentry free tier, UptimeRobot. | M | — |
+| P8.5 Conformité | Politique confidentialité, mentions légales, conservation, consentement (Loi 25). | M | — |
+
+---
+
+## Phase 9 — UX paroxystique (cosmétique, en dernier ou jamais)
 
 | Module | Périmètre | Effort | Note |
 |---|---|---|---|
-| M8.1 Candlesticks OHLC + indicateurs techniques (RSI, MACD, Bollinger) | Recharts ou lightweight-charts (TradingView). | L | Un PM regarde rarement ça, attention à pas devenir un outil de day-trader |
-| M8.2 i18n FR / EN | `react-intl` ou `lingui`. Toutes les strings extraites. | M | Indispensable si tu vises hors-Québec |
-| M8.3 Densité d'affichage + raccourcis clavier | Mode compact pour PM expérimentés. `j` / `k` navigation, `/` recherche. | M | — |
-| M8.4 UX mobile responsive | Reflows panels, navigation tab bar. Pas d'app native. | L | Un PM bosse à 90 % au desktop, ROI faible |
-| M8.5 Dark / light mode propre | Finir le pass Tailwind (utilities hardcodées `text-white` / `text-slate-300`). | M | Cosmétique pure |
+| P9.1 Candlesticks OHLC + indicateurs (RSI, MACD, Bollinger) | lightweight-charts. | L | Attention à ne pas devenir un outil de day-trader |
+| P9.2 i18n FR / EN | `react-intl` ou `lingui`. | M | Indispensable hors-Québec |
+| P9.3 Densité + raccourcis clavier | Mode compact, `j`/`k`/`/`. | M | Recoupe les préférences P0 |
+| P9.4 Finition thème clair (optionnel) | Neutraliser les utilities Tailwind hardcodées **uniquement** pour le thème optionnel `light`. **Ne touche PAS la palette FIS par défaut** (gelée, cf. contrainte transversale). | M | Cosmétique pure, opt-in |
 
 ---
 
 ## Chemin recommandé sans détour
 
-1. **Phase 0 entière** (M0.1 → M0.5) — ~13-18 j. Socle, rien d'autre n'a de sens avant.
-2. **Phase 1 jusqu'à M1.6** — ~12 j. Returns, TWR/MWR annualisés, vol/drawdown, Sharpe/Sortino/Calmar, beta, benchmark. À ce stade l'app est déjà un outil PM utilisable solo.
-3. **Phase 1 reste (M1.7 → M1.11)** — ~10 j. Attribution Brinson + alpha/IR/tracking error + VaR/CVaR + distribution returns + stats opérationnelles. À ce stade le factsheet mensuel est complet.
-4. **Phase 2 entière + M3.1 (canadien) + M4.1 (PDF)** — ~10 j. C'est le point où l'app devient livrable à un vrai client.
-5. **Phase 5** seulement si tu vises un cabinet multi-PM. Sinon s'arrêter à Phase 4 et capitaliser.
-6. **Phases 6-7-8** — à challenger projet par projet, pas en bloc.
+1. **Phase 0 entière** (P0.1 → P0.5) — ~16-20 j. Le noyau personnalisable. C'est ce qui réalise la vision ; rien d'autre n'a de sens avant.
+2. **Phase 1** (P1.1, P1.2) — ~5 j. L'agencement « optimal », déterministe puis IA suggestive.
+3. **Phase 2** (P2.1 → P2.3) — ~7 j. Le simulateur de démo. À ce stade l'app **démontre** sa valeur à un prospect, est composable et auto-agencée. C'est le premier jalon vendable.
+4. **Phase 3 + premières features Phase 4** (P3.1 → P4.6) — ~25 j. Socle données + returns/TWR/MWR/vol/Sharpe/benchmark attachables. L'app devient un vrai outil PM.
+5. **Phase 4 reste + Phase 5** — selon les besoins réels des gestionnaires ciblés.
+6. **Phase 6** — point où l'app est livrable à un client (PDF + fiscal).
+7. **Phase 7** — seulement si cabinet multi-PM. Sinon s'arrêter à Phase 6 et capitaliser.
+8. **Phases 8-9** — close-the-loop infra/conformité (P8.1 rate limiting à faire avant le premier `vercel --prod`) et cosmétique, à challenger pièce par pièce.
 
-**Total Phase 0 → 4 minimal viable PM** : ~48-58 jours de dev solo, ~23 nouveaux modules feature × couche, ~160 fichiers neufs cohérents avec le pattern actuel. Aucune refonte des features existantes (le pattern garantit l'isolation).
+**Jalon « studio composable démontrable »** (Phases 0 → 2) : ~28-32 jours. C'est le MVP de **ta** vision — un noyau personnalisable, auto-agencé, avec simulateur de démo — avant même d'empiler les mesures PM lourdes.
 
 ---
 
+## Modules livrés
+
+```
+P0.1 [x] livré 2026-05-29 — registre central de features (src/core/featureRegistry.js + 16 tests)
+        8 panels asset + 8 sections dashboard enregistrés. Champ componentKey = string
+        stable (mapping -> composant déféré au rendu P0.3). Données pures, immuables (gel
+        profond), helpers get/by-surface/by-category/default-layout. 395 tests verts.
+```
+
 ## Prochain bloc recommandé
 
-**M0.1 (migrations SQLite versionnées)** comme amorce immédiate avant M0.3 (lots fiscaux). Effort S, déverrouille toute la Phase 0 proprement. Sans système de migration, ajouter `transactions` puis `fx_rates` puis `audit_log` etc. via `CREATE TABLE IF NOT EXISTS` au démarrage devient ingérable au bout de 3 ajouts.
+**P0.2 (store de préférences + layout)** — `src/services/layoutStore.js` généralisant `themeStore` (localStorage versionné `fis:layout:v1`, `load/save/reset`, défaut = `getDefaultLayout()` du registre → zéro régression). Persiste visibilité/ordre/colonnage par feature. Dépend de P0.1 (livré). Effort M.
+
+Séquence Phase 0 : ~~P0.1 registre~~ ✅ → **P0.2 store** → P0.3 rendu piloté (le refactor central) → P0.4 onglet Paramètres + drag-and-drop → P0.5 profils.
 
 ## Mise à jour de ce document
 
 À chaque module livré :
 1. Cocher dans `PLATFORM_CHECKLIST.md` (source de vérité granulaire).
-2. Marquer le module ici avec `[x]` devant son ID + date de livraison + commit SHA court.
+2. Marquer le module ici avec `[x]` + date de livraison + commit SHA court.
 3. Mettre à jour `REPRISE_CHECKPOINT.md` avec les candidats du prochain bloc.
 
-Format de tracking par module (à ajouter en suffixe quand livré) :
+Format de tracking par module (suffixe quand livré) :
 
 ```
-M0.1 [x] livré 2026-MM-DD `abc1234` — migrations SQLite versionnées
+P0.1 [x] livré 2026-MM-DD `abc1234` — registre de features
 ```

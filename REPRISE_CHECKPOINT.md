@@ -43,6 +43,8 @@ Working tree propre (seuls les 3 fichiers ignorés intentionnels listés plus ba
 
 Branche: `main`. Aucun push à faire sans demande explicite.
 
+> **Mise à jour 2026-05-29** — le tip réel de `main` est `9d74acc` (commits docs roadmap ajoutés depuis : `b44f5b8`, `5f6c6f4`, `9d74acc`). Le working tree n'est **PAS** propre : ~19 fichiers modifiés + fichiers neufs non suivis (`src/services/buffettReadiness.js` + test, `src/components/AssetTable.test.jsx`) — **bloc WIP en cours, non commité**, à clarifier avant tout nouveau bloc (possible session parallèle). Ne pas committer/écraser sans confirmation utilisateur.
+
 ## Modules ajoutés depuis le checkpoint précédent (1f884eb)
 
 Commits feature livrés sur `main` depuis le checkpoint précédent :
@@ -333,24 +335,37 @@ Choix architecturaux:
 
 L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de session. Choisir le bloc le plus logique et exécuter jusqu'à livraison complète. Mémoire: `feedback_no_decision_outsourcing.md`.
 
-**Recommandation par défaut sur « on continue »** : **§10 — rate limiting applicatif sur `/api/*`**. Repo est désormais nettoyé (audit éponge dans `1c789cb`+cleanup à venir), CI active, déploiement Vercel préparé. Le prochain renforcement utile avant le premier `vercel --prod` est la protection des handlers contre les abus (60-rpm Finnhub free se vide vite si quelqu'un automatise des appels). Bloc court (~1h): middleware shared rate-limiter (en mémoire par IP, fenêtre glissante, header `Retry-After`), appliqué à tous les `/api/*` côté `vite.config.js` et clonage dans les handlers Vercel (chaque function a son propre limiteur in-memory — pas idéal en cluster, mais cohérent avec le reste de l'architecture serverless stateless).
+> **Réaligné 2026-05-29 sur `ROADMAP_PM.md` (modèle de phases P0.x).** La vision a été reformulée : **studio d'analyse personnalisable à 100 %** (noyau + features attachables, activer/désactiver + positionner librement, agencement optimal déterministe puis IA suggestive, simulateur de démo what-if, lisibilité néophyte). Les candidats ci-dessous suivent désormais les IDs `P0.x` du roadmap, pas l'ancien modèle « § ». L'ancien cap (`§10 rate limiting`) est rétrogradé en `P8.1` (close-the-loop infra, avant le premier `vercel --prod`, plus la priorité).
 
-Candidats restants (du plus close-the-loop au plus structurel) :
+> **P0.1 livré 2026-05-29** — registre central `src/core/featureRegistry.js` + `featureRegistry.test.js` (16 tests). 8 panels asset + 8 sections dashboard enregistrés sans toucher leur code. `componentKey` = string stable (mapping→composant déféré à P0.3). Données pures gelées en profondeur + helpers (`getFeatureById`, `getFeaturesBySurface`, `groupFeaturesByCategory`, `getDefaultLayout`). Suite : 379 → **395 tests verts**, lint + build verts. Commits chirurgicaux (WIP étranger laissé intact, non stagé).
 
-- §10 — rate limiting applicatif `/api/*` (par IP, fenêtre glissante, retour 429 + `Retry-After`).
-- §11 close-the-loop — déclenchement effectif `vercel --prod` (action utilisateur, Claude ne lance pas).
-- §5 close-the-loop — fallback Twelve Data sur fondamentaux (V2) pour couvrir les non-US (V1 Finnhub stricte déjà livrée; le panel Buffett rend explicitement « Données insuffisantes » sur les non-US, c'est le déclencheur naturel). Optionnellement, V2 du panel `PeersComparisonPanel` : ajouter une colonne P/E ou market cap récupérée en parallèle via N appels `/api/fundamentals`.
-- §4 visualisations — volume sous la courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown, volatilité.
-- §8-9 — DB managée (Supabase/Neon Postgres) + auth + multi-utilisateur. Gros chantier; à attaquer après que le déploiement Vercel ait été validé en preview au moins une fois par l'opérateur.
-- §1 — splits/dividendes intégrés aux courbes, pre/after-hours, multi-devises.
-- §13 — politique confidentialité, mentions légales, conservation des données.
-- §4 visualisations — volume sous la courbe (extension `PriceHistoryChart`), comparaison benchmark/multi-actifs (panel séparé), candlesticks OHLC, drawdown réel, volatilité réalisée, corrélation.
-- §1 — splits/dividendes (intégrer aux courbes), pre/after-hours, multi-devises, mapping officiel symboles/exchanges.
-- §7 — alertes volume inhabituel, notifications navigateur (Notification API), jobs planifiés serveur, résumé quotidien.
-- §3 — P&L réalisé, gestion frais, devises, lots fiscaux, multi-portefeuilles.
-- §6 — raffiner le thème Clair (utilities Tailwind hardcodées à neutraliser), densité, devise, langue.
-- §11 déploiement Vercel — **soulevé explicitement par l'utilisateur en fin de session précédente**. Bloc de ~2h: `vercel.json`, gating SQLite si filesystem read-only, ENV vars dashboard, README court de procédure. Ne PAS lancer `vercel deploy` automatiquement (hard-stop) — préparer la config et laisser le user déclencher.
-- §8-9 — DB managée (Supabase/Neon Postgres), migrations versionnées, auth, multi-utilisateur (gros chantier; à attaquer après le déploiement Vercel pour avoir une cible de prod claire).
+**Recommandation par défaut sur « on continue »** : **P0.2 — store de préférences + layout** (`src/services/layoutStore.js`). Généralise `themeStore` : localStorage versionné `fis:layout:v1`, `load/save/reset`, défaut = `getDefaultLayout(surface)` du registre P0.1 → **zéro régression**. Persiste par feature : visibilité on/off, ordre, colonnage. Effort M, dépend de P0.1 (livré). Pur data + localStorage, testable en isolation comme `themeStore` → bon candidat autonomie. ⚠️ WIP étranger toujours non commité dans le tree (cf. § Etat git) — ne pas l'écraser.
+
+Candidats restants (ordre = chemin recommandé du roadmap) :
+
+**Phase 0 — noyau personnalisable (priorité absolue, dans l'ordre) :**
+- **P0.1** registre de features (`src/core/featureRegistry.js`) — *recommandation par défaut, ci-dessus*.
+- **P0.2** store de préférences + layout (`src/services/layoutStore.js`, généralise `themeStore` : visibilité/ordre/colonnage, localStorage versionné, défaut tout-visible).
+- **P0.3** rendu piloté par le layout (refactor `IntelligenceCard.jsx` + dashboard : lire registre + layoutStore au lieu de l'empilage en dur ll. 378-392 ; défaut identique au pixel). Seul gros touch d'orchestrateur.
+- **P0.4** onglet Paramètres `/settings` : toggles on/off + drag-and-drop de repositionnement + aperçu live + reset.
+- **P0.5** profils de gestionnaire (presets « Vue d'ensemble / Value / Trader / Conseiller client », applicables en 1 clic, custom sauvegardables).
+
+**Phase 1 — agencement optimal :**
+- **P1.1** moteur d'agencement déterministe (`src/core/layoutEngine.js`, règles de placement) ; **P1.2** suggestion IA opt-in (Qwen-gencore local), fallback déterministe, jamais bloquante.
+
+**Phase 2 — simulateur de démo (argument de vente, livrable tôt, ne dépend que de l'historique existant) :**
+- **P2.1** moteur what-if historique ; **P2.2** portefeuille de démo multi-positions vs benchmark ; **P2.3** `SimulationPanel` graphique + tableau, bandeau « hypothèse, pas un conseil ».
+
+**Phases 3-4 — socle données PM puis features analytiques attachables :**
+- **P3.1** migrations SQLite versionnées (`migrations/NNN_*.sql` + runner) ; **P3.2** multi-portefeuilles ; **P3.3** transactions + lots fiscaux ; **P3.4** multi-devises + FX.
+- **P4.x** returns / TWR / MWR / vol-drawdown / Sharpe-Sortino-Calmar / benchmark / beta / ratios étendus / attribution Brinson / distribution / VaR-CVaR / stats opérationnelles — chacune = feature de catalogue.
+
+**Phases 5-9 — selon besoins réels :**
+- **P5.x** journal/compliance/rééquilibrage/watchlists thématiques + données complémentaires (canadien, macro FRED, ESG/insider/short).
+- **P6.x** exploitation client (PDF mensuel, snapshots fiscaux T5008/1099-B, commentaire PM, portail client read-only).
+- **P7.x** multi-utilisateur (auth, rôles, audit trail, multi-tenant, Postgres) — seulement si cabinet.
+- **P8.x** close-the-loop infra : **P8.1 rate limiting `/api/*`** (ex-§10, à faire avant le premier `vercel --prod`), cron, alertes serveur, observabilité, conformité Loi 25. Déclenchement `vercel --prod` = action utilisateur (hard-stop).
+- **P9.x** UX paroxystique (candlesticks/indicateurs, i18n FR/EN, densité, finition thème clair *optionnel* — **palette FIS par défaut jamais touchée**).
 
 Le mot magique `FIS-REPRISE-FD01815` reste valide pour relire ce fichier au prochain `claude`.
 
