@@ -248,7 +248,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (489 tests)
+- [x] `npm test` vert (502 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI

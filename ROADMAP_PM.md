@@ -272,7 +272,18 @@ P2.3 [x] livré 2026-05-30 `cfb5ebf` — SimulationPanel (feature surface asset,
         aux layouts existants sans migration). Vérifié live sur MSFT (données Twelve Data réelles ;
         free tier ~18 mois → date de départ antérieure aux données = entrée gracieuse au 1er point
         dispo, étiqueté honnêtement). 489 tests verts.
+P2.2 [x] livré 2026-05-30 — portefeuille de démo multi-positions vs benchmark. CLÔT LA PHASE 2.
+          P2.2a `38afd57` — agrégation pure (src/utils/portfolioSimulation.js + 9 tests) :
+                 aggregateCurves (somme N courbes sur axe de dates commun, report avant), 
+                 simulateDemoPortfolio (× simulateInvestment par position + KPIs + courbe),
+                 excessReturnPct. Aligne des séries de longueurs/dates différentes.
+          P2.2b `1838917` — route /demo + DemoPortfolioPanel : formulaire multi-positions, fetch
+                 résilient, double courbe Portefeuille vs benchmark (SPY), tableau par position,
+                 bandeau hypothèse. Vérifié live : AAPL+MSFT 10k chacun depuis 2021 → 22,6k$ (+13%),
+                 −12,2 pts vs SPY. 502 tests verts.
 ```
+
+> **🏁 PHASE 2 COMPLÈTE (2026-05-30) — MVP « studio composable démontrable » atteint.** Les Phases 0→2 (noyau personnalisable + agencement déterministe + simulateur de démo) constituent le premier jalon vendable de la roadmap. L'app se compose, s'auto-agence et démontre sa valeur sur données factuelles. 502 tests verts.
 
 > **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée.
 
@@ -290,11 +301,11 @@ P2.3 [x] livré 2026-05-30 `cfb5ebf` — SimulationPanel (feature surface asset,
 
 ## Prochain bloc recommandé
 
-**P2.2 (portefeuille de démo multi-positions)** — étend le simulateur d'un seul titre à N positions. Composer un portefeuille fictif (N symboles, dates et montants d'entrée), projeter sa valeur agrégée dans le temps (somme des courbes par position via `simulateInvestment`), comparer à un benchmark (ex. S&P 500 / `SPY`). Réutilise le calculateur P2.1 par position + une agrégation. Restitution graphique + tableau, bandeau hypothèse. Effort M, dépend de P2.1 (livré). C'est ce qui rend la démo client vraiment convaincante (« votre portefeuille vs le marché »).
+**P3.1 (migrations SQLite versionnées)** — première brique de Phase 3 (socle de données PM). Système `migrations/NNN_*.sql` + runner ; remplace le `CREATE TABLE IF NOT EXISTS` au démarrage. Déverrouille proprement tous les ajouts de tables suivants (multi-portefeuilles P3.2, transactions/lots fiscaux P3.3, FX P3.4). Effort S, dépend de rien. **NB priorité** : maintenant que le MVP démontrable (Phases 0→2) est atteint, Phase 3 fait passer l'app de « terminal + studio » à « vrai outil PM » (multi-mandats, transactions, P&L réalisé). À arbitrer vs polissage des phases livrées selon les retours d'usage.
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
-Séquence : 🏁 Phase 0 complète · Phase 1 : ~~P1.1 moteur~~ ✅, P1.2 IA **gelé** · Phase 2 : ~~P2.1 calculateur~~ ✅ → ~~P2.3 panneau~~ ✅ → **P2.2 portefeuille démo multi-positions + benchmark**.
+Séquence : 🏁 **Phases 0→2 complètes (MVP)** · Phase 1 P1.2 IA **gelé** · Prochaine : **Phase 3 (P3.1 migrations → P3.2 multi-portefeuilles → P3.3 transactions/lots → P3.4 FX)**.
 
 ## Mise à jour de ce document
 

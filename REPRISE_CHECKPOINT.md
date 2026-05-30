@@ -65,6 +65,8 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 >
 > Tests : 370 → **395 verts**. Reprise propre, prêt pour le prochain bloc (candidats Phase 0 ci-dessous).
 
+> **🏁 P2.2 livré — PHASE 2 COMPLÈTE — MVP « studio composable démontrable » atteint — 2026-05-30 (niveau 3 MISSION).** Portefeuille de démo multi-positions. `P2.2a 38afd57` : agrégation pure `src/utils/portfolioSimulation.js` (+9 tests) — `aggregateCurves` (somme N courbes sur axe de dates commun + report avant), `simulateDemoPortfolio`, `excessReturnPct`. `P2.2b 1838917` : route `/demo` + `DemoPortfolioPanel` (formulaire multi-positions, double courbe Portefeuille vs benchmark SPY, tableau, bandeau hypothèse). **Vérifié live** : AAPL+MSFT 10k/2021 → 22,6k$ (+13%), −12,2 pts vs SPY. Suite 489 → **502 tests verts**, lint+build verts. `main` 31 commits devant `origin`, non poussé. **Phases 0→2 (MVP roadmap) toutes complètes. Prochain bloc : P3.1 — migrations SQLite versionnées (1re brique Phase 3, socle données PM).**
+
 > **P2.1 + P2.3 livrés — 2026-05-30 (niveau 3 MISSION).** Simulateur de démo what-if (« premier jalon vendable » de la roadmap). `P2.1 63f00ea` : calculateur pur `src/utils/simulationCalculator.js` (+10 tests) — `simulateInvestment(points, {amount, startDate})` → parts, valeur finale, rendement, CAGR, courbe ; pur/déterministe. `P2.3 cfb5ebf` : `SimulationPanel` (feature surface asset, enregistrée au registre → montée auto par le pipeline, réconciliation P0.2 l'ajoute aux layouts existants) — formulaire montant+date → `/api/history` → calc → KPIs + courbe Recharts + **bandeau permanent « pas un conseil »**. **Vérifié live sur MSFT** (données Twelve Data réelles). Suite 475 → **489 tests verts**, lint+build verts. `main` 28 commits devant `origin`, non poussé. **P1.2 (IA agencement) GELÉ** (optionnel, prise prête). **Prochain bloc : P2.2 — portefeuille de démo multi-positions + benchmark.**
 >
 > ⚠️ Données : « 100k en 2017 » nécessite un historique long (Twelve Data payant). Free tier ~18 mois → entrée gracieuse au plus ancien point, jamais de valeur inventée.
@@ -376,7 +378,7 @@ L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de se
 
 > **P0.1 livré 2026-05-29** — registre central `src/core/featureRegistry.js` + `featureRegistry.test.js` (16 tests). 8 panels asset + 8 sections dashboard enregistrés sans toucher leur code. `componentKey` = string stable (mapping→composant déféré à P0.3). Données pures gelées en profondeur + helpers (`getFeatureById`, `getFeaturesBySurface`, `groupFeaturesByCategory`, `getDefaultLayout`). Suite : 379 → **395 tests verts**, lint + build verts. Commits chirurgicaux (WIP étranger laissé intact, non stagé).
 
-**Recommandation par défaut sur « on continue »** : **P2.2 — portefeuille de démo multi-positions + benchmark**. Étendre le simulateur d'un titre à N positions : composer un portefeuille fictif (N symboles + dates + montants), agréger les courbes par position (`simulateInvestment` × N puis somme alignée par date), comparer à un benchmark (`SPY`/S&P 500). Restitution graphique + tableau, bandeau hypothèse. Réutilise P2.1. Effort M. C'est l'argument de démo « votre portefeuille vs le marché ». NB : prévoir une fonction d'agrégation pure et testable (alignement des dates entre séries de longueurs différentes). **P1.2 (IA) reste gelé** — prise prête, à rouvrir si besoin. NB toujours ouvert : rendu colonnage 1/2 dans `LayoutSurface`.
+**Recommandation par défaut sur « on continue »** : **P3.1 — migrations SQLite versionnées** (1re brique Phase 3, socle données PM). Système `migrations/NNN_*.sql` + runner remplaçant le `CREATE TABLE IF NOT EXISTS` au démarrage (cf. `server/portfolioRepository.js`). Déverrouille proprement les tables suivantes (multi-portefeuilles P3.2, transactions/lots P3.3, FX P3.4). Effort S. ⚠️ Garder le **principe IA transverse** (prise prête) et la palette gelée. **P1.2 (IA agencement) reste gelé**. NB toujours ouvert : rendu colonnage 1/2 dans `LayoutSurface`. **Arbitrage possible** : maintenant que le MVP (Phases 0→2) est atteint, le user voudra peut-être d'abord polir/évaluer l'existant (il a dit vouloir analyser le comportement final avant de décider de l'IA) plutôt qu'attaquer Phase 3 — confirmer le cap au démarrage.
 
 Candidats restants (ordre = chemin recommandé du roadmap) :
 
@@ -394,9 +396,9 @@ Candidats restants (ordre = chemin recommandé du roadmap) :
 **Phase 2 — simulateur de démo (premier jalon vendable) :**
 - ~~**P2.1** calculateur what-if (`src/utils/simulationCalculator.js`)~~ ✅ livré.
 - ~~**P2.3** `SimulationPanel` (graphique + tableau + bandeau « pas un conseil »)~~ ✅ livré.
-- **P2.2** portefeuille de démo multi-positions vs benchmark — *recommandation par défaut, ci-dessus*.
+- ~~**P2.2** portefeuille de démo multi-positions vs benchmark~~ ✅ livré — **🏁 PHASE 2 COMPLÈTE (MVP)**.
 
-**Phases 3-4 — socle données PM puis features analytiques attachables :**
+**Phase 3 — socle données PM (prochaine, recommandation P3.1 ci-dessus) :**
 - **P3.1** migrations SQLite versionnées (`migrations/NNN_*.sql` + runner) ; **P3.2** multi-portefeuilles ; **P3.3** transactions + lots fiscaux ; **P3.4** multi-devises + FX.
 - **P4.x** returns / TWR / MWR / vol-drawdown / Sharpe-Sortino-Calmar / benchmark / beta / ratios étendus / attribution Brinson / distribution / VaR-CVaR / stats opérationnelles — chacune = feature de catalogue.
 
