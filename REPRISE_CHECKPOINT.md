@@ -116,6 +116,7 @@ Ne pas inclure sans demande explicite:
 - Ne jamais faire `git push` sans demande explicite de l'utilisateur.
 - Respecter le port local du projet: `20000`.
 - Si le serveur local doit tourner: `npm run dev -- --host 127.0.0.1 --port 20000`.
+- **Principe transverse IA (décision user 2026-05-30)** : l'intégration d'IA reste **100% optionnelle** — le user décidera après avoir analysé le comportement final du programme. MAIS **garder en permanence une « prise » prête à l'accueillir**. Concrètement : ne jamais coupler en dur ce qui pourrait être produit par une IA ; toujours passer par une frontière propre. Ex. agencement : un suggéreur IA = un frère de `optimizeLayout` (P1.1) qui produit un layout, le **valide contre le registre** (réconciliation `layoutStore`), puis appelle `apply()`. P1.1 reste le fallback déterministe. Tout nouveau module doit préserver ce genre de couture (entrée/sortie de données pures, point d'injection clair) pour qu'une IA puisse s'y brancher sans refonte.
 
 ## Validation connue au checkpoint
 
