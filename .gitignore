@@ -28,3 +28,4 @@ data/*.sqlite-*
 *.njsproj
 *.sln
 *.sw?
+.vercel
