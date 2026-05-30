@@ -59,6 +59,13 @@ import ThemeSelector from "./components/ThemeSelector";
 import LayoutSurface from "./components/LayoutSurface";
 import SettingsPage from "./components/SettingsPage";
 import DemoPortfolioPanel from "./components/DemoPortfolioPanel";
+import TransactionJournalPanel from "./components/TransactionJournalPanel";
+import {
+  addTransaction,
+  loadTransactions,
+  removeTransaction,
+  saveTransactions,
+} from "./services/transactionStore";
 import { useLayout } from "./core/layoutContext";
 import { applyTheme, loadTheme } from "./services/themeStore";
 
@@ -176,6 +183,7 @@ export default function App() {
   const [portfolioList, setPortfolioList] = useState(() => loadPortfolioList());
   const activeId = portfolioList.activeId;
   const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets([], portfolioList.activeId));
+  const [transactions, setTransactions] = useState(() => loadTransactions(portfolioList.activeId));
   const [watchlistAssets, setWatchlistAssets] = useState(() => loadWatchlistAssets([]));
   const [favoriteSymbols, setFavoriteSymbols] = useState(() => loadFavoriteSymbols([]));
   const [alerts, setAlerts] = useState(() => loadAlerts());
@@ -194,7 +202,8 @@ export default function App() {
   const isWatchlistRoute = currentPath === "/watchlist";
   const isSettingsRoute = currentPath === "/settings";
   const isDemoRoute = currentPath === "/demo";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute;
+  const isTransactionsRoute = currentPath === "/transactions";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute;
   const layout = useLayout();
 
   useEffect(() => {
@@ -271,6 +280,7 @@ export default function App() {
     persistPortfolioList(nextState);
     const id = nextState.activeId;
     setPortfolioAssets(loadPortfolioAssets([], id));
+    setTransactions(loadTransactions(id));
     setAssets([]);
     setFiltered([]);
     setSelected(null);
@@ -309,6 +319,22 @@ export default function App() {
       persistPortfolioList(next);
     }
   }, [portfolioList, activateMandate, persistPortfolioList]);
+
+  // --- Transactions journal (tax lots, P3.3b) --------------------------------
+  // Scoped by mandate like positions (localStorage only; the dev SQLite mirror
+  // is deferred with the rest of the server-side mandate scope, P3.2c).
+  const persistTransactions = useCallback((next) => {
+    saveTransactions(next, activeId);
+    setTransactions(next);
+  }, [activeId]);
+
+  const handleAddTransaction = useCallback((draft) => {
+    persistTransactions(addTransaction(transactions, draft));
+  }, [persistTransactions, transactions]);
+
+  const handleRemoveTransaction = useCallback((id) => {
+    persistTransactions(removeTransaction(transactions, id));
+  }, [persistTransactions, transactions]);
 
   const persistWatchlist = useCallback((nextAssets) => {
     saveWatchlistAssets(nextAssets);
@@ -565,7 +591,7 @@ export default function App() {
 
   // Settings and the demo simulator don't depend on live quotes — keep them
   // reachable while prices load.
-  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute && !isDemoRoute) {
+  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute) {
     return <MarketBootScreen status={marketStatus} />;
   }
 
@@ -616,6 +642,13 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => navigateTo("/transactions")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isTransactionsRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                >
+                  Transactions
+                </button>
+                <button
+                  type="button"
                   onClick={() => navigateTo("/settings")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isSettingsRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
                 >
@@ -642,6 +675,12 @@ export default function App() {
           <SettingsPage />
         ) : isDemoRoute ? (
           <DemoPortfolioPanel />
+        ) : isTransactionsRoute ? (
+          <TransactionJournalPanel
+            transactions={transactions}
+            onAdd={handleAddTransaction}
+            onRemove={handleRemoveTransaction}
+          />
         ) : isWatchlistRoute ? (
           <>
             <section aria-label="Recherche marché globale">

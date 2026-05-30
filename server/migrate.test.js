@@ -73,6 +73,13 @@ describe("loadMigrations / runMigrations (dossier réel)", () => {
     expect(runMigrations(db)).toEqual([]);
   });
 
+  it("applique 003 : la table transactions est en place (parité dev P3.3b)", () => {
+    const db = memDb();
+    const applied = runMigrations(db);
+    expect(applied).toContain("003");
+    expect(tableNames(db)).toContain("transactions");
+  });
+
   it("loadMigrations ignore les fichiers non conformes et lit le SQL", () => {
     const migrations = loadMigrations(MIGRATIONS_DIR);
     expect(migrations.length).toBeGreaterThanOrEqual(1);
