@@ -15,6 +15,7 @@ import SecFilingsPanel from "./SecFilingsPanel";
 import PeersComparisonPanel from "./PeersComparisonPanel";
 import SimulationPanel from "./SimulationPanel";
 import ReturnsMatrixPanel from "./ReturnsMatrixPanel";
+import ReturnsDistributionPanel from "./ReturnsDistributionPanel";
 import LayoutSurface from "./LayoutSurface";
 import { useLayout } from "../core/layoutContext";
 
@@ -33,6 +34,7 @@ const ASSET_FEATURE_COMPONENTS = {
   PeersComparisonPanel,
   SimulationPanel,
   ReturnsMatrixPanel,
+  ReturnsDistributionPanel,
 };
 
 function formatTick(value, timeUnit) {

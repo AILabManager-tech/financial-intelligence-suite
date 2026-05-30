@@ -134,6 +134,8 @@ Légende:
   - Actuel: chaque KPI fondamental porte son propre `{value, source, asOf}` rendu en chip + tooltip; les champs absents sont strictement masqués.
 - [x] Rendements standards (P4.1)
   - Actuel: `ReturnsMatrixPanel` (feature surface actif, registre catégorie `performance`) rend le rendement cumulé, le CAGR, une matrice par période (1M/3M/6M/YTD/1Y/3Y/origine) et les rendements mensuels, calculés par `src/utils/returnsCalculator.js` (pur) depuis l'historique factuel `/api/history` (days=1825 → ~18 mois de quotidien en free tier). Rendements de prix (hors dividendes réinvestis), mention affichée. Toute période hors de la portée des données est masquée (tiret), jamais un 0 inventé. Première feature analytique de la Phase 4.
+- [x] Distribution des rendements (P4.10)
+  - Actuel: `ReturnsDistributionPanel` (feature surface actif distincte, registre catégorie `performance`, activable/positionnable séparément de la matrice) rend la part de mois positifs, le meilleur/pire mois, le rendement mensuel moyen, l'écart-type, un histogramme (Recharts) des rendements mensuels et les mesures de forme (asymétrie / aplatissement excès, masquées si non calculables), calculés par `src/utils/returnsDistribution.js` (pur) sur les rendements mensuels produits par `returnsCalculator`. Même série factuelle `/api/history`, aucune nouvelle source serveur. Hors dividendes réinvestis (mention affichée), insuffisant ⇒ masqué.
 
 ## 6. Interface opérateur
 
@@ -333,6 +335,7 @@ Programmé aujourd'hui:
 - conversion multi-devises (P3.4): provider de taux ECB live (`server/fx.js` Frankfurter keyless + fallback exchangerate.host), endpoint dev+prod `/api/fx?base=<ccy>` (cache 6h), `CurrencyExposurePanel` (dashboard) convertit les totaux portefeuille USD vers la devise base du mandat, taux jamais inventé (valeur masquée si manquant), sonde healthcheck `fx_rates`;
 - parité serveur du journal de transactions (clôture Phase 3): migration `004_transactions_composite_key.sql` (clé composite `(portfolio_id, id)`), `portfolioRepository` `listTransactions`/`saveTransactions` scopés par mandat, API dev `/api/transactions?portfolio=<id>` (GET+PUT), client `transactionApi`, App hydrate+mirror — dev-only, localStorage reste le fallback durable;
 - rendements standards (P4.1, première feature analytique Phase 4): `ReturnsMatrixPanel` sur la fiche actif (registre catégorie `performance`, priorité haute dans le moteur d'agencement), rendement cumulé + CAGR + matrice par période (1M→origine) + rendements mensuels, calculés par `returnsCalculator` pur depuis `/api/history` factuel; périodes hors-données masquées (jamais de 0 inventé), mention « rendements de prix (hors dividendes réinvestis) »;
+- distribution des rendements (P4.10, feature catalogue distincte de la matrice): `ReturnsDistributionPanel` sur la fiche actif, % mois positifs + meilleur/pire mois + moyenne + écart-type + histogramme + asymétrie/aplatissement (masqués si non sûrs), calculés par `returnsDistribution` pur sur les rendements mensuels de `returnsCalculator`; même série `/api/history`, activable/positionnable indépendamment de P4.1;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.

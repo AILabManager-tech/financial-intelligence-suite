@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatPct, returnTone, formatMonthLabel } from "./returnsFormatters";
+import { formatPct, returnTone, formatMonthLabel, formatRatio } from "./returnsFormatters";
 
 describe("formatPct", () => {
   it("formate avec signe et deux décimales", () => {
@@ -24,6 +24,19 @@ describe("returnTone", () => {
     expect(returnTone(-1)).toBe("text-rose-400");
     expect(returnTone(null)).toBe("text-slate-500");
     expect(returnTone(Number.NaN)).toBe("text-slate-500");
+  });
+});
+
+describe("formatRatio", () => {
+  it("formate à 2 décimales par défaut", () => {
+    expect(formatRatio(1.5)).toBe("1.50");
+    expect(formatRatio(-0.234, 3)).toBe("-0.234");
+  });
+
+  it("retourne null pour une valeur absente ou invalide", () => {
+    expect(formatRatio(null)).toBeNull();
+    expect(formatRatio(Number.NaN)).toBeNull();
+    expect(formatRatio("1")).toBeNull();
   });
 });
 

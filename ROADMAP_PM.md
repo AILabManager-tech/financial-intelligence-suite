@@ -319,6 +319,16 @@ P4.1 [x] livré 2026-05-30 — rendements standards (première feature analytiqu
         source serveur (même voie que SimulationPanel). Rendements de prix hors dividendes, mention
         affichée ; périodes hors-portée masquées (jamais de 0 inventé). Dogfood curl MSFT : 1M/3M/6M/
         YTD/1Y peuplés, 3Y masqué, 17 rendements mensuels. 593 → 611 tests verts.
+P4.10 [x] livré 2026-05-30 — distribution des returns (feature catalogue distincte de P4.1).
+        src/utils/returnsDistribution.js (pur, 7 tests) : computeDistribution(monthlyReturns) → %
+        mois positifs, meilleur/pire mois, moyenne, écart-type échantillon, skewness g1, kurtosis
+        excess g2 (null si σ=0 ou n<3), histogramme 8 tranches (somme = nb mois). returnsFormatters
+        + formatRatio (2 tests). src/components/ReturnsDistributionPanel.jsx (4 tests, surface actif,
+        registre `performance` order 110, histogramme Recharts emerald/rose). Dérivé des rendements
+        mensuels de returnsCalculator — même série /api/history, zéro nouveau fichier serveur.
+        Panel SÉPARÉ de la matrice (activable/positionnable indépendamment = modularité). Dogfood
+        curl NVDA réel : 17 mois, 64.7 % positifs, best +24.06 (2025-05) / worst −13.24 (2025-03),
+        skew 0.094 / kurtosis −0.647, histogramme somme = 17. 611 → 624 tests verts.
 ```
 
 > **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée. Idem pour la matrice de rendements P4.1 : la période 3 ans (et au-delà) est masquée tant que la source gratuite ne remonte pas si loin.
@@ -337,13 +347,13 @@ P4.1 [x] livré 2026-05-30 — rendements standards (première feature analytiqu
 
 ## Prochain bloc recommandé
 
-**P4.10 (distribution des returns) ou P4.12 (stats opérationnelles)** — les deux ne dépendent que de briques déjà livrées (P4.1 returns / P3.3 lots) et restent dérivables sans snapshots de portefeuille. P4.10 enrichit la matrice P4.1 (best/worst périodes, % mois positifs, skewness/kurtosis, heatmap monthly) sur la **même série /api/history** — extension naturelle et factuelle de `ReturnsMatrixPanel`. P4.12 (turnover, holding period, hit ratio, win/loss, yield-on-cost) se branche sur le **moteur de lots P3.3a** déjà réalisé.
+**P4.12 (stats opérationnelles)** — turnover, holding period moyen, hit ratio, win/loss, yield-on-cost, branché sur le **moteur de lots P3.3a** déjà réalisé. Dérivable des transactions saisies (sans snapshots). NB : se peuple seulement avec des transactions réelles dans un mandat — moins « démontrable à froid » que les features prix, mais c'est la dernière brique Phase 4 hors-snapshots. Alternative encore plus alignée « modularité » : enrichir le **catalogue dashboard** (les nouvelles features récentes sont toutes sur la fiche actif ; le tableau de bord composable gagnerait une feature de performance agrégée). **P4.1 ✅ + P4.10 ✅** livrés.
 
 > **Pré-requis snapshots pour P4.2+ (TWR/MWR/vol/Sharpe portefeuille).** P4.2 (TWR GIPS), P4.3 (MWR/IRR), P4.4 (vol/drawdown), P4.5 (Sharpe) exigent une **série de valeur du portefeuille dans le temps** — c.-à-d. l'**accrual de snapshots SQLite** (la table existe, n'est pas peuplée). Factualité stricte : ne pas fabriquer une série de valeur portefeuille tant que les snapshots ne sont pas accumulés. Donc soit on attaque d'abord l'**accrual de snapshots** (brique socle), soit on avance sur les features dérivables du prix/des lots (P4.10, P4.12) en attendant.
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
-Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 (P4.1 returns ✅ → P4.10/P4.12 dérivables, puis accrual snapshots → P4.2 TWR / P4.4 vol / P4.5 Sharpe)**.
+Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 (P4.1 returns ✅ + P4.10 distribution ✅ → P4.12 stats op. dérivable, puis accrual snapshots → P4.2 TWR / P4.4 vol / P4.5 Sharpe)**.
 
 ## Mise à jour de ce document
 

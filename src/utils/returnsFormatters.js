@@ -23,6 +23,18 @@ export function returnTone(value) {
   return value >= 0 ? "text-emerald-400" : "text-rose-400";
 }
 
+/**
+ * Nombre à `decimals` décimales (signé non forcé). null si non fini.
+ * Sert aux mesures de forme (skewness / kurtosis) de la distribution P4.10.
+ * @param {number} value
+ * @param {number} [decimals]
+ * @returns {string|null}
+ */
+export function formatRatio(value, decimals = 2) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return value.toFixed(decimals);
+}
+
 const MONTH_RE = /^(\d{4})-(\d{2})$/;
 
 /**

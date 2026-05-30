@@ -132,6 +132,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 100,
   },
+  {
+    id: "returns-distribution",
+    label: "Distribution des rendements",
+    category: "performance",
+    surface: "asset",
+    componentKey: "ReturnsDistributionPanel",
+    dataDeps: ["history"],
+    defaultVisible: true,
+    order: 110,
+  },
 
   // --- Surface dashboard (bloc composable du tableau de bord, App.jsx) --------
   // `order` = empilage RÉEL du bloc central de App.jsx (vérifié 2026-05-29).
