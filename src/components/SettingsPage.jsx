@@ -1,8 +1,15 @@
 import { useState } from "react";
-import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown, LayoutTemplate } from "lucide-react";
+import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown, LayoutTemplate, Save, Trash2 } from "lucide-react";
 import { getFeatureById } from "../core/featureRegistry";
 import { useLayout, useLayoutControls } from "../core/layoutContext";
 import { BUILTIN_PROFILES, buildLayoutFromProfile } from "../core/layoutProfiles";
+import {
+  loadProfiles,
+  saveProfiles,
+  addProfile,
+  removeProfile,
+  profileSurfacesFromLayout,
+} from "../services/profileStore";
 
 // Editing UI for the layout (P0.4b + P0.4c). Per surface, lists the features in
 // their current layout order with: a visibility toggle, a 1/2-column selector,
@@ -140,7 +147,15 @@ function SurfaceList({ surface, entries, controls }) {
   );
 }
 
-function ProfilePicker({ onApply }) {
+function ProfilePicker({ onApply, customProfiles, onSaveCurrent, onDelete }) {
+  const [name, setName] = useState("");
+
+  const save = () => {
+    if (!name.trim()) return;
+    onSaveCurrent(name);
+    setName("");
+  };
+
   return (
     <section aria-label="Profils d'agencement" className="p-4 rounded-2xl bg-surface-900 border border-white/5 space-y-3">
       <div className="flex items-center gap-2">
@@ -155,7 +170,7 @@ function ProfilePicker({ onApply }) {
           <button
             key={profile.id}
             type="button"
-            onClick={() => onApply(buildLayoutFromProfile(profile))}
+            onClick={() => onApply(profile)}
             aria-label={`Appliquer le profil ${profile.label}`}
             className="text-left p-3 rounded-xl bg-surface-800 border border-white/5 hover:border-violet-500/40 cursor-pointer"
           >
@@ -164,6 +179,52 @@ function ProfilePicker({ onApply }) {
           </button>
         ))}
       </div>
+
+      {customProfiles.length > 0 && (
+        <div className="space-y-2 pt-1">
+          <div className="text-[11px] uppercase tracking-wide text-slate-500">Mes profils</div>
+          {customProfiles.map((profile) => (
+            <div key={profile.id} className="flex items-center gap-2 p-2 rounded-xl bg-surface-800 border border-white/5">
+              <button
+                type="button"
+                onClick={() => onApply(profile)}
+                aria-label={`Appliquer le profil ${profile.name}`}
+                className="flex-1 text-left text-sm font-medium text-white hover:text-violet-200 cursor-pointer truncate"
+              >
+                {profile.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(profile.id)}
+                aria-label={`Supprimer le profil ${profile.name}`}
+                className="p-1.5 rounded-md text-slate-400 hover:text-rose-400 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        <input
+          type="text"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Nom du profil…"
+          aria-label="Nom du nouveau profil"
+          className="flex-1 px-3 py-2 rounded-lg bg-surface-800 border border-white/5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50"
+        />
+        <button
+          type="button"
+          onClick={save}
+          disabled={!name.trim()}
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 text-violet-300 hover:bg-violet-500/15 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold cursor-pointer"
+        >
+          <Save className="w-3.5 h-3.5" />
+          Enregistrer l'agencement actuel
+        </button>
+      </div>
     </section>
   );
 }
@@ -171,6 +232,21 @@ function ProfilePicker({ onApply }) {
 export default function SettingsPage() {
   const layout = useLayout();
   const controls = useLayoutControls();
+  const [customProfiles, setCustomProfiles] = useState(() => loadProfiles());
+
+  const applyProfile = (profile) => controls.apply(buildLayoutFromProfile(profile));
+
+  const saveCurrentProfile = (name) => {
+    const next = addProfile(customProfiles, name, profileSurfacesFromLayout(layout));
+    setCustomProfiles(next);
+    saveProfiles(next);
+  };
+
+  const deleteProfile = (id) => {
+    const next = removeProfile(customProfiles, id);
+    setCustomProfiles(next);
+    saveProfiles(next);
+  };
 
   return (
     <div className="animate-slide-up space-y-6" role="region" aria-label="Paramètres d'agencement">
@@ -191,7 +267,12 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      <ProfilePicker onApply={controls.apply} />
+      <ProfilePicker
+        onApply={applyProfile}
+        customProfiles={customProfiles}
+        onSaveCurrent={saveCurrentProfile}
+        onDelete={deleteProfile}
+      />
 
       {SURFACES.map((surface) => (
         <section key={surface.key} aria-label={`Paramètres — ${surface.label}`} className="space-y-3">

@@ -115,6 +115,37 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("switch", { name: `Afficher ${hiddenFeature.label}` })).toHaveAttribute("aria-checked", "false");
   });
 
+  it("enregistre l'agencement courant comme profil custom, puis le supprime", () => {
+    renderPage();
+    const input = screen.getByLabelText("Nom du nouveau profil");
+    const saveBtn = screen.getByRole("button", { name: /Enregistrer l'agencement actuel/ });
+    expect(saveBtn).toBeDisabled();
+    fireEvent.change(input, { target: { value: "Mon agencement" } });
+    expect(saveBtn).toBeEnabled();
+    fireEvent.click(saveBtn);
+    // apparaît dans la liste + persisté
+    expect(screen.getByRole("button", { name: "Appliquer le profil Mon agencement" })).toBeInTheDocument();
+    expect(localStorage.getItem("fis:profiles:v1")).not.toBeNull();
+    // suppression
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer le profil Mon agencement" }));
+    expect(screen.queryByRole("button", { name: "Appliquer le profil Mon agencement" })).toBeNull();
+    expect(localStorage.getItem("fis:profiles:v1")).toBeNull();
+  });
+
+  it("un profil custom appliqué restitue son agencement", () => {
+    renderPage();
+    const dash0 = getFeaturesBySurface("dashboard")[0];
+    // masquer le 1er panneau dashboard, sauvegarder ce layout comme profil
+    fireEvent.click(screen.getByRole("switch", { name: `Afficher ${dash0.label}` }));
+    fireEvent.change(screen.getByLabelText("Nom du nouveau profil"), { target: { value: "Sans premier" } });
+    fireEvent.click(screen.getByRole("button", { name: /Enregistrer l'agencement actuel/ }));
+    // tout réafficher, puis réappliquer le profil custom
+    fireEvent.click(screen.getByRole("button", { name: /Réinitialiser/ }));
+    expect(screen.getByRole("switch", { name: `Afficher ${dash0.label}` })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Appliquer le profil Sans premier" }));
+    expect(screen.getByRole("switch", { name: `Afficher ${dash0.label}` })).toHaveAttribute("aria-checked", "false");
+  });
+
   it("réordonne via un drop natif (drag-and-drop)", () => {
     renderPage();
     const dash = getFeaturesBySurface("dashboard").map((f) => f.id);
