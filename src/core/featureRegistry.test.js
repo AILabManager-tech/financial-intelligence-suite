@@ -68,19 +68,26 @@ describe("featureRegistry — couverture des features existantes", () => {
     }
   });
 
-  it("enregistre les sections dashboard existantes", () => {
+  it("enregistre le bloc composable du dashboard (panneaux, hors chrome)", () => {
     const dashKeys = getFeaturesBySurface("dashboard").map((f) => f.componentKey);
     for (const key of [
-      "RiskCommandCenter",
       "TopPerformers",
-      "AssetTable",
-      "PortfolioManager",
-      "WatchlistPanel",
+      "SafetyBadge",
       "MarketDataHealthPanel",
       "OperatorAlerts",
       "AlertManager",
+      "RiskCommandCenter",
+      "PortfolioManager",
     ]) {
       expect(dashKeys).toContain(key);
+    }
+  });
+
+  it("exclut le chrome structurel et la route watchlist de la surface dashboard", () => {
+    const dashKeys = getFeaturesBySurface("dashboard").map((f) => f.componentKey);
+    // MarketLookup / SearchFilter / AssetTable = chrome fixe ; WatchlistPanel = route /watchlist.
+    for (const key of ["MarketLookup", "SearchFilter", "AssetTable", "WatchlistPanel"]) {
+      expect(dashKeys).not.toContain(key);
     }
   });
 });

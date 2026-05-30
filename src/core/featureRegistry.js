@@ -113,17 +113,13 @@ const RAW_FEATURES = [
     order: 80,
   },
 
-  // --- Surface dashboard (App.jsx) -------------------------------------------
-  {
-    id: "risk-command-center",
-    label: "Centre de risque",
-    category: "overview",
-    surface: "dashboard",
-    componentKey: "RiskCommandCenter",
-    dataDeps: ["quotes"],
-    defaultVisible: true,
-    order: 10,
-  },
+  // --- Surface dashboard (bloc composable du tableau de bord, App.jsx) --------
+  // `order` = empilage RÉEL du bloc central de App.jsx (vérifié 2026-05-29).
+  // Encadrant ce bloc, des contrôles STRUCTURELS non catalogués : MarketLookup
+  // (recherche, en tête) et le couple SearchFilter + AssetTable (filtre + grille
+  // principale, en pied). Ce sont des chrome fixes — pas des panneaux qu'on
+  // masque/déplace — donc hors registre. WatchlistPanel appartient à la route
+  // /watchlist, pas au tableau de bord : elle n'est pas une feature de surface.
   {
     id: "top-performers",
     label: "Top performances",
@@ -132,37 +128,17 @@ const RAW_FEATURES = [
     componentKey: "TopPerformers",
     dataDeps: ["quotes"],
     defaultVisible: true,
+    order: 10,
+  },
+  {
+    id: "safety-badge",
+    label: "Badge d'intégrité",
+    category: "overview",
+    surface: "dashboard",
+    componentKey: "SafetyBadge",
+    dataDeps: ["quotes"],
+    defaultVisible: true,
     order: 20,
-  },
-  {
-    id: "asset-table",
-    label: "Table des actifs",
-    category: "portfolio",
-    surface: "dashboard",
-    componentKey: "AssetTable",
-    dataDeps: ["quotes"],
-    defaultVisible: true,
-    order: 30,
-  },
-  {
-    id: "portfolio-manager",
-    label: "Gestionnaire de positions",
-    category: "portfolio",
-    surface: "dashboard",
-    componentKey: "PortfolioManager",
-    dataDeps: ["portfolio"],
-    defaultVisible: true,
-    order: 40,
-  },
-  {
-    id: "watchlist",
-    label: "Liste de surveillance",
-    category: "watchlist",
-    surface: "dashboard",
-    componentKey: "WatchlistPanel",
-    dataDeps: ["quotes"],
-    defaultVisible: true,
-    order: 50,
   },
   {
     id: "market-data-health",
@@ -172,7 +148,7 @@ const RAW_FEATURES = [
     componentKey: "MarketDataHealthPanel",
     dataDeps: ["health"],
     defaultVisible: true,
-    order: 60,
+    order: 30,
   },
   {
     id: "operator-alerts",
@@ -182,7 +158,7 @@ const RAW_FEATURES = [
     componentKey: "OperatorAlerts",
     dataDeps: [],
     defaultVisible: true,
-    order: 70,
+    order: 40,
   },
   {
     id: "alert-manager",
@@ -192,7 +168,27 @@ const RAW_FEATURES = [
     componentKey: "AlertManager",
     dataDeps: [],
     defaultVisible: true,
-    order: 80,
+    order: 50,
+  },
+  {
+    id: "risk-command-center",
+    label: "Centre de risque",
+    category: "overview",
+    surface: "dashboard",
+    componentKey: "RiskCommandCenter",
+    dataDeps: ["quotes"],
+    defaultVisible: true,
+    order: 60,
+  },
+  {
+    id: "portfolio-manager",
+    label: "Gestionnaire de positions",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "PortfolioManager",
+    dataDeps: ["portfolio"],
+    defaultVisible: true,
+    order: 70,
   },
 ];
 
