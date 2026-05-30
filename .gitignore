@@ -29,3 +29,4 @@ data/*.sqlite-*
 *.sln
 *.sw?
 .vercel
+.gstack/
