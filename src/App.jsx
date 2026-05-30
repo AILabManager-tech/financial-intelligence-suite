@@ -21,6 +21,16 @@ import {
   upsertPortfolioAsset,
 } from "./services/portfolioStore";
 import { fetchPortfolioFromApi, savePortfolioToApi } from "./services/portfolioApi";
+import {
+  DEFAULT_PORTFOLIO_ID,
+  loadPortfolioList,
+  savePortfolioList,
+  createPortfolio,
+  updatePortfolio,
+  removePortfolio,
+  setActivePortfolio,
+} from "./services/portfolioListStore";
+import PortfolioSelector from "./components/PortfolioSelector";
 import { fetchPortfolioSnapshots, savePortfolioSnapshot } from "./services/portfolioSnapshots";
 import {
   isWatchlisted,
@@ -163,7 +173,9 @@ function HeaderSubtitle() {
 
 export default function App() {
   const [selected, setSelected] = useState(null);
-  const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets([]));
+  const [portfolioList, setPortfolioList] = useState(() => loadPortfolioList());
+  const activeId = portfolioList.activeId;
+  const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets([], portfolioList.activeId));
   const [watchlistAssets, setWatchlistAssets] = useState(() => loadWatchlistAssets([]));
   const [favoriteSymbols, setFavoriteSymbols] = useState(() => loadFavoriteSymbols([]));
   const [alerts, setAlerts] = useState(() => loadAlerts());
@@ -188,6 +200,10 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
+    // The dev SQLite API is scoped to the 'default' mandate (server-side
+    // multi-portfolio is P3.2c); other mandates load from localStorage only.
+    if (activeId !== DEFAULT_PORTFOLIO_ID) return undefined;
+
     fetchPortfolioFromApi()
       .then((remoteAssets) => {
         if (active && remoteAssets.length > 0) {
@@ -201,6 +217,7 @@ export default function App() {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -233,11 +250,65 @@ export default function App() {
   }, []);
 
   const persistPortfolio = useCallback((nextAssets) => {
-    savePortfolioAssets(nextAssets);
-    savePortfolioToApi(nextAssets).catch(() => {
-      // Browser storage is the durable fallback in local/dev mode.
-    });
+    savePortfolioAssets(nextAssets, activeId);
+    // The dev SQLite API mirrors the 'default' mandate only (P3.2c will scope it).
+    if (activeId === DEFAULT_PORTFOLIO_ID) {
+      savePortfolioToApi(nextAssets).catch(() => {
+        // Browser storage is the durable fallback in local/dev mode.
+      });
+    }
+  }, [activeId]);
+
+  // --- Multi-portfolio (mandates, P3.2) --------------------------------------
+  const persistPortfolioList = useCallback((nextState) => {
+    savePortfolioList(nextState);
+    setPortfolioList(nextState);
   }, []);
+
+  // Load a mandate's positions and reset the live view so quotes refetch
+  // (loadLiveQuotes is keyed on portfolioAssets).
+  const activateMandate = useCallback((nextState) => {
+    persistPortfolioList(nextState);
+    const id = nextState.activeId;
+    setPortfolioAssets(loadPortfolioAssets([], id));
+    setAssets([]);
+    setFiltered([]);
+    setSelected(null);
+    // In dev the 'default' mandate's positions live in SQLite (seeded there, not
+    // localStorage), so re-hydrate from the API when switching back to it.
+    if (id === DEFAULT_PORTFOLIO_ID) {
+      fetchPortfolioFromApi()
+        .then((remoteAssets) => {
+          if (remoteAssets.length > 0) setPortfolioAssets(remoteAssets);
+        })
+        .catch(() => {});
+    }
+  }, [persistPortfolioList]);
+
+  const handleSwitchPortfolio = useCallback((id) => {
+    if (id === portfolioList.activeId) return;
+    activateMandate(setActivePortfolio(portfolioList, id));
+  }, [portfolioList, activateMandate]);
+
+  const handleCreatePortfolio = useCallback((draft) => {
+    const next = createPortfolio(portfolioList, draft);
+    if (next === portfolioList) return; // empty name ignored
+    activateMandate(next);
+  }, [portfolioList, activateMandate]);
+
+  const handleRenamePortfolio = useCallback((id, fields) => {
+    persistPortfolioList(updatePortfolio(portfolioList, id, fields));
+  }, [portfolioList, persistPortfolioList]);
+
+  const handleDeletePortfolio = useCallback((id) => {
+    const next = removePortfolio(portfolioList, id);
+    if (next === portfolioList) return; // last mandate protected
+    if (next.activeId !== portfolioList.activeId) {
+      activateMandate(next);
+    } else {
+      persistPortfolioList(next);
+    }
+  }, [portfolioList, activateMandate, persistPortfolioList]);
 
   const persistWatchlist = useCallback((nextAssets) => {
     saveWatchlistAssets(nextAssets);
@@ -551,6 +622,13 @@ export default function App() {
                   Paramètres
                 </button>
               </div>
+              <PortfolioSelector
+                state={portfolioList}
+                onSwitch={handleSwitchPortfolio}
+                onCreate={handleCreatePortfolio}
+                onRename={handleRenamePortfolio}
+                onDelete={handleDeletePortfolio}
+              />
               <ThemeSelector />
               <MarketDataStatus status={marketStatus} onRefresh={loadLiveQuotes} />
             </div>
