@@ -112,6 +112,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 80,
   },
+  {
+    id: "simulation",
+    label: "Simulateur what-if",
+    category: "simulation",
+    surface: "asset",
+    componentKey: "SimulationPanel",
+    dataDeps: ["history"],
+    defaultVisible: true,
+    order: 90,
+  },
 
   // --- Surface dashboard (bloc composable du tableau de bord, App.jsx) --------
   // `order` = empilage RÉEL du bloc central de App.jsx (vérifié 2026-05-29).

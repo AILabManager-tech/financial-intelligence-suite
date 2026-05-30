@@ -32,6 +32,7 @@ const CATEGORY_LABELS = {
   calendar: "Calendrier",
   documents: "Documents",
   comparison: "Comparaison",
+  simulation: "Simulation",
 };
 
 function FeatureRow({ surface, entry, index, count, controls, dragHandlers, isDragging }) {

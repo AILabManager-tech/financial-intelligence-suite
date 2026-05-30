@@ -20,6 +20,7 @@ const CATEGORY_PRIORITY = {
   sentiment: 50,
   calendar: 60,
   monitoring: 70,
+  simulation: 75, // outil what-if -> bas, avant le documentaire
   documents: 80, // documentaire -> bas
 };
 const FALLBACK_PRIORITY = 100;

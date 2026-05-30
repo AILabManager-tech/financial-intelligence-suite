@@ -13,6 +13,7 @@ import EarningsCalendarPanel from "./EarningsCalendarPanel";
 import DividendHistoryPanel from "./DividendHistoryPanel";
 import SecFilingsPanel from "./SecFilingsPanel";
 import PeersComparisonPanel from "./PeersComparisonPanel";
+import SimulationPanel from "./SimulationPanel";
 import LayoutSurface from "./LayoutSurface";
 import { useLayout } from "../core/layoutContext";
 
@@ -29,6 +30,7 @@ const ASSET_FEATURE_COMPONENTS = {
   CompanyNewsPanel,
   SecFilingsPanel,
   PeersComparisonPanel,
+  SimulationPanel,
 };
 
 function formatTick(value, timeUnit) {
