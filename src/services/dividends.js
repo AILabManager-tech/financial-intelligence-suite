@@ -20,6 +20,9 @@ export async function fetchDividends(symbol, { signal } = {}) {
     source: payload.source ?? 'finnhub.io',
     fetchedAt: payload.fetchedAt ?? null,
     window: payload.window ?? null,
+    status: payload.status ?? 'ready',
+    reason: payload.reason ?? null,
+    message: payload.message ?? null,
     items: Array.isArray(payload.items) ? payload.items : [],
     cache: payload.cache ?? null,
   };

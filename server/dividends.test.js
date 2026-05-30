@@ -55,6 +55,7 @@ describe('fetchDividends', () => {
       amount: 0.24,
       adjustedAmount: 0.24,
       currency: 'USD',
+      source: 'finnhub.io',
     });
   });
 
@@ -79,8 +80,8 @@ describe('fetchDividends', () => {
 
   it('rejects when no Finnhub API key is configured', async () => {
     await expect(
-      fetchDividends('AAPL', { finnhubApiKey: '', fetcher: vi.fn() }),
-    ).rejects.toThrow(/FINNHUB_API_KEY/);
+      fetchDividends('AAPL', { finnhubApiKey: '', alphaVantageApiKey: '', twelveDataApiKey: '', fetcher: vi.fn() }),
+    ).rejects.toThrow(/provider API key/);
   });
 
   it('does not leak the API token in error messages', async () => {
@@ -90,5 +91,65 @@ describe('fetchDividends', () => {
     } catch (error) {
       expect(error.message).not.toContain('super-secret-token');
     }
+  });
+
+  it('falls back to Alpha Vantage when Finnhub denies access', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({}) })
+      .mockResolvedValueOnce(okJson({
+        symbol: 'AAPL',
+        data: [
+          {
+            ex_dividend_date: '2026-02-09',
+            payment_date: '2026-02-15',
+            record_date: '2026-02-12',
+            declaration_date: '2026-01-30',
+            amount: '0.24',
+          },
+        ],
+      }));
+
+    const result = await fetchDividends('AAPL', {
+      finnhubApiKey: 'finnhub-token',
+      alphaVantageApiKey: 'alpha-token',
+      fetcher,
+    });
+
+    expect(result.source).toBe('alphavantage.co');
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        exDate: '2026-02-09',
+        payDate: '2026-02-15',
+        amount: 0.24,
+        source: 'alphavantage.co',
+      }),
+    ]);
+  });
+
+  it('falls back to Twelve Data when Finnhub and Alpha Vantage are unavailable', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({}) })
+      .mockResolvedValueOnce(okJson({ Note: 'rate limit' }))
+      .mockResolvedValueOnce(okJson({
+        meta: { symbol: 'AAPL', currency: 'USD' },
+        dividends: [{ ex_date: '2026-02-09', amount: 0.24 }],
+      }));
+
+    const result = await fetchDividends('AAPL', {
+      finnhubApiKey: 'finnhub-token',
+      alphaVantageApiKey: 'alpha-token',
+      twelveDataApiKey: 'twelve-token',
+      fetcher,
+    });
+
+    expect(result.source).toBe('twelvedata.com');
+    expect(result.items[0]).toMatchObject({
+      exDate: '2026-02-09',
+      amount: 0.24,
+      currency: 'USD',
+      source: 'twelvedata.com',
+    });
   });
 });

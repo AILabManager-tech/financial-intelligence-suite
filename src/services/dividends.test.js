@@ -33,6 +33,25 @@ describe('fetchDividends (client)', () => {
     expect(result.items[0].amount).toBe(0.24);
   });
 
+  it('passes through provider unavailable state without throwing', async () => {
+    globalThis.fetch.mockImplementationOnce(() => Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({
+        symbol: 'AAPL',
+        source: 'finnhub.io',
+        status: 'unavailable',
+        reason: 'provider_access_denied',
+        items: [],
+      }),
+    }));
+
+    const result = await fetchDividends('AAPL');
+    expect(result.status).toBe('unavailable');
+    expect(result.reason).toBe('provider_access_denied');
+    expect(result.items).toEqual([]);
+  });
+
   it('throws on non-OK response', async () => {
     globalThis.fetch.mockImplementationOnce(() => Promise.resolve({ ok: false, status: 502 }));
     await expect(fetchDividends('AAPL')).rejects.toThrow(/502/);

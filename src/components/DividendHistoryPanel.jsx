@@ -37,6 +37,8 @@ export default function DividendHistoryPanel({ asset }) {
     items: [],
     fetchedAt: null,
     source: null,
+    providerStatus: null,
+    reason: null,
     error: null,
   });
 
@@ -47,6 +49,8 @@ export default function DividendHistoryPanel({ asset }) {
       items: [],
       fetchedAt: null,
       source: null,
+      providerStatus: null,
+      reason: null,
       error: null,
     });
   }
@@ -65,6 +69,8 @@ export default function DividendHistoryPanel({ asset }) {
           items: payload.items,
           fetchedAt: payload.fetchedAt,
           source: payload.source,
+          providerStatus: payload.status,
+          reason: payload.reason,
           error: null,
         });
       })
@@ -76,6 +82,8 @@ export default function DividendHistoryPanel({ asset }) {
           items: [],
           fetchedAt: null,
           source: null,
+          providerStatus: null,
+          reason: null,
           error: error.message,
         });
       });
@@ -111,13 +119,22 @@ export default function DividendHistoryPanel({ asset }) {
         </div>
       )}
 
-      {state.status === "ready" && state.items.length === 0 && (
+      {state.status === "ready" && state.providerStatus === "unavailable" && (
+        <div className="text-sm text-amber-400">
+          Historique dividendes indisponible — accès fournisseur refusé pour cette clé.
+          <div className="text-xs text-slate-500 mt-1">
+            Aucun dividende n'est affiché pour éviter de présenter une donnée non vérifiée.
+          </div>
+        </div>
+      )}
+
+      {state.status === "ready" && state.providerStatus !== "unavailable" && state.items.length === 0 && (
         <div className="text-sm text-slate-400">
           Aucun dividende publié pour {asset?.symbol} sur les 5 dernières années.
         </div>
       )}
 
-      {state.status === "ready" && state.items.length > 0 && (
+      {state.status === "ready" && state.providerStatus !== "unavailable" && state.items.length > 0 && (
         <div className="space-y-3">
           {ttm && (
             <div className="text-xs text-slate-300">

@@ -49,6 +49,22 @@ function sendJson(response, statusCode, payload) {
   response.end(JSON.stringify(payload))
 }
 
+function isProviderAccessDenied(error) {
+  return /\b(upstream 401|upstream 403)\b/.test(error.message)
+}
+
+function unavailableDividendsPayload(symbol, error) {
+  return {
+    symbol,
+    source: 'finnhub.io',
+    fetchedAt: new Date().toISOString(),
+    status: 'unavailable',
+    reason: 'provider_access_denied',
+    message: error.message,
+    items: [],
+  }
+}
+
 function readJsonBody(request) {
   return new Promise((resolve, reject) => {
     const chunks = []
@@ -224,6 +240,20 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined
+            if (id.includes('react') || id.includes('react-dom')) return 'vendor-react'
+            if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
+            if (id.includes('katex')) return 'vendor-katex'
+            if (id.includes('lucide-react')) return 'vendor-icons'
+            return undefined
+          },
+        },
+      },
+    },
     plugins: [
       react(),
       tailwindcss(),
@@ -368,7 +398,11 @@ export default defineConfig(({ mode }) => {
             const { value, cacheStatus, expiresAt } = await readThroughCache(
               `dividends:${symbol}`,
               cacheTtlMs.dividends,
-              () => fetchDividends(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY }),
+              () => fetchDividends(symbol, {
+                finnhubApiKey: process.env.FINNHUB_API_KEY,
+                alphaVantageApiKey: process.env.ALPHA_VANTAGE_API_KEY,
+                twelveDataApiKey: process.env.TWELVE_DATA_API_KEY,
+              }),
             )
             sendJson(response, 200, {
               ...value,
@@ -379,6 +413,17 @@ export default defineConfig(({ mode }) => {
               },
             })
           } catch (error) {
+            if (isProviderAccessDenied(error)) {
+              sendJson(response, 200, {
+                ...unavailableDividendsPayload(symbol, error),
+                cache: {
+                  status: 'miss',
+                  ttlMs: cacheTtlMs.dividends,
+                  expiresAt: new Date(Date.now() + cacheTtlMs.dividends).toISOString(),
+                },
+              })
+              return
+            }
             sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
           }
         })

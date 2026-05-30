@@ -63,7 +63,7 @@ export function mergeQuotesIntoAssets(assets, quotes) {
         ...asset,
         marketData: {
           status: "stale",
-          source: "mock",
+          source: "unavailable",
           fetchedAt: null,
           message: "Quote live indisponible; données statiques conservées.",
         },
