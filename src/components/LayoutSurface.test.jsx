@@ -63,6 +63,21 @@ describe("LayoutSurface", () => {
     expect(screen.getByTestId(`feat-${ASSET_IDS[1]}`)).toBeInTheDocument();
   });
 
+  it("enveloppe chaque feature via wrapItem en conservant l'ordre", () => {
+    render(
+      <LayoutSurface
+        surface="asset"
+        layout={getDefaultLayout()}
+        components={ASSET_COMPONENTS}
+        wrapItem={(feature, node) => <section aria-label={feature.label}>{node}</section>}
+      />,
+    );
+    const sections = screen.getAllByRole("region");
+    expect(sections.length).toBe(ASSET_IDS.length);
+    // le marqueur de la première feature est bien à l'intérieur d'une section
+    expect(sections[0]).toContainElement(screen.getByTestId(`feat-${ASSET_IDS[0]}`));
+  });
+
   it("rend un ensemble vide pour une surface sans feature visible", () => {
     let layout = getDefaultLayout();
     for (const id of ASSET_IDS) layout = setFeatureVisibility(layout, "asset", id, false);

@@ -46,7 +46,24 @@ import {
 import { evaluateAlerts } from "./utils/alertEvaluator";
 import AlertManager from "./components/AlertManager";
 import ThemeSelector from "./components/ThemeSelector";
+import LayoutSurface from "./components/LayoutSurface";
+import { useLayout } from "./hooks/useLayout";
 import { applyTheme, loadTheme } from "./services/themeStore";
+
+// Maps the registry componentKeys of the "dashboard" surface to their
+// components. Render order + visibility come from the layout store (P0.2) via
+// LayoutSurface. The dashboard chrome (MarketLookup search, SearchFilter +
+// AssetTable grid) is intentionally NOT here — it frames the composable block
+// at fixed positions (see featureRegistry dashboard comment).
+const DASHBOARD_FEATURE_COMPONENTS = {
+  TopPerformers,
+  SafetyBadge,
+  MarketDataHealthPanel,
+  OperatorAlerts,
+  AlertManager,
+  RiskCommandCenter,
+  PortfolioManager,
+};
 
 // Apply persisted theme synchronously at module load so the first paint
 // already reflects the user's choice — avoids a flash of FIS default when
@@ -161,6 +178,7 @@ export default function App() {
   });
 
   const isWatchlistRoute = currentPath === "/watchlist";
+  const layout = useLayout();
 
   useEffect(() => {
     let active = true;
@@ -446,6 +464,29 @@ export default function App() {
     persistFavorites(toggleFavoriteSymbol(favoriteSymbols, symbol));
   }, [favoriteSymbols, persistFavorites]);
 
+  // Per-component props for the layout-driven dashboard block. Keyed by the
+  // registry componentKey; LayoutSurface feeds each visible panel its slice.
+  const dashboardPanelProps = {
+    TopPerformers: { assets, buffettSummaries, onSelect: handleSelect },
+    SafetyBadge: { assets },
+    MarketDataHealthPanel: {},
+    OperatorAlerts: { assets, userTriggers: alertTriggers },
+    AlertManager: {
+      alerts,
+      availableSymbols: portfolioAssets.map((asset) => asset.symbol),
+      onAddAlert: handleAddAlert,
+      onRemoveAlert: handleRemoveAlert,
+      onToggleAlert: handleToggleAlert,
+    },
+    RiskCommandCenter: { assets, snapshots: portfolioSnapshots },
+    PortfolioManager: {
+      assets,
+      onSavePosition: handleSavePosition,
+      onRemoveAsset: handleRemoveAsset,
+      onImportPositions: handleImportPositions,
+    },
+  };
+
   if (!assets.length && portfolioAssets.length > 0) {
     return <MarketBootScreen status={marketStatus} />;
   }
@@ -556,45 +597,17 @@ export default function App() {
               <MarketLookup onSelect={handleSelect} />
             </section>
 
-            <section aria-label="Meilleures opportunités">
-              <TopPerformers assets={assets} buffettSummaries={buffettSummaries} onSelect={handleSelect} />
-            </section>
-
-            <section aria-label="Intégrité et fiabilité">
-              <SafetyBadge assets={assets} />
-            </section>
-
-            <section aria-label="État des fournisseurs de données">
-              <MarketDataHealthPanel />
-            </section>
-
-            <section aria-label="Alertes opérateur">
-              <OperatorAlerts assets={assets} userTriggers={alertTriggers} />
-            </section>
-
-            <section aria-label="Alertes configurables">
-              <AlertManager
-                alerts={alerts}
-                availableSymbols={portfolioAssets.map((asset) => asset.symbol)}
-                onAddAlert={handleAddAlert}
-                onRemoveAlert={handleRemoveAlert}
-                onToggleAlert={handleToggleAlert}
-              />
-            </section>
-
-            {/* Portfolio risk */}
-            <section aria-label="Centre de risque portefeuille">
-              <RiskCommandCenter assets={assets} snapshots={portfolioSnapshots} />
-            </section>
-
-            <section aria-label="Gestion des positions">
-              <PortfolioManager
-                assets={assets}
-                onSavePosition={handleSavePosition}
-                onRemoveAsset={handleRemoveAsset}
-                onImportPositions={handleImportPositions}
-              />
-            </section>
+            {/* Composable dashboard block — order & visibility from the layout
+                store (P0.2), driven by the feature registry (P0.1). */}
+            <LayoutSurface
+              surface="dashboard"
+              layout={layout}
+              components={DASHBOARD_FEATURE_COMPONENTS}
+              propsFor={(feature) => dashboardPanelProps[feature.componentKey] ?? {}}
+              wrapItem={(feature, node) => (
+                <section aria-label={feature.label}>{node}</section>
+              )}
+            />
 
             {/* Search & Filter */}
             <section aria-label="Recherche et filtres">

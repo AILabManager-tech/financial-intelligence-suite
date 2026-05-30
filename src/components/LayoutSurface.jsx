@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { getFeatureById } from "../core/featureRegistry";
 import { getVisibleFeatureIds } from "../services/layoutStore";
 
@@ -14,7 +15,11 @@ import { getVisibleFeatureIds } from "../services/layoutStore";
 // default is 1 (full width), which reproduces the current stacked layout
 // pixel-for-pixel. The 2-column arrangement lands with the settings UI (P0.4),
 // where the user can actually set it.
-export default function LayoutSurface({ surface, layout, components, propsFor }) {
+//
+// wrapItem(feature, node) lets a surface wrap each rendered feature (e.g. the
+// dashboard wraps panels in <section aria-label>). Keys are always applied by
+// LayoutSurface via Fragment, so wrapItem need not handle them.
+export default function LayoutSurface({ surface, layout, components, propsFor, wrapItem }) {
   const ids = getVisibleFeatureIds(layout, surface);
   return ids.map((id) => {
     const feature = getFeatureById(id);
@@ -24,6 +29,7 @@ export default function LayoutSurface({ surface, layout, components, propsFor })
     const Component = components[feature.componentKey];
     if (!Component) return null;
     const props = propsFor ? propsFor(feature) : {};
-    return <Component key={id} {...props} />;
+    const node = <Component {...props} />;
+    return <Fragment key={id}>{wrapItem ? wrapItem(feature, node) : node}</Fragment>;
   });
 }
