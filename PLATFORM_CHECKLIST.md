@@ -151,7 +151,7 @@ Légende:
   - Actuel: alertes opérateur configurables prix ≥/≤, variation % ≥/≤ et drift allocation, persistées localement et déclenchées sur le tick de quotes.
 - [ ] UX mobile avancée
 - [~] Préférences utilisateur
-  - Actuel: sélecteur de thème dans le header (`ThemeSelector` + `themeStore`), persisté `localStorage` `fis:theme:v1` et appliqué avant le premier paint. Pas encore d'autres préférences (densité, devise, langue).
+  - Actuel: (1) sélecteur de thème dans le header (`ThemeSelector` + `themeStore`), persisté `localStorage` `fis:theme:v1` et appliqué avant le premier paint ; (2) **store de layout** (`layoutStore`, P0.2) persisté `fis:layout:v1` — visibilité/ordre/colonnage par feature et par surface, réconcilié contre `featureRegistry`. Le store existe et est testé (24 tests) ; le rendu piloté par ces préférences arrive en P0.3, l'UI d'édition (toggles + drag-and-drop) en P0.4. Pas encore de préférences densité/devise/langue.
 - [~] Mode clair/sombre
   - Actuel: thème FIS sombre par défaut + option Clair via `:root[data-theme="light"]` (override CSS-vars). Inversion fonctionnelle mais expérimentale — quelques utilities Tailwind hardcodées (`text-white`, `text-slate-300/400`) restent telles quelles, le rendu sur fond clair est lisible mais sous-optimal.
 
@@ -248,7 +248,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (395 tests)
+- [x] `npm test` vert (419 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI

@@ -65,6 +65,8 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 >
 > Tests : 370 → **395 verts**. Reprise propre, prêt pour le prochain bloc (candidats Phase 0 ci-dessous).
 
+> **P0.2 livré — 2026-05-29 (niveau 3 MISSION).** `src/services/layoutStore.js` + `layoutStore.test.js` (24 tests). Généralise `themeStore` : localStorage versionné `fis:layout:v1`, `load/save/reset`, défaut = absence d'entrée. Persiste **par feature et par surface** : visibilité on/off, ordre, colonnage (1/2). Réconciliation contre `featureRegistry` au load ET au save (ids disparus écartés, nouvelles features ajoutées en fin à leurs défauts → zéro régression + tolérance aux futurs ajouts). Mutateurs purs immuables (`setFeatureVisibility`, `setFeatureColumns`, `moveFeature`) + `getVisibleFeatureIds` (pour le rendu P0.3). Suite : 395 → **419 tests verts**, lint + build verts. `main` est désormais **11 commits en avance sur `origin/main`** (8 de la reprise + P0.1 docs déjà là + ce commit feat P0.2). Toujours pas poussé. **Prochain bloc : P0.3 — rendu piloté par le layout.**
+
 ## Modules ajoutés depuis le checkpoint précédent (1f884eb)
 
 Commits feature livrés sur `main` depuis le checkpoint précédent :
@@ -359,14 +361,14 @@ L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de se
 
 > **P0.1 livré 2026-05-29** — registre central `src/core/featureRegistry.js` + `featureRegistry.test.js` (16 tests). 8 panels asset + 8 sections dashboard enregistrés sans toucher leur code. `componentKey` = string stable (mapping→composant déféré à P0.3). Données pures gelées en profondeur + helpers (`getFeatureById`, `getFeaturesBySurface`, `groupFeaturesByCategory`, `getDefaultLayout`). Suite : 379 → **395 tests verts**, lint + build verts. Commits chirurgicaux (WIP étranger laissé intact, non stagé).
 
-**Recommandation par défaut sur « on continue »** : **P0.2 — store de préférences + layout** (`src/services/layoutStore.js`). Généralise `themeStore` : localStorage versionné `fis:layout:v1`, `load/save/reset`, défaut = `getDefaultLayout(surface)` du registre P0.1 → **zéro régression**. Persiste par feature : visibilité on/off, ordre, colonnage. Effort M, dépend de P0.1 (livré). Pur data + localStorage, testable en isolation comme `themeStore` → bon candidat autonomie. ⚠️ WIP étranger toujours non commité dans le tree (cf. § Etat git) — ne pas l'écraser.
+**Recommandation par défaut sur « on continue »** : **P0.3 — rendu piloté par le layout**. Refactor de `IntelligenceCard.jsx` (surface `asset`) et du dashboard dans `App.jsx` (surface `dashboard`) : remplacer l'empilage en dur par un rendu qui itère sur `getVisibleFeatureIds(loadLayout(), surface)` (de `layoutStore`, P0.2) et résout `componentKey → composant` via un mapping local au rendu, en appliquant le colonnage. **Seul gros touch d'orchestrateur central** ; les panels ne changent pas. Défaut identique au pixel à l'actuel (défaut du store = toutes features visibles, ordre canonique, 1 colonne). Effort L, dépend de P0.1 + P0.2 (livrés). ⚠️ Vérifier les lignes d'empilage réelles dans `IntelligenceCard.jsx` avant de refactorer (les numéros de lignes peuvent avoir bougé).
 
 Candidats restants (ordre = chemin recommandé du roadmap) :
 
 **Phase 0 — noyau personnalisable (priorité absolue, dans l'ordre) :**
-- **P0.1** registre de features (`src/core/featureRegistry.js`) — *recommandation par défaut, ci-dessus*.
-- **P0.2** store de préférences + layout (`src/services/layoutStore.js`, généralise `themeStore` : visibilité/ordre/colonnage, localStorage versionné, défaut tout-visible).
-- **P0.3** rendu piloté par le layout (refactor `IntelligenceCard.jsx` + dashboard : lire registre + layoutStore au lieu de l'empilage en dur ll. 378-392 ; défaut identique au pixel). Seul gros touch d'orchestrateur.
+- ~~**P0.1** registre de features (`src/core/featureRegistry.js`)~~ ✅ livré.
+- ~~**P0.2** store de préférences + layout (`src/services/layoutStore.js`)~~ ✅ livré.
+- **P0.3** rendu piloté par le layout (refactor `IntelligenceCard.jsx` + dashboard : lire registre + layoutStore au lieu de l'empilage en dur ; défaut identique au pixel) — *recommandation par défaut, ci-dessus*. Seul gros touch d'orchestrateur.
 - **P0.4** onglet Paramètres `/settings` : toggles on/off + drag-and-drop de repositionnement + aperçu live + reset.
 - **P0.5** profils de gestionnaire (presets « Vue d'ensemble / Value / Trader / Conseiller client », applicables en 1 clic, custom sauvegardables).
 

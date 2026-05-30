@@ -210,6 +210,13 @@ P0.1 [x] livré 2026-05-29 `f242c0c` — registre central de features (src/core/
         8 panels asset + 8 sections dashboard enregistrés. Champ componentKey = string
         stable (mapping -> composant déféré au rendu P0.3). Données pures, immuables (gel
         profond), helpers get/by-surface/by-category/default-layout. 395 tests verts.
+P0.2 [x] livré 2026-05-29 — store de préférences + layout (src/services/layoutStore.js + 24 tests)
+        Généralise themeStore : localStorage versionné `fis:layout:v1`, load/save/reset, défaut =
+        absence d'entrée. Persiste PAR feature et PAR surface : visibilité on/off, ordre, colonnage
+        (1/2). Réconciliation contre le registre au load ET au save : ids disparus écartés, nouvelles
+        features du registre ajoutées en fin à leurs valeurs par défaut (zéro régression + tolérance
+        aux futurs ajouts P0.x). Mutateurs purs immuables (setFeatureVisibility/Columns, moveFeature)
+        + getVisibleFeatureIds (consommé par le rendu P0.3). 419 tests verts.
 ```
 
 ### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
@@ -226,9 +233,9 @@ P0.1 [x] livré 2026-05-29 `f242c0c` — registre central de features (src/core/
 
 ## Prochain bloc recommandé
 
-**P0.2 (store de préférences + layout)** — `src/services/layoutStore.js` généralisant `themeStore` (localStorage versionné `fis:layout:v1`, `load/save/reset`, défaut = `getDefaultLayout()` du registre → zéro régression). Persiste visibilité/ordre/colonnage par feature. Dépend de P0.1 (livré). Effort M.
+**P0.3 (rendu piloté par le layout)** — refactor de `IntelligenceCard.jsx` (surface `asset`) et du dashboard `App.jsx` (surface `dashboard`) : remplacer l'empilage en dur par un rendu qui lit `featureRegistry` (catalogue) + `layoutStore` (préférences). Itérer sur `getVisibleFeatureIds(layout, surface)`, résoudre `componentKey → composant` via un mapping local au rendu, appliquer le colonnage. **Seul gros touch d'orchestrateur central.** Les panels eux-mêmes ne changent pas. Défaut identique au pixel à l'actuel (le défaut du store = toutes features visibles, ordre canonique, 1 colonne). Dépend de P0.1 + P0.2 (livrés). Effort L.
 
-Séquence Phase 0 : ~~P0.1 registre~~ ✅ → **P0.2 store** → P0.3 rendu piloté (le refactor central) → P0.4 onglet Paramètres + drag-and-drop → P0.5 profils.
+Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → **P0.3 rendu piloté** (le refactor central) → P0.4 onglet Paramètres + drag-and-drop → P0.5 profils.
 
 ## Mise à jour de ce document
 
