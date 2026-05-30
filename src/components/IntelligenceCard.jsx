@@ -13,6 +13,23 @@ import EarningsCalendarPanel from "./EarningsCalendarPanel";
 import DividendHistoryPanel from "./DividendHistoryPanel";
 import SecFilingsPanel from "./SecFilingsPanel";
 import PeersComparisonPanel from "./PeersComparisonPanel";
+import LayoutSurface from "./LayoutSurface";
+import { useLayout } from "../hooks/useLayout";
+
+// Maps the registry componentKeys of the "asset" surface to their components.
+// The render order and visibility now come from the layout store (P0.2) via
+// LayoutSurface; this map only resolves the stable string keys to components.
+// All asset panels take the same single prop (asset), so propsFor is uniform.
+const ASSET_FEATURE_COMPONENTS = {
+  FundamentalsPanel,
+  BuffettAnalysisPanel,
+  AnalystRatingsPanel,
+  EarningsCalendarPanel,
+  DividendHistoryPanel,
+  CompanyNewsPanel,
+  SecFilingsPanel,
+  PeersComparisonPanel,
+};
 
 function formatTick(value, timeUnit) {
   if (!value) return "";
@@ -212,6 +229,7 @@ export default function IntelligenceCard({
   isInWatchlist = false,
   isFavorite = false,
 }) {
+  const layout = useLayout();
   const isUp = asset.changePct >= 0;
   const [positionDraft, setPositionDraft] = useState({
     symbol: asset.symbol,
@@ -375,21 +393,12 @@ export default function IntelligenceCard({
         </div>
       </div>
 
-      <FundamentalsPanel asset={asset} />
-
-      <BuffettAnalysisPanel asset={asset} />
-
-      <AnalystRatingsPanel asset={asset} />
-
-      <EarningsCalendarPanel asset={asset} />
-
-      <DividendHistoryPanel asset={asset} />
-
-      <CompanyNewsPanel asset={asset} />
-
-      <SecFilingsPanel asset={asset} />
-
-      <PeersComparisonPanel asset={asset} />
+      <LayoutSurface
+        surface="asset"
+        layout={layout}
+        components={ASSET_FEATURE_COMPONENTS}
+        propsFor={() => ({ asset })}
+      />
     </div>
   );
 }
