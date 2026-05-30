@@ -206,10 +206,22 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 ## Modules livrés
 
 ```
-P0.1 [x] livré 2026-05-29 — registre central de features (src/core/featureRegistry.js + 16 tests)
+P0.1 [x] livré 2026-05-29 `f242c0c` — registre central de features (src/core/featureRegistry.js + 16 tests)
         8 panels asset + 8 sections dashboard enregistrés. Champ componentKey = string
         stable (mapping -> composant déféré au rendu P0.3). Données pures, immuables (gel
         profond), helpers get/by-surface/by-category/default-layout. 395 tests verts.
+```
+
+### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
+
+```
+[x] `d736d24` — Score Buffett dans le portefeuille. services/buffettReadiness.js calcule par
+        actif valeur intrinsèque + marge de sécurité + score /6 + signal BUY/SELL depuis les
+        fondamentaux Finnhub ; AssetTable gagne une colonne "Buffett" triable, App fetch les
+        résumés (AbortSignal) et les propage à AssetTable/TopPerformers/SearchFilter.
+[x] `208aafe` — Dividendes multi-provider. server/dividends.js cascade Finnhub -> Alpha Vantage
+        -> Twelve Data (firstSuccessfulProvider), provenance taguée, payload "unavailable" caché
+        si tout échoue ; liveQuotes source "mock" -> "unavailable".
 ```
 
 ## Prochain bloc recommandé

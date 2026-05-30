@@ -16,11 +16,11 @@ Légende:
 - [x] Provenance visible dans l'interface
   - Actuel: source et horodatage affichés par actif.
 - [x] Fallback contrôlé si source primaire échoue
-  - Actuel: fallback quotes seulement.
+  - Actuel: fallback quotes (Finnhub → Stooq) et dividendes (cascade Finnhub → Alpha Vantage → Twelve Data via `firstSuccessfulProvider`, payload `unavailable` caché si tout échoue).
 - [x] Masquage des données simulées au chargement initial
   - Actuel: dashboard masqué tant que les quotes ne sont pas reçues.
 - [~] Normalisation multi-sources
-  - Actuel: normalisation minimale quote/historique.
+  - Actuel: normalisation minimale quote/historique ; dividendes normalisés sur 3 sources (Finnhub/Alpha Vantage/Twelve Data) avec provenance taguée par item.
 - [~] Gestion avancée des rate limits
   - Actuel: réduction des appels par cache TTL en mémoire, pas encore quotas par fournisseur.
 - [~] Cache serveur robuste avec TTL par fournisseur
@@ -87,6 +87,7 @@ Légende:
 - [x] Min/max et variation période
 - [x] Couleur hausse/baisse
 - [x] Table des actifs triable
+  - Actuel: tri par symbole/valeur/variation + colonne « Buffett » triable (score /6 + signal BUY/SELL par actif via `buffettReadiness`, « Fondamentaux requis » si données insuffisantes).
 - [x] Vue top movers
 - [x] Graphique portefeuille
   - Actuel: courbe de valeur portefeuille basée sur snapshots SQLite.
@@ -247,10 +248,11 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (368 tests)
+- [x] `npm test` vert (395 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
-- [ ] Tests composants UI
+- [~] Tests composants UI
+  - Actuel: tests `@testing-library/react` sur AssetTable, BuffettAnalysisPanel, BuffettMathBreakdown, PeersComparisonPanel, SecFilingsPanel, ThemeSelector. Couverture partielle (les panels les plus logiques sont testés, pas tous).
 - [ ] Tests API endpoints
 - [ ] Tests e2e Playwright
 - [ ] Tests accessibilité
