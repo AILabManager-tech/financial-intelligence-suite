@@ -72,6 +72,7 @@ import {
   removeTransaction,
   saveTransactions,
 } from "./services/transactionStore";
+import { fetchTransactionsFromApi, saveTransactionsToApi } from "./services/transactionApi";
 import { useLayout } from "./core/layoutContext";
 import { applyTheme, loadTheme } from "./services/themeStore";
 
@@ -216,7 +217,7 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
-    // Dev SQLite mirrors every mandate (P3.2c); hydrate the active one.
+    // Dev SQLite mirrors every mandate (P3.2c+); hydrate the active one.
     fetchPortfolioFromApi(activeId)
       .then((remoteAssets) => {
         if (active && remoteAssets.length > 0) {
@@ -225,6 +226,17 @@ export default function App() {
       })
       .catch(() => {
         // localStorage remains the offline fallback.
+      });
+
+    // Transactions are mirrored server-side too (Phase 3 closure).
+    fetchTransactionsFromApi(activeId)
+      .then((remoteTransactions) => {
+        if (active && remoteTransactions.length > 0) {
+          setTransactions(remoteTransactions);
+        }
+      })
+      .catch(() => {
+        // localStorage (transactionStore) is the offline fallback.
       });
 
     return () => {
@@ -294,6 +306,11 @@ export default function App() {
         if (remoteAssets.length > 0) setPortfolioAssets(remoteAssets);
       })
       .catch(() => {});
+    fetchTransactionsFromApi(id)
+      .then((remoteTransactions) => {
+        if (remoteTransactions.length > 0) setTransactions(remoteTransactions);
+      })
+      .catch(() => {});
     fetchPortfolioSnapshots(120, id)
       .then(setPortfolioSnapshots)
       .catch(() => setPortfolioSnapshots([]));
@@ -336,6 +353,10 @@ export default function App() {
   const persistTransactions = useCallback((next) => {
     saveTransactions(next, activeId);
     setTransactions(next);
+    // Dev SQLite mirrors the active mandate's journal (Phase 3 closure).
+    saveTransactionsToApi(next, activeId).catch(() => {
+      // Browser storage is the durable fallback in local/dev mode.
+    });
   }, [activeId]);
 
   const handleAddTransaction = useCallback((draft) => {

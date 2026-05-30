@@ -92,6 +92,42 @@ function rowToSnapshot(row) {
   };
 }
 
+const TRANSACTION_TYPES = new Set(["buy", "sell", "dividend", "fee"]);
+
+// Normalize a raw transaction for storage. Mirrors the client transactionStore
+// shape ({ id, type, symbol, date, quantity, price, fee, amount }); the DB column
+// for `date` is `trade_date`. Returns null for records that can't be valid
+// (unknown type, missing symbol/date) so they're dropped rather than persisted.
+function normalizeTransaction(transaction) {
+  if (!transaction || !TRANSACTION_TYPES.has(transaction.type)) return null;
+  const symbol = String(transaction.symbol ?? "").trim().toUpperCase();
+  const date = String(transaction.date ?? "").trim();
+  if (!symbol || !date) return null;
+  return {
+    id: typeof transaction.id === "string" && transaction.id ? transaction.id : null,
+    type: transaction.type,
+    symbol,
+    date,
+    quantity: cleanNumber(transaction.quantity, 0),
+    price: cleanNumber(transaction.price, 0),
+    fee: cleanNumber(transaction.fee, 0),
+    amount: cleanNumber(transaction.amount, 0),
+  };
+}
+
+function rowToTransaction(row) {
+  return {
+    id: row.id,
+    type: row.type,
+    symbol: row.symbol,
+    date: row.trade_date,
+    quantity: row.quantity,
+    price: row.price,
+    fee: row.fee,
+    amount: row.amount,
+  };
+}
+
 function portfolioId(value) {
   const id = String(value ?? "").trim();
   return id || DEFAULT_PORTFOLIO_ID;
@@ -187,6 +223,42 @@ export function createPortfolioRepository(dbPath = defaultDbPath) {
     LIMIT @limit
   `);
 
+  const listTransactionsStmt = db.prepare(`
+    SELECT id, type, symbol, trade_date, quantity, price, fee, amount
+    FROM transactions
+    WHERE portfolio_id = ?
+    ORDER BY trade_date ASC, id ASC
+  `);
+
+  const deleteTransactions = db.prepare("DELETE FROM transactions WHERE portfolio_id = ?");
+  const insertTransaction = db.prepare(`
+    INSERT INTO transactions (
+      id, portfolio_id, type, symbol, trade_date, quantity, price, fee, amount
+    ) VALUES (
+      @id, @portfolioId, @type, @symbol, @date, @quantity, @price, @fee, @amount
+    )
+  `);
+
+  // Replace-all per mandate, mirroring saveAssets: the client owns the full
+  // transaction array (with its own stable tN ids), so each save is a snapshot.
+  // A null id (older client record) gets a deterministic positional fallback so
+  // the PRIMARY KEY is always satisfied.
+  const replaceTransactions = db.transaction((id, transactions) => {
+    ensurePortfolio.run({ id, name: id });
+    deleteTransactions.run(id);
+    transactions
+      .map(normalizeTransaction)
+      .filter(Boolean)
+      .forEach((transaction, index) => {
+        insertTransaction.run({
+          ...transaction,
+          id: transaction.id ?? `t${index + 1}`,
+          portfolioId: id,
+        });
+      });
+    touchPortfolio.run(id);
+  });
+
   return {
     // --- Mandates -----------------------------------------------------------
     listPortfolios() {
@@ -227,6 +299,16 @@ export function createPortfolioRepository(dbPath = defaultDbPath) {
         .all({ portfolioId: portfolioId(id), limit: normalizedLimit })
         .map(rowToSnapshot)
         .reverse();
+    },
+
+    // --- Transactions (P3.3 server parity) ----------------------------------
+    listTransactions(id = DEFAULT_PORTFOLIO_ID) {
+      return listTransactionsStmt.all(portfolioId(id)).map(rowToTransaction);
+    },
+    saveTransactions(transactions, id = DEFAULT_PORTFOLIO_ID) {
+      const scoped = portfolioId(id);
+      replaceTransactions(scoped, Array.isArray(transactions) ? transactions : []);
+      return this.listTransactions(scoped);
     },
 
     close() {

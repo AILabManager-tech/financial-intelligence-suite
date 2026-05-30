@@ -80,6 +80,18 @@ describe("loadMigrations / runMigrations (dossier réel)", () => {
     expect(tableNames(db)).toContain("transactions");
   });
 
+  it("applique 004 : transactions a une clé composite (portfolio_id, id)", () => {
+    const db = memDb();
+    const applied = runMigrations(db);
+    expect(applied).toContain("004");
+    // composite PK lets the same client id coexist across mandates
+    db.exec("INSERT INTO portfolios (id, name) VALUES ('a', 'A'), ('b', 'B')");
+    const ins = db.prepare("INSERT INTO transactions (id, portfolio_id, type, symbol, trade_date) VALUES (?, ?, 'buy', 'AAPL', '2020-01-01')");
+    ins.run("t1", "a");
+    expect(() => ins.run("t1", "b")).not.toThrow();
+    expect(() => ins.run("t1", "a")).toThrow();
+  });
+
   it("loadMigrations ignore les fichiers non conformes et lit le SQL", () => {
     const migrations = loadMigrations(MIGRATIONS_DIR);
     expect(migrations.length).toBeGreaterThanOrEqual(1);

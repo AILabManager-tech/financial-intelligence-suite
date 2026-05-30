@@ -135,3 +135,50 @@ describe('portfolioRepository — multi-mandats (P3.2c)', () => {
     cleanup();
   });
 });
+
+describe('portfolioRepository — transactions (P3 server parity)', () => {
+  it('persiste et relit les transactions, mappant date<->trade_date', () => {
+    const { repository, cleanup } = freshRepo();
+    repository.saveTransactions([
+      { id: 't1', type: 'buy', symbol: 'aapl', date: '2020-01-01', quantity: 10, price: 100, fee: 5 },
+      { id: 't2', type: 'dividend', symbol: 'AAPL', date: '2021-02-01', amount: 25 },
+    ], 'default');
+
+    const rows = repository.listTransactions('default');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ id: 't1', type: 'buy', symbol: 'AAPL', date: '2020-01-01', quantity: 10, price: 100, fee: 5 });
+    expect(rows[1]).toMatchObject({ id: 't2', type: 'dividend', symbol: 'AAPL', amount: 25 });
+    cleanup();
+  });
+
+  it('isole les transactions par mandat', () => {
+    const { repository, cleanup } = freshRepo();
+    repository.saveTransactions([{ id: 't1', type: 'buy', symbol: 'AAPL', date: '2020-01-01', quantity: 1, price: 1 }], 'default');
+    repository.saveTransactions([{ id: 't1', type: 'buy', symbol: 'MSFT', date: '2020-01-01', quantity: 2, price: 2 }], 'client-a');
+    expect(repository.listTransactions('default').map((t) => t.symbol)).toEqual(['AAPL']);
+    expect(repository.listTransactions('client-a').map((t) => t.symbol)).toEqual(['MSFT']);
+    cleanup();
+  });
+
+  it('remplace tout le journal à chaque save (snapshot) et ignore les invalides', () => {
+    const { repository, cleanup } = freshRepo();
+    repository.saveTransactions([{ id: 't1', type: 'buy', symbol: 'AAPL', date: '2020-01-01', quantity: 1, price: 1 }], 'default');
+    repository.saveTransactions([
+      { id: 't2', type: 'sell', symbol: 'AAPL', date: '2021-01-01', quantity: 1, price: 2 },
+      { type: 'xfer', symbol: 'AAPL', date: '2021-01-01' },
+      { type: 'buy', symbol: '', date: '2021-01-01' },
+    ], 'default');
+    const rows = repository.listTransactions('default');
+    expect(rows.map((t) => t.id)).toEqual(['t2']);
+    cleanup();
+  });
+
+  it('cascade : supprimer le mandat supprime ses transactions', () => {
+    const { repository, cleanup } = freshRepo();
+    repository.saveTransactions([{ id: 't1', type: 'buy', symbol: 'TSLA', date: '2020-01-01', quantity: 1, price: 1 }], 'client-a');
+    expect(repository.listTransactions('client-a')).toHaveLength(1);
+    repository.removePortfolio('client-a');
+    expect(repository.listTransactions('client-a')).toHaveLength(0);
+    cleanup();
+  });
+});

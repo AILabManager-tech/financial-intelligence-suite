@@ -430,6 +430,36 @@ export default defineConfig(({ mode }) => {
           }
         })
 
+        server.middlewares.use('/api/transactions', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const portfolioId = (requestUrl.searchParams.get('portfolio') ?? 'default').trim() || 'default'
+
+          if (request.method === 'GET') {
+            sendJson(response, 200, {
+              transactions: portfolioRepository.listTransactions(portfolioId),
+              source: 'sqlite',
+            })
+            return
+          }
+
+          if (request.method !== 'PUT') {
+            sendJson(response, 405, { error: 'method not allowed' })
+            return
+          }
+
+          try {
+            const payload = await readJsonBody(request)
+            const transactions = Array.isArray(payload.transactions) ? payload.transactions : []
+            sendJson(response, 200, {
+              transactions: portfolioRepository.saveTransactions(transactions, portfolioId),
+              updatedAt: new Date().toISOString(),
+              source: 'sqlite',
+            })
+          } catch (error) {
+            sendJson(response, 400, { error: error.message })
+          }
+        })
+
         server.middlewares.use('/api/fx', async (request, response) => {
           const requestUrl = new URL(request.url ?? '', 'http://localhost')
           const base = (requestUrl.searchParams.get('base') ?? 'USD').trim().toUpperCase() || 'USD'
