@@ -76,7 +76,8 @@ Légende:
   - Actuel: parser CSV générique (détection automatique des en-têtes EN/FR), preview avec lignes valides + erreurs ligne par ligne, upsert dans le portefeuille local et serveur.
 - [x] Export CSV/JSON
   - Actuel: export depuis le gestionnaire de positions avec métriques portefeuille.
-- [ ] Plusieurs portefeuilles par utilisateur
+- [x] Plusieurs portefeuilles par utilisateur
+  - Actuel: mandats multiples (P3.2) — sélecteur header (switch/créer/renommer/supprimer), positions scopées par mandat (localStorage `fis:portfolios:v1` + clé positions namespacée). Prod via localStorage ; parité dev SQLite (P3.2c) à faire.
 - [x] Snapshots historiques du portefeuille
   - Actuel: snapshots locaux SQLite via `/api/portfolio/snapshots`.
 
@@ -248,7 +249,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (510 tests)
+- [x] `npm test` vert (526 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI

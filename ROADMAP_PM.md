@@ -290,6 +290,16 @@ P3.1 [x] livré 2026-05-30 `8c0cd25` — migrations SQLite versionnées (server/
         server/migrations/001_initial_schema.sql + 8 tests). schema_migrations + application
         transactionnelle des migrations en attente, idempotent. portfolioRepository exécute
         runMigrations(db) au lieu du CREATE TABLE inline. SQLite reste dev-only. 510 tests verts.
+P3.2 [~] livré 2026-05-30 (client-first, prod-correct) — multi-portefeuilles (mandats).
+          `e78f47e` P3.2a : portfolioListStore (mandats {id,name,client,baseCurrency,openedAt} +
+                 actif, localStorage fis:portfolios:v1, mutateurs purs) + positions scopées par
+                 mandat dans portfolioStore (clé namespacée, default=clé legacy). 12 tests.
+          `aa424ba` P3.2b : PortfolioSelector (header : switch/créer/renommer/supprimer) + App
+                 scope les positions par mandat actif, recharge au switch. Vérifié live : mandat
+                 « Client Test » isolé, retour principal repeuplé (re-hydrate SQLite en dev).
+          RESTE P3.2c (parité dev SQLite : migration 002 colonnes mandat + repo CRUD + API
+                 /api/portfolios scopé) — dev-only, le multi-portefeuilles fonctionne déjà en
+                 prod via localStorage. 526 tests verts.
 ```
 
 > **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée.
@@ -308,7 +318,7 @@ P3.1 [x] livré 2026-05-30 `8c0cd25` — migrations SQLite versionnées (server/
 
 ## Prochain bloc recommandé
 
-**P3.2 (multi-portefeuilles)** — sélecteur de portefeuille en header + CRUD mandat (nom, client, devise base, date d'ouverture). Exposer/étendre la table `portfolios` (déjà présente, gérée par migrations P3.1). Migration `002_*.sql` pour les colonnes mandat (client, base_currency, opened_at). API `/api/portfolios` (liste/créer/renommer/supprimer) + scope des positions/snapshots par `portfolio_id` (déjà la PK). UI : sélecteur + gestion. Effort M, dépend de P3.1 (livré). C'est la base du « N mandats clients ». **NB priorité** : maintenant que le MVP (Phases 0→2) est atteint, Phase 3 fait passer l'app de « terminal + studio » à « vrai outil PM » — à arbitrer vs polissage de l'existant selon les retours d'usage.
+**P3.3 (transactions + lots fiscaux)** — table `transactions` (achat/vente/dividende/frais/apport/retrait), moteur d'appariement de lots FIFO/LIFO/spec-ID, P&L réalisé par lot, frais imputés. Bâtir d'abord le **moteur pur** (`src/utils/lotEngine.js` : appliquer une séquence de transactions → lots ouverts + P&L réalisé), testable, puis le stockage (client + migration 003 dev) et l'UI (journal de transactions). Client-first comme P3.2. Effort L, dépend de P3.2 (livré). **Reste aussi P3.2c** (parité dev SQLite, dev-only) et **P3.4** (multi-devises + FX, provider externe ECB/exchangerate.host). **NB** : Phase 3 est volumineuse (4 sous-phases) ; livrée de façon incrémentale, chaque bloc poussé.
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 

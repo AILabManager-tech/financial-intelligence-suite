@@ -65,6 +65,8 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 >
 > Tests : 370 → **395 verts**. Reprise propre, prêt pour le prochain bloc (candidats Phase 0 ci-dessous).
 
+> **P3.2 livré (multi-portefeuilles, client-first) — 2026-05-30 (niveau 3 MISSION).** `e78f47e` P3.2a : `portfolioListStore` (mandats + actif, `fis:portfolios:v1`) + positions scopées par mandat (`portfolioStore`, clé namespacée, default=legacy). `aa424ba` P3.2b : `PortfolioSelector` header (switch/créer/renommer/supprimer) + App scope par mandat actif. **Vérifié live** : mandat « Client Test » isolé (vide), retour principal repeuplé (re-hydrate SQLite en dev — bug du switch-back trouvé+corrigé en dogfood). Suite 510 → **526 tests verts**, lint+build verts, **poussé** (`aa424ba`). **RESTE Phase 3** : P3.2c (parité dev SQLite — migration 002 + repo CRUD + API scopé, dev-only) ; **P3.3 transactions + lots fiscaux** (moteur FIFO/LIFO pur d'abord) ; **P3.4 multi-devises + FX** (provider externe). **Prochain bloc : P3.3 — moteur de lots (`src/utils/lotEngine.js`, pur/testable) d'abord.**
+
 > **P3.1 livré + 32 commits poussés sur `origin/main` — 2026-05-30 (niveau 3 MISSION).** Migrations SQLite versionnées : `server/migrate.js` (loadMigrations + applyMigrations transactionnel/idempotent + runMigrations) + `server/migrations/001_initial_schema.sql` (schéma actuel, IF NOT EXISTS pour adoption sans heurt des DB dev existantes) + 8 tests. `portfolioRepository` appelle `runMigrations(db)` au lieu du CREATE TABLE inline. SQLite reste dev-only. **Push effectué** : `origin/main` était à `ba1e2c7`, désormais à `8c36c4d` (32 commits Phase 0→2) ; P3.1 `8c0cd25` à pousser au prochain push. Suite 502 → **510 tests verts**, lint+build verts. **Prochain bloc : P3.2 — multi-portefeuilles (sélecteur header + CRUD mandat + migration 002).**
 
 > **🏁 P2.2 livré — PHASE 2 COMPLÈTE — MVP « studio composable démontrable » atteint — 2026-05-30 (niveau 3 MISSION).** Portefeuille de démo multi-positions. `P2.2a 38afd57` : agrégation pure `src/utils/portfolioSimulation.js` (+9 tests) — `aggregateCurves` (somme N courbes sur axe de dates commun + report avant), `simulateDemoPortfolio`, `excessReturnPct`. `P2.2b 1838917` : route `/demo` + `DemoPortfolioPanel` (formulaire multi-positions, double courbe Portefeuille vs benchmark SPY, tableau, bandeau hypothèse). **Vérifié live** : AAPL+MSFT 10k/2021 → 22,6k$ (+13%), −12,2 pts vs SPY. Suite 489 → **502 tests verts**, lint+build verts. `main` 31 commits devant `origin`, non poussé. **Phases 0→2 (MVP roadmap) toutes complètes. Prochain bloc : P3.1 — migrations SQLite versionnées (1re brique Phase 3, socle données PM).**
@@ -380,7 +382,7 @@ L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de se
 
 > **P0.1 livré 2026-05-29** — registre central `src/core/featureRegistry.js` + `featureRegistry.test.js` (16 tests). 8 panels asset + 8 sections dashboard enregistrés sans toucher leur code. `componentKey` = string stable (mapping→composant déféré à P0.3). Données pures gelées en profondeur + helpers (`getFeatureById`, `getFeaturesBySurface`, `groupFeaturesByCategory`, `getDefaultLayout`). Suite : 379 → **395 tests verts**, lint + build verts. Commits chirurgicaux (WIP étranger laissé intact, non stagé).
 
-**Recommandation par défaut sur « on continue »** : **P3.2 — multi-portefeuilles**. Sélecteur de portefeuille en header + CRUD mandat (nom, client, devise base, date d'ouverture). Migration `002_*.sql` (colonnes mandat sur `portfolios`), API `/api/portfolios` (liste/créer/renommer/supprimer), scope positions/snapshots par `portfolio_id` (déjà la PK), UI sélecteur + gestion. Effort M, dépend de P3.1 (livré). ⚠️ Garder le **principe IA transverse** (prise prête), la palette gelée. **P1.2 (IA agencement) reste gelé**. NB toujours ouvert : rendu colonnage 1/2 dans `LayoutSurface`. **Arbitrage possible** : le user a dit vouloir analyser le comportement final du MVP — confirmer s'il veut poursuivre Phase 3 ou polir/évaluer d'abord.
+**Recommandation par défaut sur « on continue »** : **P3.3 — transactions + lots fiscaux**, en commençant par le **moteur pur** `src/utils/lotEngine.js` (appliquer une séquence de transactions achat/vente/dividende/frais → lots ouverts FIFO/LIFO/spec-ID + P&L réalisé par lot), testable comme les calculateurs P2 ; puis stockage client + UI journal. Client-first. Effort L, dépend de P3.2 (livré). ⚠️ Garder le **principe IA transverse** + palette gelée. **Reste Phase 3** : P3.2c (parité dev SQLite, dev-only), P3.4 (multi-devises + FX). **P1.2 (IA) gelé.** NB ouvert : rendu colonnage 1/2 dans `LayoutSurface`.
 
 Candidats restants (ordre = chemin recommandé du roadmap) :
 
@@ -402,8 +404,9 @@ Candidats restants (ordre = chemin recommandé du roadmap) :
 
 **Phase 3 — socle données PM (en cours) :**
 - ~~**P3.1** migrations SQLite versionnées (`server/migrate.js` + `migrations/NNN_*.sql`)~~ ✅ livré.
-- **P3.2** multi-portefeuilles (sélecteur header + CRUD mandat + migration 002) — *recommandation par défaut, ci-dessus*.
-- **P3.3** transactions + lots fiscaux ; **P3.4** multi-devises + FX.
+- ~~**P3.2** multi-portefeuilles (client-first : selector + scoping)~~ ✅ livré. Reste P3.2c (parité dev SQLite, dev-only).
+- **P3.3** transactions + lots fiscaux (moteur FIFO/LIFO pur d'abord) — *recommandation par défaut, ci-dessus*.
+- **P3.4** multi-devises + FX (provider externe ECB/exchangerate.host).
 - **P4.x** returns / TWR / MWR / vol-drawdown / Sharpe-Sortino-Calmar / benchmark / beta / ratios étendus / attribution Brinson / distribution / VaR-CVaR / stats opérationnelles — chacune = feature de catalogue.
 
 **Phases 5-9 — selon besoins réels :**
