@@ -48,6 +48,7 @@ import AlertManager from "./components/AlertManager";
 import ThemeSelector from "./components/ThemeSelector";
 import LayoutSurface from "./components/LayoutSurface";
 import SettingsPage from "./components/SettingsPage";
+import DemoPortfolioPanel from "./components/DemoPortfolioPanel";
 import { useLayout } from "./core/layoutContext";
 import { applyTheme, loadTheme } from "./services/themeStore";
 
@@ -180,7 +181,8 @@ export default function App() {
 
   const isWatchlistRoute = currentPath === "/watchlist";
   const isSettingsRoute = currentPath === "/settings";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute;
+  const isDemoRoute = currentPath === "/demo";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute;
   const layout = useLayout();
 
   useEffect(() => {
@@ -490,8 +492,9 @@ export default function App() {
     },
   };
 
-  // Settings don't depend on live quotes — keep them reachable while prices load.
-  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute) {
+  // Settings and the demo simulator don't depend on live quotes — keep them
+  // reachable while prices load.
+  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute && !isDemoRoute) {
     return <MarketBootScreen status={marketStatus} />;
   }
 
@@ -535,6 +538,13 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => navigateTo("/demo")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDemoRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                >
+                  Démo
+                </button>
+                <button
+                  type="button"
                   onClick={() => navigateTo("/settings")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isSettingsRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
                 >
@@ -552,6 +562,8 @@ export default function App() {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8" role="main">
         {isSettingsRoute ? (
           <SettingsPage />
+        ) : isDemoRoute ? (
+          <DemoPortfolioPanel />
         ) : isWatchlistRoute ? (
           <>
             <section aria-label="Recherche marché globale">
