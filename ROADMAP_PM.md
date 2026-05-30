@@ -240,7 +240,18 @@ P0.4 [x] livré 2026-05-29 — onglet Paramètres `/settings` (layout réactif +
           P0.4c `682c75c` — réordonnancement : drag-and-drop natif HTML5 + boutons monter/descendre
                  (même move()). Vérifié live : descendre un panneau réordonne le dashboard.
         446 tests verts, lint + build verts. Palette FIS respectée (aucune couleur neuve).
+P0.5 [x] livré 2026-05-29 — profils de gestionnaire (presets). CLÔT LA PHASE 0.
+          P0.5a `584ab56` — 4 profils intégrés en données pures (core/layoutProfiles.js : Vue
+                 d'ensemble / Value investor / Trader / Conseiller client) + buildLayoutFromProfile
+                 + contrôle apply() au provider + ProfilePicker dans SettingsPage. Vérifié live :
+                 appliquer « Trader » réduit le dashboard à ses 4 panneaux.
+          P0.5b `3bd62a6` — profils custom (services/profileStore.js, fis:profiles:v1) :
+                 enregistrer l'agencement courant comme profil nommé, appliquer, supprimer.
+                 Vérifié live : profil sauvegardé, listé, persisté.
+        466 tests verts, lint + build verts.
 ```
+
+> **🏁 PHASE 0 COMPLÈTE (2026-05-29).** Le noyau personnalisable est livré : registre de features (P0.1) → store de layout réactif (P0.2) → rendu piloté (P0.3) → onglet Paramètres avec toggles/colonnage/drag-and-drop (P0.4) → profils intégrés + custom (P0.5). N'importe quel gestionnaire ouvre l'app, choisit un profil ou compose son espace (activer/désactiver/repositionner), et le retrouve à la session suivante. 466 tests verts.
 
 ### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
 
@@ -256,9 +267,9 @@ P0.4 [x] livré 2026-05-29 — onglet Paramètres `/settings` (layout réactif +
 
 ## Prochain bloc recommandé
 
-**P0.5 (profils de gestionnaire / presets)** — dernier bloc de Phase 0. Bundles nommés livrés d'origine (« Vue d'ensemble », « Value investor », « Trader », « Conseiller client ») : chaque profil = un set de features visibles + un ordre préconfigurés par surface, applicable en 1 clic depuis `/settings`, puis ajustable. Profils custom sauvegardables (localStorage, ex. `fis:profiles:v1`). S'appuie sur le layout réactif + les mutateurs (P0.4) : appliquer un profil = produire un layout complet et le commiter. Définir les presets en données pures (testable), un sélecteur de profil dans SettingsPage, et la sauvegarde/suppression de profils custom. Effort M, dépend de P0.1→P0.4 (livrés). **Clôt Phase 0** → le noyau personnalisable est complet.
+**P1.1 (moteur d'agencement déterministe)** — première brique de Phase 1. `src/core/layoutEngine.js` (pur, testable) : à partir des features cochées + un profil, génère un ordre + colonnage selon des règles (KPI de pilotage en haut, panels documentaires en bas, groupage par catégorie, panels lourds en pleine largeur, responsive). C'est ce qui « positionne optimalement » de façon fiable et gratuite, avant la surcouche IA suggestive (P1.2). Produit un layout que l'on applique via `apply()` (P0.5a) ou que l'on propose à l'utilisateur. Effort M, dépend de Phase 0 (complète). NB : la suggestion IA P1.2 reste optionnelle/non bloquante (fallback déterministe).
 
-Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → ~~P0.3 rendu piloté~~ ✅ → ~~P0.4 onglet Paramètres + drag-and-drop~~ ✅ → **P0.5 profils** (dernier bloc).
+Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → ~~P0.3 rendu piloté~~ ✅ → ~~P0.4 onglet Paramètres~~ ✅ → ~~P0.5 profils~~ ✅ — **🏁 PHASE 0 COMPLÈTE**. Prochaine : **Phase 1 (P1.1 moteur d'agencement déterministe → P1.2 suggestion IA opt-in)**.
 
 ## Mise à jour de ce document
 

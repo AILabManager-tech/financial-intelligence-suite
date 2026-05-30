@@ -151,7 +151,7 @@ Légende:
   - Actuel: alertes opérateur configurables prix ≥/≤, variation % ≥/≤ et drift allocation, persistées localement et déclenchées sur le tick de quotes.
 - [ ] UX mobile avancée
 - [~] Préférences utilisateur
-  - Actuel: (1) sélecteur de thème dans le header (`ThemeSelector` + `themeStore`), persisté `localStorage` `fis:theme:v1` et appliqué avant le premier paint ; (2) **store de layout** (`layoutStore`, P0.2) persisté `fis:layout:v1` — visibilité/ordre/colonnage par feature et par surface, réconcilié contre `featureRegistry` ; (3) **rendu piloté par le layout** (P0.3) : `IntelligenceCard` (surface asset, 8 panels) et le bloc composable du dashboard dans `App.jsx` (7 panneaux) sont rendus via `LayoutSurface` à partir du registre + du store (ordre + visibilité), défaut pixel-identique. (4) **UI d'édition** route `/settings` (P0.4) : par surface, toggle visibilité + sélecteur colonnage 1/2 + réordonnancement (drag-and-drop natif + boutons monter/descendre) + réinitialiser ; layout réactif (contexte) → les éditions re-rendent les surfaces live. Manque : profils/presets (P0.5) et le rendu effectif du colonnage 1/2 en grille (persisté, pas encore gridé dans `LayoutSurface`). Pas encore de préférences densité/devise/langue.
+  - Actuel: (1) sélecteur de thème dans le header (`ThemeSelector` + `themeStore`), persisté `localStorage` `fis:theme:v1` et appliqué avant le premier paint ; (2) **store de layout** (`layoutStore`, P0.2) persisté `fis:layout:v1` — visibilité/ordre/colonnage par feature et par surface, réconcilié contre `featureRegistry` ; (3) **rendu piloté par le layout** (P0.3) : `IntelligenceCard` (surface asset, 8 panels) et le bloc composable du dashboard dans `App.jsx` (7 panneaux) sont rendus via `LayoutSurface` à partir du registre + du store (ordre + visibilité), défaut pixel-identique. (4) **UI d'édition** route `/settings` (P0.4) : par surface, toggle visibilité + sélecteur colonnage 1/2 + réordonnancement (drag-and-drop natif + boutons monter/descendre) + réinitialiser ; layout réactif (contexte) → les éditions re-rendent les surfaces live ; (5) **profils** (P0.5) : 4 presets intégrés (Vue d'ensemble / Value / Trader / Conseiller client) applicables en 1 clic + profils custom sauvegardables/supprimables (`fis:profiles:v1`). **🏁 Noyau personnalisable (Phase 0 roadmap) complet.** Manque : rendu effectif du colonnage 1/2 en grille (persisté, pas encore gridé dans `LayoutSurface`), moteur d'agencement déterministe (P1.1) + suggestion IA (P1.2). Pas encore de préférences densité/devise/langue.
 - [~] Mode clair/sombre
   - Actuel: thème FIS sombre par défaut + option Clair via `:root[data-theme="light"]` (override CSS-vars). Inversion fonctionnelle mais expérimentale — quelques utilities Tailwind hardcodées (`text-white`, `text-slate-300/400`) restent telles quelles, le rendu sur fond clair est lisible mais sous-optimal.
 
@@ -248,7 +248,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (446 tests)
+- [x] `npm test` vert (466 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI
