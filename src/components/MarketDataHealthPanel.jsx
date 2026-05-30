@@ -98,7 +98,10 @@ export default function MarketDataHealthPanel() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {providers.map((provider) => (
-          <div key={provider.provider} className="p-4 rounded-xl bg-surface-800 border border-white/5">
+          // Key by provider + capability: a single provider (e.g. finnhub.io)
+          // exposes several capabilities (quote, fundamentals, news), so the
+          // provider name alone is not unique across rows.
+          <div key={`${provider.provider}-${provider.capability}`} className="p-4 rounded-xl bg-surface-800 border border-white/5">
             <div className="flex items-center justify-between gap-3 mb-2">
               <div className="flex items-center gap-2">
                 <StatusIcon status={provider.status} />
