@@ -217,6 +217,19 @@ P0.2 [x] livré 2026-05-29 — store de préférences + layout (src/services/lay
         features du registre ajoutées en fin à leurs valeurs par défaut (zéro régression + tolérance
         aux futurs ajouts P0.x). Mutateurs purs immuables (setFeatureVisibility/Columns, moveFeature)
         + getVisibleFeatureIds (consommé par le rendu P0.3). 419 tests verts.
+P0.3 [x] livré 2026-05-29 — rendu piloté par le layout (LayoutSurface + useLayout + refactor
+        IntelligenceCard & App). Empilage en dur remplacé par un rendu lisant featureRegistry +
+        layoutStore. Surface asset : 8 panels via LayoutSurface (uniformes, asset={asset}).
+        Surface dashboard : bloc composable de 7 panneaux via LayoutSurface (props par
+        componentKey, wrapItem pour les <section aria-label>). Sous-étapes :
+          P0.3a `d90ef80` — infra (LayoutSurface, useLayout) + surface asset, pixel-identique.
+          P0.3b `ef8c4a4` — réconciliation registre dashboard↔réalité (order corrigé, SafetyBadge
+                 enregistré, AssetTable+SearchFilter+MarketLookup = chrome hors registre,
+                 WatchlistPanel retiré (route /watchlist)).
+          P0.3c `9cecda1` — surface dashboard pilotée, ordre vérifié live (browse :20000), pixel OK.
+          fix  `2d86754` — bug pré-existant dup-key React dans MarketDataHealthPanel (provider
+                 répété) corrigé en passant, +2 tests. Vérifié live : console propre.
+        429 tests verts, lint + build verts.
 ```
 
 ### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
@@ -233,9 +246,9 @@ P0.2 [x] livré 2026-05-29 — store de préférences + layout (src/services/lay
 
 ## Prochain bloc recommandé
 
-**P0.3 (rendu piloté par le layout)** — refactor de `IntelligenceCard.jsx` (surface `asset`) et du dashboard `App.jsx` (surface `dashboard`) : remplacer l'empilage en dur par un rendu qui lit `featureRegistry` (catalogue) + `layoutStore` (préférences). Itérer sur `getVisibleFeatureIds(layout, surface)`, résoudre `componentKey → composant` via un mapping local au rendu, appliquer le colonnage. **Seul gros touch d'orchestrateur central.** Les panels eux-mêmes ne changent pas. Défaut identique au pixel à l'actuel (le défaut du store = toutes features visibles, ordre canonique, 1 colonne). Dépend de P0.1 + P0.2 (livrés). Effort L.
+**P0.4 (onglet Paramètres `/settings`)** — l'UI d'édition du layout. Route `/settings` : liste des features par catégorie (`groupFeaturesByCategory`) avec toggle on/off **+ réorganisation par glisser-déposer** (drag-and-drop) + aperçu live + bouton « réinitialiser ». Branche les mutateurs déjà livrés (`setFeatureVisibility`, `moveFeature`, `setFeatureColumns`, `saveLayout`, `resetLayout`). **Prérequis technique** : `useLayout` ne lit le store qu'au montage — P0.4 doit le faire passer en source réactive (contexte/abonnement) pour que toggles/réordo re-rendent les surfaces. C'est le vrai travail de P0.4 (la persistance et le rendu existent déjà). Le colonnage 1/2 (persisté mais pas encore rendu en grille) peut être branché ici. Effort L, dépend de P0.1+P0.2+P0.3 (livrés).
 
-Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → **P0.3 rendu piloté** (le refactor central) → P0.4 onglet Paramètres + drag-and-drop → P0.5 profils.
+Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → ~~P0.3 rendu piloté~~ ✅ → **P0.4 onglet Paramètres + drag-and-drop** → P0.5 profils.
 
 ## Mise à jour de ce document
 
