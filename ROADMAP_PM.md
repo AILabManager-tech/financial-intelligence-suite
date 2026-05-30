@@ -230,6 +230,16 @@ P0.3 [x] livré 2026-05-29 — rendu piloté par le layout (LayoutSurface + useL
           fix  `2d86754` — bug pré-existant dup-key React dans MarketDataHealthPanel (provider
                  répété) corrigé en passant, +2 tests. Vérifié live : console propre.
         429 tests verts, lint + build verts.
+P0.4 [x] livré 2026-05-29 — onglet Paramètres `/settings` (layout réactif + UI d'édition).
+          P0.4a `6775022` — contexte réactif : LayoutProvider (état + persistance via effet) +
+                 useLayout (réactif sous provider, fallback hors) + useLayoutControls ; App
+                 enveloppé dans main.jsx. Remplace le useLayout mount-only de P0.3. 7 tests.
+          P0.4b `568f6da` — page SettingsPage + route /settings + bouton nav « Paramètres » :
+                 par surface, toggle visibilité + sélecteur colonnage 1/2 + reset. Boot screen
+                 ne gate plus /settings. Vérifié live : masquer un panneau le retire du dashboard.
+          P0.4c `682c75c` — réordonnancement : drag-and-drop natif HTML5 + boutons monter/descendre
+                 (même move()). Vérifié live : descendre un panneau réordonne le dashboard.
+        446 tests verts, lint + build verts. Palette FIS respectée (aucune couleur neuve).
 ```
 
 ### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
@@ -246,9 +256,9 @@ P0.3 [x] livré 2026-05-29 — rendu piloté par le layout (LayoutSurface + useL
 
 ## Prochain bloc recommandé
 
-**P0.4 (onglet Paramètres `/settings`)** — l'UI d'édition du layout. Route `/settings` : liste des features par catégorie (`groupFeaturesByCategory`) avec toggle on/off **+ réorganisation par glisser-déposer** (drag-and-drop) + aperçu live + bouton « réinitialiser ». Branche les mutateurs déjà livrés (`setFeatureVisibility`, `moveFeature`, `setFeatureColumns`, `saveLayout`, `resetLayout`). **Prérequis technique** : `useLayout` ne lit le store qu'au montage — P0.4 doit le faire passer en source réactive (contexte/abonnement) pour que toggles/réordo re-rendent les surfaces. C'est le vrai travail de P0.4 (la persistance et le rendu existent déjà). Le colonnage 1/2 (persisté mais pas encore rendu en grille) peut être branché ici. Effort L, dépend de P0.1+P0.2+P0.3 (livrés).
+**P0.5 (profils de gestionnaire / presets)** — dernier bloc de Phase 0. Bundles nommés livrés d'origine (« Vue d'ensemble », « Value investor », « Trader », « Conseiller client ») : chaque profil = un set de features visibles + un ordre préconfigurés par surface, applicable en 1 clic depuis `/settings`, puis ajustable. Profils custom sauvegardables (localStorage, ex. `fis:profiles:v1`). S'appuie sur le layout réactif + les mutateurs (P0.4) : appliquer un profil = produire un layout complet et le commiter. Définir les presets en données pures (testable), un sélecteur de profil dans SettingsPage, et la sauvegarde/suppression de profils custom. Effort M, dépend de P0.1→P0.4 (livrés). **Clôt Phase 0** → le noyau personnalisable est complet.
 
-Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → ~~P0.3 rendu piloté~~ ✅ → **P0.4 onglet Paramètres + drag-and-drop** → P0.5 profils.
+Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → ~~P0.3 rendu piloté~~ ✅ → ~~P0.4 onglet Paramètres + drag-and-drop~~ ✅ → **P0.5 profils** (dernier bloc).
 
 ## Mise à jour de ce document
 
