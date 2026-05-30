@@ -260,7 +260,21 @@ P1.1 [x] livré 2026-05-30 — moteur d'agencement déterministe (src/core/layou
         préservés. Pur, idempotent. Bouton « Agencement optimal » dans /settings → controls.apply.
         Vérifié live : « Centre de risque » remonte avec les KPI, monitoring repoussé en bas.
         475 tests verts, lint + build verts.
+P2.1 [x] livré 2026-05-30 `63f00ea` — calculateur what-if pur (src/utils/simulationCalculator.js
+        + 10 tests). simulateInvestment(points, {amount, startDate}) : parts à l'entrée, valeur
+        finale, rendement total, CAGR, courbe de croissance, depuis l'historique factuel. Pur,
+        déterministe (dates issues de la série, pas de Date.now). Gère week-ends/fériés, série non
+        triée, montants/série invalides, pertes.
+P2.3 [x] livré 2026-05-30 `cfb5ebf` — SimulationPanel (feature surface asset, registre + 4 tests).
+        Formulaire montant + date → fetch /api/history → simulateInvestment → KPIs + courbe Recharts
+        + détail d'entrée, sous BANDEAU permanent « pas un conseil, pas une prédiction ». Enregistré
+        au registre → monté automatiquement par le pipeline de layout (réconciliation P0.2 l'ajoute
+        aux layouts existants sans migration). Vérifié live sur MSFT (données Twelve Data réelles ;
+        free tier ~18 mois → date de départ antérieure aux données = entrée gracieuse au 1er point
+        dispo, étiqueté honnêtement). 489 tests verts.
 ```
+
+> **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée.
 
 ### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
 
@@ -276,9 +290,11 @@ P1.1 [x] livré 2026-05-30 — moteur d'agencement déterministe (src/core/layou
 
 ## Prochain bloc recommandé
 
-**P1.2 (suggestion IA opt-in)** — surcouche optionnelle au moteur déterministe. Bouton « Suggérer un agencement » : un appel LLM (Qwen-gencore local dispo chez gear-code via Ollama, ou provider configuré) reçoit la liste des features + le profil et **propose** un layout que l'utilisateur accepte/ajuste. **Fallback déterministe (P1.1) si l'IA échoue/lente/absente** — jamais bloquant, jamais automatique. Garde-fou : sortie validée contre le registre (réconciliation via `layoutStore`, aucune feature inventée). Effort M, dépend de P1.1 (livré). **Challenge intégré** : si P1.1 suffit en pratique, P1.2 reste gelable — ne pas faire de l'IA un prérequis.
+**P2.2 (portefeuille de démo multi-positions)** — étend le simulateur d'un seul titre à N positions. Composer un portefeuille fictif (N symboles, dates et montants d'entrée), projeter sa valeur agrégée dans le temps (somme des courbes par position via `simulateInvestment`), comparer à un benchmark (ex. S&P 500 / `SPY`). Réutilise le calculateur P2.1 par position + une agrégation. Restitution graphique + tableau, bandeau hypothèse. Effort M, dépend de P2.1 (livré). C'est ce qui rend la démo client vraiment convaincante (« votre portefeuille vs le marché »).
 
-Séquence Phase 0 : ~~P0.1~~ → ~~P0.2~~ → ~~P0.3~~ → ~~P0.4~~ → ~~P0.5~~ ✅ **🏁 COMPLÈTE**. Phase 1 : ~~P1.1 moteur déterministe~~ ✅ → **P1.2 suggestion IA opt-in**.
+> **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
+
+Séquence : 🏁 Phase 0 complète · Phase 1 : ~~P1.1 moteur~~ ✅, P1.2 IA **gelé** · Phase 2 : ~~P2.1 calculateur~~ ✅ → ~~P2.3 panneau~~ ✅ → **P2.2 portefeuille démo multi-positions + benchmark**.
 
 ## Mise à jour de ce document
 

@@ -65,6 +65,10 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 >
 > Tests : 370 → **395 verts**. Reprise propre, prêt pour le prochain bloc (candidats Phase 0 ci-dessous).
 
+> **P2.1 + P2.3 livrés — 2026-05-30 (niveau 3 MISSION).** Simulateur de démo what-if (« premier jalon vendable » de la roadmap). `P2.1 63f00ea` : calculateur pur `src/utils/simulationCalculator.js` (+10 tests) — `simulateInvestment(points, {amount, startDate})` → parts, valeur finale, rendement, CAGR, courbe ; pur/déterministe. `P2.3 cfb5ebf` : `SimulationPanel` (feature surface asset, enregistrée au registre → montée auto par le pipeline, réconciliation P0.2 l'ajoute aux layouts existants) — formulaire montant+date → `/api/history` → calc → KPIs + courbe Recharts + **bandeau permanent « pas un conseil »**. **Vérifié live sur MSFT** (données Twelve Data réelles). Suite 475 → **489 tests verts**, lint+build verts. `main` 28 commits devant `origin`, non poussé. **P1.2 (IA agencement) GELÉ** (optionnel, prise prête). **Prochain bloc : P2.2 — portefeuille de démo multi-positions + benchmark.**
+>
+> ⚠️ Données : « 100k en 2017 » nécessite un historique long (Twelve Data payant). Free tier ~18 mois → entrée gracieuse au plus ancien point, jamais de valeur inventée.
+
 > **P1.1 livré — 2026-05-30 (niveau 3 MISSION).** Moteur d'agencement déterministe `src/core/layoutEngine.js` (+ 8 tests) : `optimizeLayout`/`optimizeSurface` réordonnent par priorité de catégorie (overview/KPI → portfolio → comparison → sentiment → calendar → monitoring → documents), ordre canonique en départage, visibilité+colonnage préservés. Pur, idempotent. Bouton « Agencement optimal » dans `/settings` (applique via `controls.apply`). **Vérifié live** : « Centre de risque » (overview) remonte avec les KPI, monitoring repoussé en bas. Suite 466 → **475 tests verts**, lint + build verts. `main` ~26 commits devant `origin`, non poussé. **Prochain bloc : P1.2 — suggestion IA opt-in (Qwen-gencore local / provider), fallback déterministe P1.1, non bloquante.**
 
 > **🏁 P0.5 livré — PHASE 0 COMPLÈTE — 2026-05-29 (niveau 3 MISSION).** Profils de gestionnaire. `P0.5a 584ab56` : 4 presets en données pures (`src/core/layoutProfiles.js` : overview/value/trader/advisor) + `buildLayoutFromProfile` + contrôle `apply(layout)` au provider + `ProfilePicker` dans SettingsPage. `P0.5b 3bd62a6` : profils custom (`src/services/profileStore.js`, `fis:profiles:v1`) — enregistrer l'agencement courant, appliquer, supprimer. **Vérifié live** : « Trader » réduit le dashboard à 4 panneaux ; profil custom « Mon setup » sauvegardé/listé/persisté. Suite 446 → **466 tests verts**, lint + build verts. `main` est **24 commits en avance sur `origin/main`** (incluant le bloc de reprise post-panne + toute la Phase 0), non poussé — `git push` à faire sur demande explicite.
@@ -372,7 +376,7 @@ L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de se
 
 > **P0.1 livré 2026-05-29** — registre central `src/core/featureRegistry.js` + `featureRegistry.test.js` (16 tests). 8 panels asset + 8 sections dashboard enregistrés sans toucher leur code. `componentKey` = string stable (mapping→composant déféré à P0.3). Données pures gelées en profondeur + helpers (`getFeatureById`, `getFeaturesBySurface`, `groupFeaturesByCategory`, `getDefaultLayout`). Suite : 379 → **395 tests verts**, lint + build verts. Commits chirurgicaux (WIP étranger laissé intact, non stagé).
 
-**Recommandation par défaut sur « on continue »** : **P1.2 — suggestion IA opt-in**. Bouton « Suggérer un agencement » à côté de « Agencement optimal » : appel LLM (Qwen-gencore local via Ollama `http://localhost:11434`, modèle `qwen2.5:32b` ou `qwen-gencore`, cf. `~/.claude/CLAUDE.md`) qui reçoit features + profil et propose un layout. **Non bloquant** : fallback sur `optimizeLayout` (P1.1) si IA absente/lente/échoue ; sortie **validée contre le registre** (réutiliser la réconciliation de `layoutStore` → aucune feature inventée/ id inconnu écarté). Jamais automatique (l'utilisateur clique et accepte). Effort M, dépend de P1.1 (livré). ⚠️ Challenge : si P1.1 suffit en pratique, P1.2 est gelable — ne pas faire de l'IA un prérequis. NB toujours ouvert : rendu effectif du colonnage 1/2 dans `LayoutSurface` (persisté, pas encore gridé).
+**Recommandation par défaut sur « on continue »** : **P2.2 — portefeuille de démo multi-positions + benchmark**. Étendre le simulateur d'un titre à N positions : composer un portefeuille fictif (N symboles + dates + montants), agréger les courbes par position (`simulateInvestment` × N puis somme alignée par date), comparer à un benchmark (`SPY`/S&P 500). Restitution graphique + tableau, bandeau hypothèse. Réutilise P2.1. Effort M. C'est l'argument de démo « votre portefeuille vs le marché ». NB : prévoir une fonction d'agrégation pure et testable (alignement des dates entre séries de longueurs différentes). **P1.2 (IA) reste gelé** — prise prête, à rouvrir si besoin. NB toujours ouvert : rendu colonnage 1/2 dans `LayoutSurface`.
 
 Candidats restants (ordre = chemin recommandé du roadmap) :
 
@@ -385,13 +389,12 @@ Candidats restants (ordre = chemin recommandé du roadmap) :
 
 **Phase 1 — agencement optimal :**
 - ~~**P1.1** moteur d'agencement déterministe (`src/core/layoutEngine.js`)~~ ✅ livré.
-- **P1.2** suggestion IA opt-in (bouton « Suggérer un agencement », fallback déterministe P1.1, jamais bloquant) — *recommandation par défaut, ci-dessus*.
+- **P1.2** suggestion IA opt-in — **GELÉ** (optionnel, prise prête : frère de `optimizeLayout`, validé registre, `apply()`).
 
-**Phase 1 — agencement optimal :**
-- **P1.1** moteur d'agencement déterministe (`src/core/layoutEngine.js`, règles de placement) ; **P1.2** suggestion IA opt-in (Qwen-gencore local), fallback déterministe, jamais bloquante.
-
-**Phase 2 — simulateur de démo (argument de vente, livrable tôt, ne dépend que de l'historique existant) :**
-- **P2.1** moteur what-if historique ; **P2.2** portefeuille de démo multi-positions vs benchmark ; **P2.3** `SimulationPanel` graphique + tableau, bandeau « hypothèse, pas un conseil ».
+**Phase 2 — simulateur de démo (premier jalon vendable) :**
+- ~~**P2.1** calculateur what-if (`src/utils/simulationCalculator.js`)~~ ✅ livré.
+- ~~**P2.3** `SimulationPanel` (graphique + tableau + bandeau « pas un conseil »)~~ ✅ livré.
+- **P2.2** portefeuille de démo multi-positions vs benchmark — *recommandation par défaut, ci-dessus*.
 
 **Phases 3-4 — socle données PM puis features analytiques attachables :**
 - **P3.1** migrations SQLite versionnées (`migrations/NNN_*.sql` + runner) ; **P3.2** multi-portefeuilles ; **P3.3** transactions + lots fiscaux ; **P3.4** multi-devises + FX.
