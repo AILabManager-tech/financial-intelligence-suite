@@ -300,6 +300,9 @@ P3.2 [~] livré 2026-05-30 (client-first, prod-correct) — multi-portefeuilles 
           RESTE P3.2c (parité dev SQLite : migration 002 colonnes mandat + repo CRUD + API
                  /api/portfolios scopé) — dev-only, le multi-portefeuilles fonctionne déjà en
                  prod via localStorage. 526 tests verts.
+P3.3 [~] moteur de lots livré 2026-05-30 `1b8eab0` — src/utils/lotEngine.js (applyTransactions
+          FIFO/LIFO → lots ouverts + P&L réalisé ; frais, dividendes, survente ; summarize). 9 tests.
+          RESTE P3.3b : stockage transactions (client + migration 003 dev) + journal UI. 535 tests.
 ```
 
 > **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée.
