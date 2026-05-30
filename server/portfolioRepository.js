@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { runMigrations } from "./migrate.js";
 
 const defaultDbPath = resolve(process.cwd(), "data/financial-intelligence.sqlite");
+const DEFAULT_PORTFOLIO_ID = "default";
 
 function cleanNumber(value, fallback = 0) {
   const parsed = Number(value);
@@ -40,6 +41,30 @@ function rowToAsset(row) {
   };
 }
 
+function rowToMandate(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    client: row.client ?? "",
+    baseCurrency: row.base_currency ?? "USD",
+    openedAt: row.opened_at ?? null,
+  };
+}
+
+function normalizeMandate(mandate) {
+  const id = String(mandate?.id ?? "").trim();
+  return {
+    id,
+    name: String(mandate?.name ?? "").trim() || id,
+    client: typeof mandate?.client === "string" ? mandate.client : "",
+    baseCurrency:
+      typeof mandate?.baseCurrency === "string" && mandate.baseCurrency
+        ? mandate.baseCurrency.toUpperCase()
+        : "USD",
+    openedAt: mandate?.openedAt ?? null,
+  };
+}
+
 function normalizeSnapshot(snapshot) {
   const metrics = snapshot.metrics ?? snapshot;
 
@@ -67,100 +92,143 @@ function rowToSnapshot(row) {
   };
 }
 
+function portfolioId(value) {
+  const id = String(value ?? "").trim();
+  return id || DEFAULT_PORTFOLIO_ID;
+}
+
+// Mandate-aware portfolio repository (P3.2c). Positions, snapshots and mandate
+// metadata are all scoped by `portfolio_id`; the dev SQLite DB now mirrors the
+// client's multi-portfolio store (portfolioListStore + namespaced positions).
+// Position/snapshot methods take an optional trailing portfolioId (default
+// 'default') so existing single-portfolio callers keep working unchanged.
 export function createPortfolioRepository(dbPath = defaultDbPath) {
   mkdirSync(dirname(dbPath), { recursive: true });
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
 
-  // Schema is owned by versioned migrations (P3.1), not an inline CREATE block.
+  // Schema is owned by versioned migrations (P3.1+), not an inline CREATE block.
   runMigrations(db);
 
   const ensureDefaultPortfolio = db.prepare(`
-    INSERT OR IGNORE INTO portfolios (id, name)
-    VALUES ('default', 'Default portfolio')
+    INSERT OR IGNORE INTO portfolios (id, name) VALUES ('default', 'Default portfolio')
   `);
   ensureDefaultPortfolio.run();
 
-  const list = db.prepare(`
+  // Keep a position/snapshot insert from violating the FK when a mandate row was
+  // never registered via savePortfolio (name falls back to the id).
+  const ensurePortfolio = db.prepare(`
+    INSERT OR IGNORE INTO portfolios (id, name) VALUES (@id, @name)
+  `);
+
+  const listPortfoliosStmt = db.prepare(`
+    SELECT id, name, client, base_currency, opened_at
+    FROM portfolios
+    ORDER BY (id = 'default') DESC, name ASC
+  `);
+
+  const upsertPortfolio = db.prepare(`
+    INSERT INTO portfolios (id, name, client, base_currency, opened_at)
+    VALUES (@id, @name, @client, @baseCurrency, @openedAt)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      client = excluded.client,
+      base_currency = excluded.base_currency,
+      opened_at = excluded.opened_at,
+      updated_at = CURRENT_TIMESTAMP
+  `);
+
+  const deletePortfolioStmt = db.prepare("DELETE FROM portfolios WHERE id = ?");
+
+  const listStmt = db.prepare(`
     SELECT symbol, name, sector, quantity, average_cost, target_weight
     FROM positions
-    WHERE portfolio_id = 'default'
+    WHERE portfolio_id = ?
     ORDER BY symbol ASC
   `);
 
-  const replacePositions = db.transaction((assets) => {
-    db.prepare("DELETE FROM positions WHERE portfolio_id = 'default'").run();
-    const insert = db.prepare(`
-      INSERT INTO positions (
-        portfolio_id, symbol, name, sector, quantity, average_cost, target_weight
-      ) VALUES (
-        'default', @symbol, @name, @sector, @quantity, @averageCost, @targetWeight
-      )
-    `);
+  const deletePositions = db.prepare("DELETE FROM positions WHERE portfolio_id = ?");
+  const insertPosition = db.prepare(`
+    INSERT INTO positions (
+      portfolio_id, symbol, name, sector, quantity, average_cost, target_weight
+    ) VALUES (
+      @portfolioId, @symbol, @name, @sector, @quantity, @averageCost, @targetWeight
+    )
+  `);
+  const touchPortfolio = db.prepare("UPDATE portfolios SET updated_at = CURRENT_TIMESTAMP WHERE id = ?");
 
-    assets.map(normalizeAsset).filter((asset) => asset.symbol).forEach((asset) => insert.run(asset));
-    db.prepare("UPDATE portfolios SET updated_at = CURRENT_TIMESTAMP WHERE id = 'default'").run();
+  const replacePositions = db.transaction((id, assets) => {
+    ensurePortfolio.run({ id, name: id });
+    deletePositions.run(id);
+    assets
+      .map(normalizeAsset)
+      .filter((asset) => asset.symbol)
+      .forEach((asset) => insertPosition.run({ ...asset, portfolioId: id }));
+    touchPortfolio.run(id);
   });
 
   const insertSnapshot = db.prepare(`
     INSERT INTO portfolio_snapshots (
-      portfolio_id,
-      captured_at,
-      total_market_value,
-      total_cost,
-      unrealized_pnl,
-      unrealized_pnl_pct,
-      positions_count,
-      live_quotes_count
+      portfolio_id, captured_at, total_market_value, total_cost,
+      unrealized_pnl, unrealized_pnl_pct, positions_count, live_quotes_count
     ) VALUES (
-      'default',
-      @capturedAt,
-      @totalMarketValue,
-      @totalCost,
-      @unrealizedPnl,
-      @unrealizedPnlPct,
-      @positionsCount,
-      @liveQuotesCount
+      @portfolioId, @capturedAt, @totalMarketValue, @totalCost,
+      @unrealizedPnl, @unrealizedPnlPct, @positionsCount, @liveQuotesCount
     )
   `);
 
-  const listSnapshots = db.prepare(`
-    SELECT
-      id,
-      captured_at,
-      total_market_value,
-      total_cost,
-      unrealized_pnl,
-      unrealized_pnl_pct,
-      positions_count,
-      live_quotes_count
+  const listSnapshotsStmt = db.prepare(`
+    SELECT id, captured_at, total_market_value, total_cost, unrealized_pnl,
+           unrealized_pnl_pct, positions_count, live_quotes_count
     FROM portfolio_snapshots
-    WHERE portfolio_id = 'default'
+    WHERE portfolio_id = @portfolioId
     ORDER BY captured_at DESC
     LIMIT @limit
   `);
 
   return {
-    listAssets() {
-      return list.all().map(rowToAsset);
+    // --- Mandates -----------------------------------------------------------
+    listPortfolios() {
+      return listPortfoliosStmt.all().map(rowToMandate);
     },
-    saveAssets(assets) {
-      replacePositions(Array.isArray(assets) ? assets : []);
-      return this.listAssets();
+    savePortfolio(mandate) {
+      const normalized = normalizeMandate(mandate);
+      if (!normalized.id) throw new Error("portfolio id is required");
+      upsertPortfolio.run(normalized);
+      return normalized;
     },
-    saveSnapshot(snapshot) {
+    removePortfolio(id) {
+      const result = deletePortfolioStmt.run(portfolioId(id));
+      return result.changes > 0;
+    },
+
+    // --- Positions ----------------------------------------------------------
+    listAssets(id = DEFAULT_PORTFOLIO_ID) {
+      return listStmt.all(portfolioId(id)).map(rowToAsset);
+    },
+    saveAssets(assets, id = DEFAULT_PORTFOLIO_ID) {
+      const scoped = portfolioId(id);
+      replacePositions(scoped, Array.isArray(assets) ? assets : []);
+      return this.listAssets(scoped);
+    },
+
+    // --- Snapshots ----------------------------------------------------------
+    saveSnapshot(snapshot, id = DEFAULT_PORTFOLIO_ID) {
+      const scoped = portfolioId(id);
+      ensurePortfolio.run({ id: scoped, name: scoped });
       const normalized = normalizeSnapshot(snapshot ?? {});
-      const result = insertSnapshot.run(normalized);
-      return {
-        id: result.lastInsertRowid,
-        ...normalized,
-      };
+      const result = insertSnapshot.run({ ...normalized, portfolioId: scoped });
+      return { id: result.lastInsertRowid, ...normalized };
     },
-    listSnapshots(limit = 120) {
+    listSnapshots(limit = 120, id = DEFAULT_PORTFOLIO_ID) {
       const normalizedLimit = Math.min(Math.max(Number(limit) || 120, 1), 500);
-      return listSnapshots.all({ limit: normalizedLimit }).map(rowToSnapshot).reverse();
+      return listSnapshotsStmt
+        .all({ portfolioId: portfolioId(id), limit: normalizedLimit })
+        .map(rowToSnapshot)
+        .reverse();
     },
+
     close() {
       db.close();
     },

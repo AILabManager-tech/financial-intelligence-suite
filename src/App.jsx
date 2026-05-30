@@ -20,9 +20,13 @@ import {
   savePortfolioAssets,
   upsertPortfolioAsset,
 } from "./services/portfolioStore";
-import { fetchPortfolioFromApi, savePortfolioToApi } from "./services/portfolioApi";
 import {
-  DEFAULT_PORTFOLIO_ID,
+  fetchPortfolioFromApi,
+  savePortfolioToApi,
+  savePortfolioMandateToApi,
+  deletePortfolioMandateFromApi,
+} from "./services/portfolioApi";
+import {
   loadPortfolioList,
   savePortfolioList,
   createPortfolio,
@@ -209,11 +213,8 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
-    // The dev SQLite API is scoped to the 'default' mandate (server-side
-    // multi-portfolio is P3.2c); other mandates load from localStorage only.
-    if (activeId !== DEFAULT_PORTFOLIO_ID) return undefined;
-
-    fetchPortfolioFromApi()
+    // Dev SQLite mirrors every mandate (P3.2c); hydrate the active one.
+    fetchPortfolioFromApi(activeId)
       .then((remoteAssets) => {
         if (active && remoteAssets.length > 0) {
           setPortfolioAssets(remoteAssets);
@@ -241,7 +242,7 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
-    fetchPortfolioSnapshots()
+    fetchPortfolioSnapshots(120, activeId)
       .then((snapshots) => {
         if (active) {
           setPortfolioSnapshots(snapshots);
@@ -256,16 +257,15 @@ export default function App() {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const persistPortfolio = useCallback((nextAssets) => {
     savePortfolioAssets(nextAssets, activeId);
-    // The dev SQLite API mirrors the 'default' mandate only (P3.2c will scope it).
-    if (activeId === DEFAULT_PORTFOLIO_ID) {
-      savePortfolioToApi(nextAssets).catch(() => {
-        // Browser storage is the durable fallback in local/dev mode.
-      });
-    }
+    // Dev SQLite mirrors the active mandate (P3.2c).
+    savePortfolioToApi(nextAssets, activeId).catch(() => {
+      // Browser storage is the durable fallback in local/dev mode.
+    });
   }, [activeId]);
 
   // --- Multi-portfolio (mandates, P3.2) --------------------------------------
@@ -284,15 +284,16 @@ export default function App() {
     setAssets([]);
     setFiltered([]);
     setSelected(null);
-    // In dev the 'default' mandate's positions live in SQLite (seeded there, not
-    // localStorage), so re-hydrate from the API when switching back to it.
-    if (id === DEFAULT_PORTFOLIO_ID) {
-      fetchPortfolioFromApi()
-        .then((remoteAssets) => {
-          if (remoteAssets.length > 0) setPortfolioAssets(remoteAssets);
-        })
-        .catch(() => {});
-    }
+    // In dev, positions/snapshots are mirrored per mandate in SQLite (P3.2c);
+    // re-hydrate the activated mandate from the API.
+    fetchPortfolioFromApi(id)
+      .then((remoteAssets) => {
+        if (remoteAssets.length > 0) setPortfolioAssets(remoteAssets);
+      })
+      .catch(() => {});
+    fetchPortfolioSnapshots(120, id)
+      .then(setPortfolioSnapshots)
+      .catch(() => setPortfolioSnapshots([]));
   }, [persistPortfolioList]);
 
   const handleSwitchPortfolio = useCallback((id) => {
@@ -303,16 +304,22 @@ export default function App() {
   const handleCreatePortfolio = useCallback((draft) => {
     const next = createPortfolio(portfolioList, draft);
     if (next === portfolioList) return; // empty name ignored
+    const mandate = next.portfolios.find((p) => p.id === next.activeId);
+    if (mandate) savePortfolioMandateToApi(mandate).catch(() => {});
     activateMandate(next);
   }, [portfolioList, activateMandate]);
 
   const handleRenamePortfolio = useCallback((id, fields) => {
-    persistPortfolioList(updatePortfolio(portfolioList, id, fields));
+    const next = updatePortfolio(portfolioList, id, fields);
+    const mandate = next.portfolios.find((p) => p.id === id);
+    if (mandate) savePortfolioMandateToApi(mandate).catch(() => {});
+    persistPortfolioList(next);
   }, [portfolioList, persistPortfolioList]);
 
   const handleDeletePortfolio = useCallback((id) => {
     const next = removePortfolio(portfolioList, id);
     if (next === portfolioList) return; // last mandate protected
+    deletePortfolioMandateFromApi(id).catch(() => {});
     if (next.activeId !== portfolioList.activeId) {
       activateMandate(next);
     } else {
@@ -471,7 +478,7 @@ export default function App() {
           unrealizedPnlPct: analytics.unrealizedPnlPct,
           positionsCount: mergedAssets.length,
           liveQuotesCount: liveCount,
-        })
+        }, activeId)
           .then((snapshot) => {
             setPortfolioSnapshots((current) => [...current, snapshot].slice(-120));
           })
@@ -487,7 +494,7 @@ export default function App() {
         error: "Impossible de récupérer les prix de marché. Tableau masqué pour éviter d'afficher des valeurs statiques.",
       });
     }
-  }, [portfolioAssets, evaluateAndPersistAlerts]);
+  }, [portfolioAssets, evaluateAndPersistAlerts, activeId]);
 
   useEffect(() => {
     const refreshTimer = window.setTimeout(loadLiveQuotes, 0);

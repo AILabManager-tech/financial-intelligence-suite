@@ -637,12 +637,13 @@ export default defineConfig(({ mode }) => {
         })
 
         server.middlewares.use('/api/portfolio/snapshots', async (request, response) => {
+          const snapshotUrl = new URL(request.url ?? '', 'http://localhost')
+          const snapshotPortfolioId = snapshotUrl.searchParams.get('portfolio') ?? 'default'
           if (request.method === 'GET') {
-            const requestUrl = new URL(request.url ?? '', 'http://localhost')
-            const limit = requestUrl.searchParams.get('limit') ?? 120
+            const limit = snapshotUrl.searchParams.get('limit') ?? 120
 
             sendJson(response, 200, {
-              snapshots: portfolioRepository.listSnapshots(limit),
+              snapshots: portfolioRepository.listSnapshots(limit, snapshotPortfolioId),
               source: 'sqlite',
             })
             return
@@ -656,7 +657,7 @@ export default defineConfig(({ mode }) => {
           try {
             const payload = await readJsonBody(request)
             sendJson(response, 201, {
-              snapshot: portfolioRepository.saveSnapshot(validatePortfolioSnapshot(payload.snapshot ?? payload)),
+              snapshot: portfolioRepository.saveSnapshot(validatePortfolioSnapshot(payload.snapshot ?? payload), snapshotPortfolioId),
               source: 'sqlite',
             })
           } catch (error) {
@@ -664,10 +665,39 @@ export default defineConfig(({ mode }) => {
           }
         })
 
+        server.middlewares.use('/api/portfolios', async (request, response) => {
+          if (request.method === 'GET') {
+            sendJson(response, 200, { portfolios: portfolioRepository.listPortfolios(), source: 'sqlite' })
+            return
+          }
+          if (request.method === 'POST') {
+            try {
+              const payload = await readJsonBody(request)
+              sendJson(response, 200, { portfolio: portfolioRepository.savePortfolio(payload), source: 'sqlite' })
+            } catch (error) {
+              sendJson(response, 400, { error: error.message })
+            }
+            return
+          }
+          if (request.method === 'DELETE') {
+            const url = new URL(request.url ?? '', 'http://localhost')
+            const id = url.searchParams.get('id')
+            if (!id) {
+              sendJson(response, 400, { error: 'id is required' })
+              return
+            }
+            sendJson(response, 200, { removed: portfolioRepository.removePortfolio(id), source: 'sqlite' })
+            return
+          }
+          sendJson(response, 405, { error: 'method not allowed' })
+        })
+
         server.middlewares.use('/api/portfolio', async (request, response) => {
+          const portfolioUrl = new URL(request.url ?? '', 'http://localhost')
+          const scopedPortfolioId = portfolioUrl.searchParams.get('portfolio') ?? 'default'
           if (request.method === 'GET') {
             sendJson(response, 200, {
-              assets: portfolioRepository.listAssets(),
+              assets: portfolioRepository.listAssets(scopedPortfolioId),
               source: 'sqlite',
             })
             return
@@ -682,7 +712,7 @@ export default defineConfig(({ mode }) => {
             const payload = await readJsonBody(request)
             const assets = validatePortfolioAssets(payload.assets ?? [])
             sendJson(response, 200, {
-              assets: portfolioRepository.saveAssets(assets),
+              assets: portfolioRepository.saveAssets(assets, scopedPortfolioId),
               updatedAt: new Date().toISOString(),
               source: 'sqlite',
             })
