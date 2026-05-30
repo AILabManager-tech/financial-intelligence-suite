@@ -181,8 +181,8 @@ Légende:
   - Actuel: SQLite local pour portefeuille.
 - [x] Couche repository
   - Actuel: `server/portfolioRepository.js`.
-- [~] Migrations
-  - Actuel: création automatique des tables au démarrage, pas encore système versionné.
+- [x] Migrations
+  - Actuel: système versionné `server/migrations/NNN_*.sql` + runner `server/migrate.js` (table `schema_migrations`, application transactionnelle des migrations en attente, idempotent). 001 = schéma initial. `portfolioRepository` exécute `runMigrations(db)` au lieu du `CREATE TABLE` inline.
 - [~] API REST/typed stable
   - Actuel: contrats JSON locaux clarifiés pour portefeuille et snapshots, pas encore typage partagé frontend/backend.
 - [x] Validation de schéma côté serveur
@@ -248,7 +248,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (502 tests)
+- [x] `npm test` vert (510 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI

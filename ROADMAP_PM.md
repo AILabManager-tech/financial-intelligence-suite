@@ -283,7 +283,14 @@ P2.2 [x] livré 2026-05-30 — portefeuille de démo multi-positions vs benchmar
                  −12,2 pts vs SPY. 502 tests verts.
 ```
 
-> **🏁 PHASE 2 COMPLÈTE (2026-05-30) — MVP « studio composable démontrable » atteint.** Les Phases 0→2 (noyau personnalisable + agencement déterministe + simulateur de démo) constituent le premier jalon vendable de la roadmap. L'app se compose, s'auto-agence et démontre sa valeur sur données factuelles. 502 tests verts.
+> **🏁 PHASE 2 COMPLÈTE (2026-05-30) — MVP « studio composable démontrable » atteint.** Les Phases 0→2 (noyau personnalisable + agencement déterministe + simulateur de démo) constituent le premier jalon vendable de la roadmap. L'app se compose, s'auto-agence et démontre sa valeur sur données factuelles. 502 tests verts. **Poussé sur `origin/main` (`8c36c4d`).**
+
+```
+P3.1 [x] livré 2026-05-30 `8c0cd25` — migrations SQLite versionnées (server/migrate.js +
+        server/migrations/001_initial_schema.sql + 8 tests). schema_migrations + application
+        transactionnelle des migrations en attente, idempotent. portfolioRepository exécute
+        runMigrations(db) au lieu du CREATE TABLE inline. SQLite reste dev-only. 510 tests verts.
+```
 
 > **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée.
 
@@ -301,7 +308,7 @@ P2.2 [x] livré 2026-05-30 — portefeuille de démo multi-positions vs benchmar
 
 ## Prochain bloc recommandé
 
-**P3.1 (migrations SQLite versionnées)** — première brique de Phase 3 (socle de données PM). Système `migrations/NNN_*.sql` + runner ; remplace le `CREATE TABLE IF NOT EXISTS` au démarrage. Déverrouille proprement tous les ajouts de tables suivants (multi-portefeuilles P3.2, transactions/lots fiscaux P3.3, FX P3.4). Effort S, dépend de rien. **NB priorité** : maintenant que le MVP démontrable (Phases 0→2) est atteint, Phase 3 fait passer l'app de « terminal + studio » à « vrai outil PM » (multi-mandats, transactions, P&L réalisé). À arbitrer vs polissage des phases livrées selon les retours d'usage.
+**P3.2 (multi-portefeuilles)** — sélecteur de portefeuille en header + CRUD mandat (nom, client, devise base, date d'ouverture). Exposer/étendre la table `portfolios` (déjà présente, gérée par migrations P3.1). Migration `002_*.sql` pour les colonnes mandat (client, base_currency, opened_at). API `/api/portfolios` (liste/créer/renommer/supprimer) + scope des positions/snapshots par `portfolio_id` (déjà la PK). UI : sélecteur + gestion. Effort M, dépend de P3.1 (livré). C'est la base du « N mandats clients ». **NB priorité** : maintenant que le MVP (Phases 0→2) est atteint, Phase 3 fait passer l'app de « terminal + studio » à « vrai outil PM » — à arbitrer vs polissage de l'existant selon les retours d'usage.
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
