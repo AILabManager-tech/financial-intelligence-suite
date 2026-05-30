@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
 import { formatPercent } from "../utils/scoreTranslator";
 
-export default function TopPerformers({ assets, onSelect }) {
+export default function TopPerformers({ assets, buffettSummaries = {}, onSelect }) {
   const top3 = useMemo(() => [...assets].sort((a, b) => b.changePct - a.changePct).slice(0, 3), [assets]);
   const medals = ["bg-gradient-to-br from-amber-400/20 to-amber-600/10 border-amber-500/30",
                   "bg-gradient-to-br from-slate-300/15 to-slate-500/5 border-slate-400/25",
@@ -23,6 +23,8 @@ export default function TopPerformers({ assets, onSelect }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {top3.map((asset, i) => {
           const isUp = asset.changePct >= 0;
+          const buffett = buffettSummaries[asset.symbol];
+          const buffettReady = buffett?.status === "ready";
 
           return (
             <button
@@ -65,6 +67,11 @@ export default function TopPerformers({ assets, onSelect }) {
 
               <div className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${isUp ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
                 Variation journalière
+              </div>
+              <div className={`ml-2 inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                buffettReady ? "bg-violet-500/10 text-violet-300" : "bg-surface-900 text-slate-500"
+              }`}>
+                Buffett {buffettReady ? `${buffett.score}/${buffett.criteriaTotal}` : buffett?.label ?? "non calculé"}
               </div>
 
               <p className="mt-3 text-xs text-slate-400 line-clamp-2 leading-relaxed">

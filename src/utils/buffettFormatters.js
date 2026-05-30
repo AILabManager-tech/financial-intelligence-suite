@@ -90,9 +90,9 @@ export function formatCurrency(value) {
 }
 
 const ACTION_LABELS = {
-  BUY: 'Acheter',
-  SELL: 'Vendre',
-  HOLD: 'Conserver',
+  BUY: 'Signal favorable',
+  SELL: 'Signal défavorable',
+  HOLD: 'Signal neutre',
 };
 
 export function formatActionLabel(action) {

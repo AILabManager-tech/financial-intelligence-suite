@@ -2,15 +2,21 @@ import { useMemo, useState, useCallback } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { getSectorFamily } from "../utils/portfolioAnalytics";
 
-const REVIEW_FILTERS = [
-  { label: "Tous les statuts", test: () => true },
-  { label: "Variation négative", test: (asset) => asset.changePct < 0 },
-  { label: "Variation positive", test: (asset) => asset.changePct >= 0 },
-  { label: "Source Finnhub", test: (asset) => asset.marketData?.source === "finnhub.io" },
-  { label: "Source fallback", test: (asset) => asset.marketData?.source && asset.marketData.source !== "finnhub.io" },
-];
+function buildReviewFilters(buffettSummaries) {
+  return [
+    { label: "Tous les statuts", test: () => true },
+    { label: "Variation négative", test: (asset) => asset.changePct < 0 },
+    { label: "Variation positive", test: (asset) => asset.changePct >= 0 },
+    { label: "Source Finnhub", test: (asset) => asset.marketData?.source === "finnhub.io" },
+    { label: "Source fallback", test: (asset) => asset.marketData?.source && asset.marketData.source !== "finnhub.io" },
+    { label: "Buffett complet", test: (asset) => buffettSummaries[asset.symbol]?.status === "ready" },
+    { label: "Buffett incomplet", test: (asset) => ["incomplete", "unavailable"].includes(buffettSummaries[asset.symbol]?.status) },
+    { label: "Buffett favorable", test: (asset) => buffettSummaries[asset.symbol]?.signal === "BUY" },
+  ];
+}
 
-export default function SearchFilter({ assets, onFilter }) {
+export default function SearchFilter({ assets, buffettSummaries = {}, onFilter }) {
+  const reviewFilters = useMemo(() => buildReviewFilters(buffettSummaries), [buffettSummaries]);
   const sectors = useMemo(() => [
     "Tous les secteurs",
     ...Array.from(new Set(assets.map((asset) => getSectorFamily(asset.sector)))).sort((a, b) => a.localeCompare(b)),
@@ -18,10 +24,10 @@ export default function SearchFilter({ assets, onFilter }) {
 
   const [query, setQuery] = useState("");
   const [sector, setSector] = useState("Tous les secteurs");
-  const [reviewFilter, setReviewFilter] = useState(REVIEW_FILTERS[0]);
+  const [reviewFilter, setReviewFilter] = useState(reviewFilters[0]);
   const [showFilters, setShowFilters] = useState(false);
 
-  const hasActiveFilters = query || sector !== sectors[0] || reviewFilter !== REVIEW_FILTERS[0];
+  const hasActiveFilters = query || sector !== sectors[0] || reviewFilter.label !== reviewFilters[0].label;
 
   const applyFilters = useCallback((q, sec, review) => {
     let filtered = assets;
@@ -53,7 +59,7 @@ export default function SearchFilter({ assets, onFilter }) {
   };
 
   const handleReviewFilter = (value) => {
-    const filter = REVIEW_FILTERS.find((r) => r.label === value) || REVIEW_FILTERS[0];
+    const filter = reviewFilters.find((r) => r.label === value) || reviewFilters[0];
     setReviewFilter(filter);
     applyFilters(query, sector, filter);
   };
@@ -61,7 +67,7 @@ export default function SearchFilter({ assets, onFilter }) {
   const clearAll = () => {
     setQuery("");
     setSector(sectors[0]);
-    setReviewFilter(REVIEW_FILTERS[0]);
+    setReviewFilter(reviewFilters[0]);
     onFilter(assets);
   };
 
@@ -128,7 +134,7 @@ export default function SearchFilter({ assets, onFilter }) {
             aria-label="Filtrer par statut opérateur"
             className="px-3 py-2 rounded-lg bg-surface-800 border border-white/5 text-sm text-slate-300 focus:outline-none focus:border-violet-500/50 cursor-pointer"
           >
-            {REVIEW_FILTERS.map((r) => (
+            {reviewFilters.map((r) => (
               <option key={r.label} value={r.label}>{r.label}</option>
             ))}
           </select>

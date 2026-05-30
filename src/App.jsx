@@ -11,6 +11,7 @@ import OperatorAlerts from "./components/OperatorAlerts";
 import WatchlistPanel from "./components/WatchlistPanel";
 import PortfolioManager from "./components/PortfolioManager";
 import { fetchLiveQuotes, mergeQuotesIntoAssets } from "./services/liveQuotes";
+import { fetchBuffettSummaries } from "./services/buffettReadiness";
 import { calculatePortfolioAnalytics } from "./utils/portfolioAnalytics";
 import {
   isPortfolioAsset,
@@ -150,6 +151,7 @@ export default function App() {
   const [alertTriggers, setAlertTriggers] = useState([]);
   const [assets, setAssets] = useState([]);
   const [filtered, setFiltered] = useState([]);
+  const [buffettSummaries, setBuffettSummaries] = useState({});
   const [portfolioSnapshots, setPortfolioSnapshots] = useState([]);
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname || "/");
   const [marketStatus, setMarketStatus] = useState({
@@ -233,6 +235,23 @@ export default function App() {
 
   useEffect(() => {
     assetsRef.current = assets;
+  }, [assets]);
+
+  useEffect(() => {
+    if (!assets.length) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    fetchBuffettSummaries(assets, { signal: controller.signal })
+      .then((summaries) => {
+        if (!controller.signal.aborted) {
+          setBuffettSummaries(summaries);
+        }
+      });
+
+    return () => controller.abort();
   }, [assets]);
 
   const evaluateAndPersistAlerts = useCallback((sourceAlerts, sourceAssets, evaluatedAt) => {
@@ -538,7 +557,7 @@ export default function App() {
             </section>
 
             <section aria-label="Meilleures opportunités">
-              <TopPerformers assets={assets} onSelect={handleSelect} />
+              <TopPerformers assets={assets} buffettSummaries={buffettSummaries} onSelect={handleSelect} />
             </section>
 
             <section aria-label="Intégrité et fiabilité">
@@ -579,13 +598,13 @@ export default function App() {
 
             {/* Search & Filter */}
             <section aria-label="Recherche et filtres">
-              <SearchFilter assets={assets} onFilter={handleFilter} />
+              <SearchFilter assets={assets} buffettSummaries={buffettSummaries} onFilter={handleFilter} />
             </section>
 
             {/* Full asset table or empty state */}
             <section aria-label="Liste des actifs">
               {filtered.length > 0 ? (
-                <AssetTable assets={filtered} onSelect={handleSelect} />
+                <AssetTable assets={filtered} buffettSummaries={buffettSummaries} onSelect={handleSelect} />
               ) : (
                 <EmptyState />
               )}

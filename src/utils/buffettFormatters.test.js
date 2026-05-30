@@ -95,9 +95,9 @@ describe('formatters', () => {
   });
 
   it('formatActionLabel maps engine actions to French UI labels', () => {
-    expect(formatActionLabel('BUY')).toBe('Acheter');
-    expect(formatActionLabel('SELL')).toBe('Vendre');
-    expect(formatActionLabel('HOLD')).toBe('Conserver');
+    expect(formatActionLabel('BUY')).toBe('Signal favorable');
+    expect(formatActionLabel('SELL')).toBe('Signal défavorable');
+    expect(formatActionLabel('HOLD')).toBe('Signal neutre');
     expect(formatActionLabel('UNKNOWN')).toBeNull();
   });
 });

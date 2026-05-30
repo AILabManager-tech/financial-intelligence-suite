@@ -1,0 +1,43 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+
+import AssetTable from "./AssetTable";
+
+const assets = [
+  {
+    symbol: "AAPL",
+    name: "Apple Inc.",
+    sector: "Technology",
+    price: 292.68,
+    change: -0.64,
+    changePct: -0.21,
+    volume: 1000,
+    marketData: { source: "finnhub.io", asOf: "2026-05-11T20:00:00.000Z" },
+    position: { quantity: 1, averageCost: 200, targetWeight: 10 },
+  },
+];
+
+describe("AssetTable", () => {
+  it("renders Buffett dashboard status when summaries are provided", () => {
+    render(
+      <AssetTable
+        assets={assets}
+        buffettSummaries={{
+          AAPL: {
+            status: "ready",
+            score: 4,
+            criteriaTotal: 6,
+            signal: "SELL",
+            label: "Signal défavorable",
+          },
+        }}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Buffett")).toBeInTheDocument();
+    expect(screen.getByText("4/6")).toBeInTheDocument();
+    expect(screen.getByText("Signal défavorable")).toBeInTheDocument();
+  });
+});

@@ -110,13 +110,13 @@ export default function BuffettMathBreakdown({ ticker, fcf, r, g, intrinsicValue
 
         <Section roman="IV" title="Règle de décision">
           <p className="mb-2 text-slate-400">
-            Déclenchée par <em>EXÉCUTER STRATÉGIE</em>. Biais conservateur : entrée seulement si
-            tous les critères sont réunis ; sortie uniquement sur surévaluation matérielle.
+            Signal calculé en continu. Biais conservateur : favorable seulement si
+            tous les critères sont réunis ; défavorable uniquement sur surévaluation matérielle.
           </p>
           <Block>
             <TeX
               display
-              tex={String.raw`\text{Action} = \begin{cases} \text{Acheter}  & \text{si les 6 critères} = \text{PASS} \\ \text{Vendre} & \text{si } MoS < -10\% \\ \text{Conserver} & \text{sinon} \end{cases}`}
+              tex={String.raw`\text{Signal} = \begin{cases} \text{Favorable}  & \text{si les 6 critères} = \text{PASS} \\ \text{Défavorable} & \text{si } MoS < -10\% \\ \text{Neutre} & \text{sinon} \end{cases}`}
             />
           </Block>
         </Section>

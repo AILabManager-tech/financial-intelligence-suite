@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor, act, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
 import BuffettAnalysisPanel from "./BuffettAnalysisPanel";
@@ -89,6 +89,10 @@ describe("BuffettAnalysisPanel", () => {
     expect(screen.getByText(/EPS growth 5y > 5%/i)).toBeInTheDocument();
     expect(screen.getByText(/Economic moat/i)).toBeInTheDocument();
     expect(screen.getByText(/Margin of Safety > 25%/i)).toBeInTheDocument();
+    expect(screen.getByText(/Critères Buffett validés/i)).toBeInTheDocument();
+    expect(screen.getByText(/4\/6/i)).toBeInTheDocument();
+    expect(screen.getByText(/Complet/i)).toBeInTheDocument();
+    expect(screen.getByText(/FCF\/action estimé/i)).toBeInTheDocument();
   });
 
   it("re-fetches when the asset symbol changes", async () => {
@@ -133,6 +137,40 @@ describe("BuffettAnalysisPanel", () => {
     render(<BuffettAnalysisPanel asset={makeAsset()} />);
     await waitFor(() => expect(screen.getByLabelText(/Taux d'actualisation/i)).toBeInTheDocument());
     expect(screen.getByLabelText(/Taux de croissance/i)).toBeInTheDocument();
+  });
+
+  it("offers assumption presets and updates slider values", async () => {
+    fetchFundamentals.mockResolvedValue({
+      symbol: "KO",
+      source: SRC,
+      fetchedAt: ASOF,
+      fields: completeFields,
+      upstream: null,
+      cache: null,
+    });
+    render(<BuffettAnalysisPanel asset={makeAsset()} />);
+    await waitFor(() => expect(screen.getByText(/Hypothèses/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: /Conservateur/i }));
+    expect(screen.getByLabelText(/Taux d'actualisation/i)).toHaveValue("0.12");
+    expect(screen.getByLabelText(/Taux de croissance/i)).toHaveValue("0.03");
+  });
+
+  it("warns when growth is greater than or equal to discount rate", async () => {
+    fetchFundamentals.mockResolvedValue({
+      symbol: "KO",
+      source: SRC,
+      fetchedAt: ASOF,
+      fields: completeFields,
+      upstream: null,
+      cache: null,
+    });
+    render(<BuffettAnalysisPanel asset={makeAsset()} />);
+    await waitFor(() => expect(screen.getByLabelText(/Taux de croissance/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/Taux de croissance/i), { target: { value: "0.10" } });
+    expect(screen.getAllByText(/Hypothèse invalide/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/croissance doit rester inférieur/i)).toBeInTheDocument();
   });
 
   it("aborts the in-flight fetch when the panel unmounts", async () => {

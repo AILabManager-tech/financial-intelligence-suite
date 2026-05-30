@@ -11,6 +11,7 @@ const SORT_COLUMNS = {
   unrealizedPnlPct: (a, b) => a.positionMetrics.unrealizedPnlPct - b.positionMetrics.unrealizedPnlPct,
   targetDrift: (a, b) => Math.abs(a.positionMetrics.targetDrift) - Math.abs(b.positionMetrics.targetDrift),
   source: (a, b) => (a.marketData?.source ?? "").localeCompare(b.marketData?.source ?? ""),
+  buffett: (a, b) => (a.buffettSummary?.score ?? -1) - (b.buffettSummary?.score ?? -1),
 };
 
 function SortIcon({ column, sortBy, sortDir }) {
@@ -20,10 +21,16 @@ function SortIcon({ column, sortBy, sortDir }) {
     : <ArrowDown className="w-3 h-3 text-violet-400" />;
 }
 
-export default function AssetTable({ assets, onSelect }) {
+export default function AssetTable({ assets, buffettSummaries = {}, onSelect }) {
   const [sortBy, setSortBy] = useState("changePct");
   const [sortDir, setSortDir] = useState("desc");
-  const positionedAssets = useMemo(() => enrichAssetsWithPositionMetrics(assets), [assets]);
+  const positionedAssets = useMemo(
+    () => enrichAssetsWithPositionMetrics(assets).map((asset) => ({
+      ...asset,
+      buffettSummary: buffettSummaries[asset.symbol],
+    })),
+    [assets, buffettSummaries],
+  );
 
   const sorted = useMemo(() => {
     const fn = SORT_COLUMNS[sortBy];
@@ -49,7 +56,7 @@ export default function AssetTable({ assets, onSelect }) {
       </div>
 
       <div className="rounded-xl border border-white/5 overflow-x-auto">
-        <table className="w-full min-w-[820px]" role="grid">
+        <table className="w-full min-w-[940px]" role="grid">
           <thead>
             <tr className="bg-surface-800/80">
               <th className="text-left text-xs font-medium text-slate-400 px-4 py-3">
@@ -87,6 +94,11 @@ export default function AssetTable({ assets, onSelect }) {
                   Source <SortIcon column="source" sortBy={sortBy} sortDir={sortDir} />
                 </button>
               </th>
+              <th className="text-left text-xs font-medium text-slate-400 px-4 py-3 hidden xl:table-cell">
+                <button onClick={() => toggleSort("buffett")} className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors" aria-label="Trier par score Buffett">
+                  Buffett <SortIcon column="buffett" sortBy={sortBy} sortDir={sortDir} />
+                </button>
+              </th>
               <th className="text-right text-xs font-medium text-slate-400 px-4 py-3 w-10"></th>
             </tr>
           </thead>
@@ -95,6 +107,15 @@ export default function AssetTable({ assets, onSelect }) {
               const isUp = asset.changePct >= 0;
               const pnlUp = asset.positionMetrics.unrealizedPnl >= 0;
               const driftAbs = Math.abs(asset.positionMetrics.targetDrift);
+              const buffett = asset.buffettSummary;
+              const buffettReady = buffett?.status === "ready";
+              const buffettTone = buffettReady
+                ? buffett.signal === "BUY"
+                  ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/20"
+                  : buffett.signal === "SELL"
+                    ? "text-rose-300 bg-rose-500/10 border-rose-500/20"
+                    : "text-amber-300 bg-amber-500/10 border-amber-500/20"
+                : "text-slate-400 bg-surface-900 border-white/5";
 
               return (
                 <tr
@@ -153,6 +174,14 @@ export default function AssetTable({ assets, onSelect }) {
                     <div className="text-xs font-medium text-slate-300">{asset.marketData?.source ?? "source externe"}</div>
                     <div className="text-[11px] text-slate-500">
                       {asset.marketData?.asOf ? new Date(asset.marketData.asOf).toLocaleString("fr-CA", { dateStyle: "short", timeStyle: "short" }) : "Horodatage API"}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 hidden xl:table-cell">
+                    <div className={`inline-flex px-2 py-1 rounded-md border text-xs font-semibold ${buffettTone}`}>
+                      {buffettReady ? `${buffett.score}/${buffett.criteriaTotal}` : buffett?.label ?? "Non calculé"}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      {buffettReady ? buffett.label : "Fondamentaux requis"}
                     </div>
                   </td>
                   <td className="px-4 py-3.5 text-right">
