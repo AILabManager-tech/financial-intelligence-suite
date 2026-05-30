@@ -14,7 +14,7 @@ import DividendHistoryPanel from "./DividendHistoryPanel";
 import SecFilingsPanel from "./SecFilingsPanel";
 import PeersComparisonPanel from "./PeersComparisonPanel";
 import LayoutSurface from "./LayoutSurface";
-import { useLayout } from "../hooks/useLayout";
+import { useLayout } from "../core/layoutContext";
 
 // Maps the registry componentKeys of the "asset" surface to their components.
 // The render order and visibility now come from the layout store (P0.2) via

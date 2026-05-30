@@ -47,7 +47,7 @@ import { evaluateAlerts } from "./utils/alertEvaluator";
 import AlertManager from "./components/AlertManager";
 import ThemeSelector from "./components/ThemeSelector";
 import LayoutSurface from "./components/LayoutSurface";
-import { useLayout } from "./hooks/useLayout";
+import { useLayout } from "./core/layoutContext";
 import { applyTheme, loadTheme } from "./services/themeStore";
 
 // Maps the registry componentKeys of the "dashboard" surface to their
