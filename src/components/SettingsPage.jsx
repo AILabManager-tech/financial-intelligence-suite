@@ -1,13 +1,13 @@
-import { Eye, EyeOff, RotateCcw, Columns2, Square } from "lucide-react";
+import { useState } from "react";
+import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { getFeatureById } from "../core/featureRegistry";
 import { useLayout, useLayoutControls } from "../core/layoutContext";
 
-// Editing UI for the layout (P0.4b). Per surface, lists the features in their
-// current layout order with a visibility toggle and a 1/2-column selector, plus
-// a global reset. Reordering by drag-and-drop lands in P0.4c. Changes are live:
-// the layout context is reactive, so the dashboard / asset card reflect edits
-// as soon as the user navigates back. Uses only the frozen FIS palette
-// (surface-*, white/slate text, violet/emerald accents) — no new colours.
+// Editing UI for the layout (P0.4b + P0.4c). Per surface, lists the features in
+// their current layout order with: a visibility toggle, a 1/2-column selector,
+// and reordering via native HTML5 drag-and-drop plus keyboard-accessible
+// up/down buttons (both call the same move()). A global reset restores defaults.
+// Changes are live (reactive layout context). Uses only the frozen FIS palette.
 
 const SURFACES = [
   { key: "dashboard", label: "Tableau de bord", hint: "Panneaux du tableau de bord (hors recherche et grille des actifs, qui sont fixes)." },
@@ -25,13 +25,46 @@ const CATEGORY_LABELS = {
   comparison: "Comparaison",
 };
 
-function FeatureRow({ surface, entry, setVisibility, setColumns }) {
+function FeatureRow({ surface, entry, index, count, controls, dragHandlers, isDragging }) {
   const feature = getFeatureById(entry.id);
   if (!feature) return null;
   const categoryLabel = CATEGORY_LABELS[feature.category] ?? feature.category;
+  const { setVisibility, setColumns, move } = controls;
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-800 border border-white/5">
+    <div
+      data-testid={`row-${entry.id}`}
+      draggable
+      onDragStart={() => dragHandlers.onDragStart(index)}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={() => dragHandlers.onDrop(index)}
+      onDragEnd={dragHandlers.onDragEnd}
+      className={`flex items-center gap-3 p-3 rounded-xl bg-surface-800 border border-white/5 ${isDragging ? "opacity-50" : ""}`}
+    >
+      <GripVertical className="w-4 h-4 text-slate-600 cursor-grab flex-shrink-0" aria-hidden="true" />
+
+      {/* Keyboard-accessible reorder */}
+      <div className="flex flex-col" role="group" aria-label={`Réordonner ${feature.label}`}>
+        <button
+          type="button"
+          onClick={() => move(surface, index, index - 1)}
+          disabled={index === 0}
+          aria-label={`Monter ${feature.label}`}
+          className="p-0.5 rounded text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <ArrowUp className="w-3 h-3" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => move(surface, index, index + 1)}
+          disabled={index === count - 1}
+          aria-label={`Descendre ${feature.label}`}
+          className="p-0.5 rounded text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <ArrowDown className="w-3 h-3" aria-hidden="true" />
+        </button>
+      </div>
+
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-white truncate">{feature.label}</div>
         <div className="text-[11px] text-slate-500">{categoryLabel}</div>
@@ -74,9 +107,41 @@ function FeatureRow({ surface, entry, setVisibility, setColumns }) {
   );
 }
 
+function SurfaceList({ surface, entries, controls }) {
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  const dragHandlers = {
+    onDragStart: (index) => setDraggedIndex(index),
+    onDragEnd: () => setDraggedIndex(null),
+    onDrop: (targetIndex) => {
+      if (draggedIndex !== null && draggedIndex !== targetIndex) {
+        controls.move(surface, draggedIndex, targetIndex);
+      }
+      setDraggedIndex(null);
+    },
+  };
+
+  return (
+    <div className="space-y-2">
+      {entries.map((entry, index) => (
+        <FeatureRow
+          key={entry.id}
+          surface={surface}
+          entry={entry}
+          index={index}
+          count={entries.length}
+          controls={controls}
+          dragHandlers={dragHandlers}
+          isDragging={draggedIndex === index}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const layout = useLayout();
-  const { setVisibility, setColumns, reset } = useLayoutControls();
+  const controls = useLayoutControls();
 
   return (
     <div className="animate-slide-up space-y-6" role="region" aria-label="Paramètres d'agencement">
@@ -84,12 +149,12 @@ export default function SettingsPage() {
         <div>
           <h2 className="text-xl font-bold text-white">Agencement</h2>
           <p className="text-sm text-slate-400 mt-1">
-            Choisis les panneaux à afficher et leur largeur. Tes réglages sont conservés sur cet appareil.
+            Choisis les panneaux à afficher, leur ordre (glisser-déposer ou flèches) et leur largeur. Tes réglages sont conservés sur cet appareil.
           </p>
         </div>
         <button
           type="button"
-          onClick={reset}
+          onClick={controls.reset}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-800 text-slate-300 hover:text-white border border-white/5 text-xs font-semibold cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -103,17 +168,7 @@ export default function SettingsPage() {
             <h3 className="text-sm font-semibold text-white uppercase tracking-wide">{surface.label}</h3>
             <p className="text-[11px] text-slate-500 mt-0.5">{surface.hint}</p>
           </div>
-          <div className="space-y-2">
-            {(layout[surface.key] ?? []).map((entry) => (
-              <FeatureRow
-                key={entry.id}
-                surface={surface.key}
-                entry={entry}
-                setVisibility={setVisibility}
-                setColumns={setColumns}
-              />
-            ))}
-          </div>
+          <SurfaceList surface={surface.key} entries={layout[surface.key] ?? []} controls={controls} />
         </section>
       ))}
     </div>

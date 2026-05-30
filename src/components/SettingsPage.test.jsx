@@ -73,4 +73,43 @@ describe("SettingsPage", () => {
     expect(getFeatureById(firstDashboard.id).category).toBe("overview");
     expect(screen.getAllByText("Vue d'ensemble").length).toBeGreaterThan(0);
   });
+
+  it("réordonne via le bouton Descendre", () => {
+    renderPage();
+    const dash = getFeaturesBySurface("dashboard").map((f) => f.id);
+    const region = screen.getByLabelText("Paramètres — Tableau de bord");
+    const order = () =>
+      within(region)
+        .getAllByTestId(/^row-/)
+        .map((el) => el.dataset.testid.replace("row-", ""));
+    expect(order()).toEqual(dash);
+    fireEvent.click(screen.getByRole("button", { name: `Descendre ${firstDashboard.label}` }));
+    const next = order();
+    expect(next[0]).toBe(dash[1]);
+    expect(next[1]).toBe(dash[0]);
+  });
+
+  it("désactive Monter sur la première ligne et Descendre sur la dernière", () => {
+    renderPage();
+    const dash = getFeaturesBySurface("dashboard");
+    expect(screen.getByRole("button", { name: `Monter ${dash[0].label}` })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: `Descendre ${dash[dash.length - 1].label}` }),
+    ).toBeDisabled();
+  });
+
+  it("réordonne via un drop natif (drag-and-drop)", () => {
+    renderPage();
+    const dash = getFeaturesBySurface("dashboard").map((f) => f.id);
+    const region = screen.getByLabelText("Paramètres — Tableau de bord");
+    const rows = within(region).getAllByTestId(/^row-/);
+    // glisser la 1re ligne sur la 3e
+    fireEvent.dragStart(rows[0]);
+    fireEvent.dragOver(rows[2]);
+    fireEvent.drop(rows[2]);
+    const order = within(region)
+      .getAllByTestId(/^row-/)
+      .map((el) => el.dataset.testid.replace("row-", ""));
+    expect(order[2]).toBe(dash[0]);
+  });
 });
