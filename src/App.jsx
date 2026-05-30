@@ -47,6 +47,7 @@ import { evaluateAlerts } from "./utils/alertEvaluator";
 import AlertManager from "./components/AlertManager";
 import ThemeSelector from "./components/ThemeSelector";
 import LayoutSurface from "./components/LayoutSurface";
+import SettingsPage from "./components/SettingsPage";
 import { useLayout } from "./core/layoutContext";
 import { applyTheme, loadTheme } from "./services/themeStore";
 
@@ -178,6 +179,8 @@ export default function App() {
   });
 
   const isWatchlistRoute = currentPath === "/watchlist";
+  const isSettingsRoute = currentPath === "/settings";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute;
   const layout = useLayout();
 
   useEffect(() => {
@@ -487,7 +490,8 @@ export default function App() {
     },
   };
 
-  if (!assets.length && portfolioAssets.length > 0) {
+  // Settings don't depend on live quotes — keep them reachable while prices load.
+  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute) {
     return <MarketBootScreen status={marketStatus} />;
   }
 
@@ -518,7 +522,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => navigateTo("/")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${!isWatchlistRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDashboardRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
                 >
                   Tableau de bord
                 </button>
@@ -528,6 +532,13 @@ export default function App() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isWatchlistRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
                 >
                   Watchlist
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo("/settings")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isSettingsRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                >
+                  Paramètres
                 </button>
               </div>
               <ThemeSelector />
@@ -539,7 +550,9 @@ export default function App() {
 
       {/* Main content */}
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8" role="main">
-        {isWatchlistRoute ? (
+        {isSettingsRoute ? (
+          <SettingsPage />
+        ) : isWatchlistRoute ? (
           <>
             <section aria-label="Recherche marché globale">
               <MarketLookup onSelect={handleSelect} />
