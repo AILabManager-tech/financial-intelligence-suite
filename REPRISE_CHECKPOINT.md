@@ -16,6 +16,20 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 `/home/gear-code/02_projects/financial-intelligence-suite` — ne modifier aucun fichier hors de ce dossier.
 
+---
+
+## 🟢 ÉTAT ACTUEL — DÉMARRER ICI (mis à jour 2026-05-30)
+
+- **`origin/main` = `78835f8`** (tout poussé, 0 commit local d'écart). Branche `main`.
+- **535 tests verts**, lint + build verts. Node v24 via nvm : `export PATH="$HOME/.nvm/versions/node/v24.14.1/bin:$PATH"`.
+- **Avancement** : 🏁 Phase 0 (noyau personnalisable) · Phase 1 P1.1 (agencement déterministe ; **P1.2 IA gelé**) · 🏁 Phase 2 (simulateur de démo) · **Phase 3 en cours** : P3.1 migrations ✅, P3.2 multi-portefeuilles ✅ (client-first, vérifié live), P3.3a moteur de lots pur ✅.
+- **➡️ PROCHAIN BLOC : P3.3b — stockage transactions + journal UI.** Brancher `src/utils/lotEngine.js` (déjà livré, P3.3a) : (1) `src/services/transactionStore.js` (localStorage `fis:transactions:v1`, scopé par mandat comme les positions, CRUD purs + tests), (2) onglet/panneau « Transactions » (saisie achat/vente/dividende/frais + liste + tableau réalisé/lots par symbole via `applyTransactions`+`summarize`), (3) migration `003_transactions.sql` (parité dev). Client-first.
+- **Reste Phase 3 après** : P3.2c (parité dev SQLite multi-portefeuille : migration 002 colonnes mandat + repo CRUD + API `/api/portfolios` scopé — dev-only), puis **P3.4** (multi-devises + FX : provider externe ECB/exchangerate.host, nouvel endpoint dev+prod, conversion du P&L vers la devise base du mandat).
+- **Vérifier en 30 s** : `export PATH=…nvm…/bin:$PATH && npm run lint && npm test && npm run build` (3 verts). Serveur dev : `npm run dev -- --host 127.0.0.1 --port 20000`.
+- **Hard rules permanentes** : palette FIS **gelée** ; factualité stricte (zéro mock visible, hypothèses étiquetées) ; **principe IA transverse** (l'IA reste optionnelle MAIS garder une « prise » propre — entrée/sortie données pures, point d'injection clair — pour la brancher sans refonte ; cf. § Regles) ; `git push` après simple avertissement ; jamais `vercel deploy`. Détail des notes par bloc plus bas (anti-chronologique).
+
+---
+
 ## Etat git
 
 Tip de `main` au moment du checkpoint (post-bloc cleanup audit F4+F5, à committer dans le même bloc que ce docs) :
