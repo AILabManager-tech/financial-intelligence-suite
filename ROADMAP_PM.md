@@ -300,12 +300,28 @@ P3.2 [~] livré 2026-05-30 (client-first, prod-correct) — multi-portefeuilles 
           RESTE P3.2c (parité dev SQLite : migration 002 colonnes mandat + repo CRUD + API
                  /api/portfolios scopé) — dev-only, le multi-portefeuilles fonctionne déjà en
                  prod via localStorage. 526 tests verts.
-P3.3 [~] moteur de lots livré 2026-05-30 `1b8eab0` — src/utils/lotEngine.js (applyTransactions
-          FIFO/LIFO → lots ouverts + P&L réalisé ; frais, dividendes, survente ; summarize). 9 tests.
-          RESTE P3.3b : stockage transactions (client + migration 003 dev) + journal UI. 535 tests.
+P3.3 [x] livré 2026-05-30 — moteur de lots `1b8eab0` (src/utils/lotEngine.js : applyTransactions
+          FIFO/LIFO → lots ouverts + P&L réalisé ; frais, dividendes, survente ; summarize, 9 tests)
+          + P3.3b stockage transactions + journal UI `e7f6806` + parité serveur `9cb22ec`.
 ```
 
-> **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée.
+> **🏁 PHASE 3 CLÔTURÉE (2026-05-30).** P3.1 migrations, P3.2(+c) multi-portefeuilles + parité dev,
+> P3.3 transactions/lots + journal, P3.4 multi-devises + FX. Socle de données PM en place. 593 tests,
+> poussé sur `origin/main` (`b146c8d`). Détail des sous-blocs dans `REPRISE_CHECKPOINT.md`.
+
+```
+P4.1 [x] livré 2026-05-30 — rendements standards (première feature analytique Phase 4).
+        src/utils/returnsCalculator.js (pur, 9 tests) : computeReturns → rendement cumulé, CAGR,
+        matrice par période (1M/3M/6M/YTD/1Y/3Y/origine, null si hors-données), rendements mensuels.
+        src/utils/returnsFormatters.js (5 tests). src/components/ReturnsMatrixPanel.jsx (4 tests,
+        surface actif, registre catégorie `performance` priorité 15 dans layoutEngine). Dérivé de
+        l'historique factuel /api/history (days=1825 → ~18 mois quotidien free tier) — pas de nouvelle
+        source serveur (même voie que SimulationPanel). Rendements de prix hors dividendes, mention
+        affichée ; périodes hors-portée masquées (jamais de 0 inventé). Dogfood curl MSFT : 1M/3M/6M/
+        YTD/1Y peuplés, 3Y masqué, 17 rendements mensuels. 593 → 611 tests verts.
+```
+
+> **NB données** : le « 100 000 $ en 2017 » de la vision nécessite un historique long (plan Twelve Data payant). En free tier (~18 mois), le simulateur fonctionne mais entre au plus ancien point disponible — jamais de valeur inventée. Idem pour la matrice de rendements P4.1 : la période 3 ans (et au-delà) est masquée tant que la source gratuite ne remonte pas si loin.
 
 ### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
 
@@ -321,11 +337,13 @@ P3.3 [~] moteur de lots livré 2026-05-30 `1b8eab0` — src/utils/lotEngine.js (
 
 ## Prochain bloc recommandé
 
-**P3.3 (transactions + lots fiscaux)** — table `transactions` (achat/vente/dividende/frais/apport/retrait), moteur d'appariement de lots FIFO/LIFO/spec-ID, P&L réalisé par lot, frais imputés. Bâtir d'abord le **moteur pur** (`src/utils/lotEngine.js` : appliquer une séquence de transactions → lots ouverts + P&L réalisé), testable, puis le stockage (client + migration 003 dev) et l'UI (journal de transactions). Client-first comme P3.2. Effort L, dépend de P3.2 (livré). **Reste aussi P3.2c** (parité dev SQLite, dev-only) et **P3.4** (multi-devises + FX, provider externe ECB/exchangerate.host). **NB** : Phase 3 est volumineuse (4 sous-phases) ; livrée de façon incrémentale, chaque bloc poussé.
+**P4.10 (distribution des returns) ou P4.12 (stats opérationnelles)** — les deux ne dépendent que de briques déjà livrées (P4.1 returns / P3.3 lots) et restent dérivables sans snapshots de portefeuille. P4.10 enrichit la matrice P4.1 (best/worst périodes, % mois positifs, skewness/kurtosis, heatmap monthly) sur la **même série /api/history** — extension naturelle et factuelle de `ReturnsMatrixPanel`. P4.12 (turnover, holding period, hit ratio, win/loss, yield-on-cost) se branche sur le **moteur de lots P3.3a** déjà réalisé.
+
+> **Pré-requis snapshots pour P4.2+ (TWR/MWR/vol/Sharpe portefeuille).** P4.2 (TWR GIPS), P4.3 (MWR/IRR), P4.4 (vol/drawdown), P4.5 (Sharpe) exigent une **série de valeur du portefeuille dans le temps** — c.-à-d. l'**accrual de snapshots SQLite** (la table existe, n'est pas peuplée). Factualité stricte : ne pas fabriquer une série de valeur portefeuille tant que les snapshots ne sont pas accumulés. Donc soit on attaque d'abord l'**accrual de snapshots** (brique socle), soit on avance sur les features dérivables du prix/des lots (P4.10, P4.12) en attendant.
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
-Séquence : 🏁 **Phases 0→2 complètes (MVP)** · Phase 1 P1.2 IA **gelé** · Prochaine : **Phase 3 (P3.1 migrations → P3.2 multi-portefeuilles → P3.3 transactions/lots → P3.4 FX)**.
+Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 (P4.1 returns ✅ → P4.10/P4.12 dérivables, puis accrual snapshots → P4.2 TWR / P4.4 vol / P4.5 Sharpe)**.
 
 ## Mise à jour de ce document
 

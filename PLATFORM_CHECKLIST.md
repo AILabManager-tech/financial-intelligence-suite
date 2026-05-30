@@ -132,6 +132,8 @@ Légende:
   - Actuel: `BuffettAnalysisPanel` empilé sous `FundamentalsPanel` rend la valeur intrinsèque DCF (Gordon-Shapiro 10y), la marge de sécurité live, 6 critères qualitatifs déterministes (ROE, croissance EPS, dette/equity, FCF, P/E, moat heuristique) et une règle de décision Acheter/Conserver/Vendre, avec décomposition mathématique KaTeX. Calculs purs côté client à partir de `/api/fundamentals` (ROE TTM, EPS growth 5y, debt/equity, P/FCF), aucune valeur inventée — affiche « Données insuffisantes » si un champ requis manque.
 - [x] Audit de provenance par champ
   - Actuel: chaque KPI fondamental porte son propre `{value, source, asOf}` rendu en chip + tooltip; les champs absents sont strictement masqués.
+- [x] Rendements standards (P4.1)
+  - Actuel: `ReturnsMatrixPanel` (feature surface actif, registre catégorie `performance`) rend le rendement cumulé, le CAGR, une matrice par période (1M/3M/6M/YTD/1Y/3Y/origine) et les rendements mensuels, calculés par `src/utils/returnsCalculator.js` (pur) depuis l'historique factuel `/api/history` (days=1825 → ~18 mois de quotidien en free tier). Rendements de prix (hors dividendes réinvestis), mention affichée. Toute période hors de la portée des données est masquée (tiret), jamais un 0 inventé. Première feature analytique de la Phase 4.
 
 ## 6. Interface opérateur
 
@@ -330,6 +332,7 @@ Programmé aujourd'hui:
 - parité dev SQLite multi-portefeuille (P3.2c): migration `002_portfolio_mandate_columns.sql` (colonnes mandat), `portfolioRepository` mandate-aware (positions/snapshots/mandats scopés par `portfolio_id`), API dev `/api/portfolios` + `/api/portfolio[/snapshots]?portfolio=<id>` scopés, client + App branchés sur tous les mandats — dev-only, prod reste localStorage;
 - conversion multi-devises (P3.4): provider de taux ECB live (`server/fx.js` Frankfurter keyless + fallback exchangerate.host), endpoint dev+prod `/api/fx?base=<ccy>` (cache 6h), `CurrencyExposurePanel` (dashboard) convertit les totaux portefeuille USD vers la devise base du mandat, taux jamais inventé (valeur masquée si manquant), sonde healthcheck `fx_rates`;
 - parité serveur du journal de transactions (clôture Phase 3): migration `004_transactions_composite_key.sql` (clé composite `(portfolio_id, id)`), `portfolioRepository` `listTransactions`/`saveTransactions` scopés par mandat, API dev `/api/transactions?portfolio=<id>` (GET+PUT), client `transactionApi`, App hydrate+mirror — dev-only, localStorage reste le fallback durable;
+- rendements standards (P4.1, première feature analytique Phase 4): `ReturnsMatrixPanel` sur la fiche actif (registre catégorie `performance`, priorité haute dans le moteur d'agencement), rendement cumulé + CAGR + matrice par période (1M→origine) + rendements mensuels, calculés par `returnsCalculator` pur depuis `/api/history` factuel; périodes hors-données masquées (jamais de 0 inventé), mention « rendements de prix (hors dividendes réinvestis) »;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.

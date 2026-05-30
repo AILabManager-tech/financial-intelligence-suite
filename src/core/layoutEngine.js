@@ -14,6 +14,7 @@ import { getFeatureById, VALID_SURFACES } from "./featureRegistry";
 // without renumbering. Unknown categories fall to the bottom (FALLBACK).
 const CATEGORY_PRIORITY = {
   overview: 10, // pilotage / KPI -> haut
+  performance: 15, // rendements / ratios PM (Phase 4) -> haut, juste sous l'overview
   fundamentals: 20,
   portfolio: 30,
   comparison: 40,

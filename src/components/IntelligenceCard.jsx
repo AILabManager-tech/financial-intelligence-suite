@@ -14,6 +14,7 @@ import DividendHistoryPanel from "./DividendHistoryPanel";
 import SecFilingsPanel from "./SecFilingsPanel";
 import PeersComparisonPanel from "./PeersComparisonPanel";
 import SimulationPanel from "./SimulationPanel";
+import ReturnsMatrixPanel from "./ReturnsMatrixPanel";
 import LayoutSurface from "./LayoutSurface";
 import { useLayout } from "../core/layoutContext";
 
@@ -31,6 +32,7 @@ const ASSET_FEATURE_COMPONENTS = {
   SecFilingsPanel,
   PeersComparisonPanel,
   SimulationPanel,
+  ReturnsMatrixPanel,
 };
 
 function formatTick(value, timeUnit) {
