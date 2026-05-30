@@ -200,6 +200,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 70,
   },
+  {
+    id: "currency-exposure",
+    label: "Exposition devises",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "CurrencyExposurePanel",
+    dataDeps: ["fx", "quotes"],
+    defaultVisible: true,
+    order: 80,
+  },
 ];
 
 /**

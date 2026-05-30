@@ -33,6 +33,7 @@ import {
   updatePortfolio,
   removePortfolio,
   setActivePortfolio,
+  getActivePortfolio,
 } from "./services/portfolioListStore";
 import PortfolioSelector from "./components/PortfolioSelector";
 import { fetchPortfolioSnapshots, savePortfolioSnapshot } from "./services/portfolioSnapshots";
@@ -64,6 +65,7 @@ import LayoutSurface from "./components/LayoutSurface";
 import SettingsPage from "./components/SettingsPage";
 import DemoPortfolioPanel from "./components/DemoPortfolioPanel";
 import TransactionJournalPanel from "./components/TransactionJournalPanel";
+import CurrencyExposurePanel from "./components/CurrencyExposurePanel";
 import {
   addTransaction,
   loadTransactions,
@@ -86,6 +88,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
   AlertManager,
   RiskCommandCenter,
   PortfolioManager,
+  CurrencyExposurePanel,
 };
 
 // Apply persisted theme synchronously at module load so the first paint
@@ -594,6 +597,7 @@ export default function App() {
       onRemoveAsset: handleRemoveAsset,
       onImportPositions: handleImportPositions,
     },
+    CurrencyExposurePanel: { assets, baseCurrency: getActivePortfolio(portfolioList).baseCurrency },
   };
 
   // Settings and the demo simulator don't depend on live quotes — keep them

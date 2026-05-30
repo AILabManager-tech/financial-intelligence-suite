@@ -11,6 +11,7 @@ import { fetchDividends } from './server/dividends.js'
 import { fetchAnalystRatings } from './server/analystRatings.js'
 import { fetchSecFilings } from './server/secFilings.js'
 import { fetchPeers } from './server/peers.js'
+import { fetchFxRates } from './server/fx.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const fallbackQuoteSource = 'stooq.com'
@@ -27,6 +28,7 @@ const cacheTtlMs = {
   analystRatings: 6 * 60 * 60 * 1000,
   secFilings: 24 * 60 * 60 * 1000,
   peers: 24 * 60 * 60 * 1000,
+  fx: 6 * 60 * 60 * 1000,
 }
 
 async function readThroughCache(key, ttlMs, loadValue) {
@@ -425,6 +427,29 @@ export default defineConfig(({ mode }) => {
               return
             }
             sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
+          }
+        })
+
+        server.middlewares.use('/api/fx', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const base = (requestUrl.searchParams.get('base') ?? 'USD').trim().toUpperCase() || 'USD'
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `fx:${base}`,
+              cacheTtlMs.fx,
+              () => fetchFxRates(base, { exchangerateApiKey: process.env.EXCHANGERATE_HOST_API_KEY }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.fx,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'frankfurter.app' })
           }
         })
 

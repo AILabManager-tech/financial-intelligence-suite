@@ -3,6 +3,7 @@ import {
   checkFinnhubCompanyNewsHealth,
   checkFinnhubFundamentalsHealth,
   checkFinnhubHealth,
+  checkFxHealth,
   checkMarketDataHealth,
   checkStooqHealth,
   checkTwelveDataHealth,
@@ -171,6 +172,39 @@ describe('marketDataHealth', () => {
     });
 
     expect(result.providers.find((p) => p.capability === 'company_news')?.status).toBe('ok');
+  });
+
+  it('reports fx as ok when frankfurter returns a usable rate', async () => {
+    const result = await checkFxHealth(async (url) => {
+      expect(String(url)).toContain('frankfurter.app');
+      return okJson({ amount: 1, base: 'USD', date: '2026-05-30', rates: { EUR: 0.92 } });
+    });
+    expect(result).toEqual(expect.objectContaining({
+      provider: 'frankfurter.app',
+      status: 'ok',
+      capability: 'fx_rates',
+      configured: true,
+    }));
+  });
+
+  it('reports fx as down on invalid payload', async () => {
+    const result = await checkFxHealth(async () => okJson({ rates: {} }));
+    expect(result).toEqual(expect.objectContaining({ provider: 'frankfurter.app', status: 'down', capability: 'fx_rates' }));
+  });
+
+  it('includes fx provider in checkMarketDataHealth output', async () => {
+    const okFetcher = async (url) => {
+      const u = String(url);
+      if (u.includes('frankfurter.app')) return okJson({ rates: { EUR: 0.92 } });
+      if (u.includes('/stock/metric')) return okJson({ metric: { peTTM: 32 } });
+      if (u.includes('/company-news')) return okJson([{ id: 1, datetime: 1, headline: 'h', source: 's', url: 'https://x' }]);
+      if (u.includes('finnhub.io/api/v1/quote')) return okJson({ c: 293.32 });
+      if (u.includes('twelvedata')) return okJson({ values: [{ datetime: '2026-05-08', close: '293' }] });
+      if (u.includes('stooq')) return okJson({ symbols: [{ close: '293' }] });
+      throw new Error(`unexpected ${url}`);
+    };
+    const result = await checkMarketDataHealth({ finnhubApiKey: 'tok', twelveDataApiKey: 'tok', fetcher: okFetcher });
+    expect(result.providers.find((p) => p.capability === 'fx_rates')?.status).toBe('ok');
   });
 
   it('summarizes provider status', () => {

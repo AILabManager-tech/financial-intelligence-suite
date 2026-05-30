@@ -222,6 +222,40 @@ export async function checkStooqHealth(fetcher = fetchWithTimeout) {
   });
 }
 
+export async function checkFxHealth(fetcher = fetchWithTimeout) {
+  // Frankfurter is keyless (ECB reference rates), so FX is always "configured".
+  const result = await measureProvider("frankfurter.app", async () => {
+    const url = new URL("https://api.frankfurter.app/latest");
+    url.searchParams.set("from", "USD");
+    url.searchParams.set("to", "EUR");
+
+    const response = await fetcher(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const rate = Number(payload?.rates?.EUR);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new Error("invalid fx payload");
+    }
+
+    return providerResult("frankfurter.app", "ok", {
+      configured: true,
+      capability: "fx_rates",
+      sample: "USD→EUR",
+    });
+  });
+
+  // Capability is the audit handle (UI groups by capability) — keep it present
+  // even when the probe failed, like the fundamentals/company-news checks.
+  if (!result.capability) {
+    result.capability = "fx_rates";
+    result.configured = true;
+  }
+  return result;
+}
+
 export function summarizeMarketDataHealth(providers) {
   if (providers.some((provider) => provider.status === "down")) {
     return "degraded";
@@ -241,6 +275,7 @@ export async function checkMarketDataHealth({ finnhubApiKey, twelveDataApiKey, f
     checkFinnhubCompanyNewsHealth(finnhubApiKey, fetcher),
     checkTwelveDataHealth(twelveDataApiKey, fetcher),
     checkStooqHealth(fetcher),
+    checkFxHealth(fetcher),
   ]);
 
   return {
