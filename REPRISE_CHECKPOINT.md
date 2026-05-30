@@ -43,7 +43,27 @@ Working tree propre (seuls les 3 fichiers ignorés intentionnels listés plus ba
 
 Branche: `main`. Aucun push à faire sans demande explicite.
 
-> **Mise à jour 2026-05-29** — le tip réel de `main` est `9d74acc` (commits docs roadmap ajoutés depuis : `b44f5b8`, `5f6c6f4`, `9d74acc`). Le working tree n'est **PAS** propre : ~19 fichiers modifiés + fichiers neufs non suivis (`src/services/buffettReadiness.js` + test, `src/components/AssetTable.test.jsx`) — **bloc WIP en cours, non commité**, à clarifier avant tout nouveau bloc (possible session parallèle). Ne pas committer/écraser sans confirmation utilisateur.
+> **Reprise post-panne électrique — 2026-05-29.** Une coupure de courant a interrompu la session abruptement. Diagnostic au redémarrage : aucune corruption (git intact, `git fsck` propre hormis 1 blob orphelin bénin, 0 fichier tronqué, port 20000 libre). Le bloc WIP signalé ci-dessous (`buffettReadiness` + dividendes multi-provider + outillage) était **complet et vert** (lint / 395 tests / build) ; il a été sécurisé en 3 commits atomiques.
+>
+> **Tip réel de `main` : `0c684cd`.** Working tree propre (seul `ROADMAP_PM.pdf` reste non suivi, intentionnel). `main` est **8 commits en avance sur `origin/main`** — non poussé (attendre demande explicite). Les 8 commits non poussés :
+>
+> ```
+> 0c684cd chore: ignore .vercel and refresh the local dev launcher
+> 208aafe feat: source dividends from multiple providers with cascade fallback
+> d736d24 feat: surface Buffett readiness score across the portfolio
+> e2b5822 docs: pivot roadmap to customizable-studio vision, mark P0.1 delivered
+> f242c0c feat(P0.1): central feature registry
+> 9d74acc docs: add M0.5 UI preferences module to Phase 0
+> 5f6c6f4 docs: expand Phase 1 with full PM returns and ratio matrix
+> b44f5b8 docs: add ROADMAP_PM.md scoping the path from analysis terminal to PM tool
+> ```
+>
+> Détail des 3 commits de reprise :
+> - `d736d24` — **Score Buffett dans le portefeuille.** Nouveau `src/services/buffettReadiness.js` (+ test) : valeur intrinsèque, marge de sécurité, score /6, signal BUY/SELL par actif depuis les fondamentaux Finnhub. `AssetTable` gagne une colonne « Buffett » triable (tone selon signal) ; `App.jsx` fetch les résumés (AbortSignal) et les passe à `AssetTable` / `TopPerformers` / `SearchFilter`. Ajustements liés : `BuffettAnalysisPanel` (+test), `BuffettMathBreakdown`, `buffettFormatters` (+test).
+> - `208aafe` — **Dividendes multi-provider.** `server/dividends.js` essaie Finnhub → Alpha Vantage → Twelve Data via `firstSuccessfulProvider`, normalise chaque source, tague la provenance. `api/dividends.js` + middleware vite forwardent les 3 clés et émettent un payload `unavailable` (caché) si tous échouent. `liveQuotes` : `source "mock"` → `"unavailable"` (règle zéro-mock).
+> - `0c684cd` — **Outillage.** `.gitignore` (+`.vercel`), refonte `scripts/start-dev.sh`.
+>
+> Tests : 370 → **395 verts**. Reprise propre, prêt pour le prochain bloc (candidats Phase 0 ci-dessous).
 
 ## Modules ajoutés depuis le checkpoint précédent (1f884eb)
 
