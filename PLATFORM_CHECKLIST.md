@@ -67,11 +67,15 @@ Légende:
 - [x] Suggestions de rééquilibrage
 - [x] Persistance serveur locale
   - Actuel: SQLite local avec tables `portfolios` et `positions`.
-- [ ] P&L réalisé
-- [ ] Gestion des frais
+- [x] P&L réalisé
+  - Actuel: journal de transactions (P3.3b), réalisé FIFO/LIFO par symbole via `lotEngine` (`applyTransactions`+`summarize`).
+- [x] Gestion des frais
+  - Actuel: frais d'achat capitalisés au coût, frais de vente déduits du réalisé (journal P3.3b).
 - [ ] Gestion des devises
-- [ ] Dividendes
-- [ ] Lots fiscaux
+- [x] Dividendes
+  - Actuel: saisis dans le journal de transactions, suivis par symbole (P3.3b).
+- [x] Lots fiscaux
+  - Actuel: moteur de lots FIFO/LIFO (P3.3a) branché au journal de transactions (P3.3b).
 - [x] Import CSV broker
   - Actuel: parser CSV générique (détection automatique des en-têtes EN/FR), preview avec lignes valides + erreurs ligne par ligne, upsert dans le portefeuille local et serveur.
 - [x] Export CSV/JSON
@@ -249,7 +253,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (535 tests)
+- [x] `npm test` vert (552 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI
@@ -321,6 +325,7 @@ Programmé aujourd'hui:
 - déploiement Vercel préparé: `vercel.json` (framework vite, functions includeFiles `server/**`, security headers, ignoreCommand sur les fichiers documentaires), `DEPLOYMENT.md` complet (ENV vars + procédure CLI + checklist post-deploy + rollback + coûts), `better-sqlite3` déplacé en devDependencies pour build serverless propre, README mis à jour. Aucun `vercel deploy` autonome (hard-stop session) — l'opérateur déclenche manuellement;
 - CI GitHub Actions: `.github/workflows/ci.yml` enchaîne lint + test + build sur Node 20 LTS à chaque pull request et à chaque push sur `main`, avec cache npm, concurrency cancel-in-progress et permissions minimales `contents: read`. Badge live dans le README;
 - cleanup audit F4 + F5: retrait de `src/data/portfolioData.js` (seed mock avec valeurs fictives `aiVerdict`/`score`/`recommendation`/`aiAnalysis`/`deterministic` non rendues dans l'UI), suppression du code mort dans `portfolioAnalytics.js` (`avgScore`, `riskScore`, `riskLabel`, `scoreVolatility`, `maxDrawdown`, `weakAssets`, `highConviction`, `driftedAssets`, `alerts`, `buildStressScenarios` et tous les helpers internes associés — jamais consommés par la UI vérifié par grep), portefeuille par défaut désormais vide (factualité maximale, l'utilisateur ajoute via `MarketLookup` ou import CSV broker), retrait du dossier orphelin `n8n_batch-ops_diagnose/` (5 fichiers Python sans rapport avec FIS). Tests portfolioAnalytics ré-écrits pour les API restantes (totalMarketValue, sectorExposure, rebalanceActions, empty-portfolio safety).
+- journal de transactions (P3.3b): route `/transactions`, saisie achat/vente/dividende/frais scopée par mandat (`fis:transactions:v1`), synthèse réalisé/lots ouverts par symbole (FIFO/LIFO) via le moteur de lots P3.3a, survente signalée, migration `003_transactions.sql` (parité dev);
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
