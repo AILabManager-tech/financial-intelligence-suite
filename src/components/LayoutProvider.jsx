@@ -28,6 +28,8 @@ export function LayoutProvider({ children }) {
         setLayout((current) => setFeatureColumns(current, surface, id, columns)),
       move: (surface, from, to) => setLayout((current) => moveFeature(current, surface, from, to)),
       reset: () => setLayout(getDefaultLayout()),
+      // Commit a complete layout at once (e.g. applying a profile, P0.5).
+      apply: (next) => setLayout(next),
     }),
     [],
   );

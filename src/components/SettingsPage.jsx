@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
+import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown, LayoutTemplate } from "lucide-react";
 import { getFeatureById } from "../core/featureRegistry";
 import { useLayout, useLayoutControls } from "../core/layoutContext";
+import { BUILTIN_PROFILES, buildLayoutFromProfile } from "../core/layoutProfiles";
 
 // Editing UI for the layout (P0.4b + P0.4c). Per surface, lists the features in
 // their current layout order with: a visibility toggle, a 1/2-column selector,
@@ -139,6 +140,34 @@ function SurfaceList({ surface, entries, controls }) {
   );
 }
 
+function ProfilePicker({ onApply }) {
+  return (
+    <section aria-label="Profils d'agencement" className="p-4 rounded-2xl bg-surface-900 border border-white/5 space-y-3">
+      <div className="flex items-center gap-2">
+        <LayoutTemplate className="w-4 h-4 text-violet-400" aria-hidden="true" />
+        <h3 className="text-sm font-semibold text-white">Profils</h3>
+      </div>
+      <p className="text-[11px] text-slate-500">
+        Applique un agencement préconfiguré en un clic, puis ajuste-le librement ci-dessous.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {BUILTIN_PROFILES.map((profile) => (
+          <button
+            key={profile.id}
+            type="button"
+            onClick={() => onApply(buildLayoutFromProfile(profile))}
+            aria-label={`Appliquer le profil ${profile.label}`}
+            className="text-left p-3 rounded-xl bg-surface-800 border border-white/5 hover:border-violet-500/40 cursor-pointer"
+          >
+            <div className="text-sm font-semibold text-white">{profile.label}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">{profile.description}</div>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function SettingsPage() {
   const layout = useLayout();
   const controls = useLayoutControls();
@@ -161,6 +190,8 @@ export default function SettingsPage() {
           Réinitialiser
         </button>
       </div>
+
+      <ProfilePicker onApply={controls.apply} />
 
       {SURFACES.map((surface) => (
         <section key={surface.key} aria-label={`Paramètres — ${surface.label}`} className="space-y-3">

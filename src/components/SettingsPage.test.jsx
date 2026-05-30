@@ -5,6 +5,7 @@ import SettingsPage from "./SettingsPage";
 import { LayoutProvider } from "./LayoutProvider";
 import { getFeatureById, getFeaturesBySurface } from "../core/featureRegistry";
 import { LAYOUT_KEY } from "../services/layoutStore";
+import { getBuiltinProfile } from "../core/layoutProfiles";
 
 const firstDashboard = getFeaturesBySurface("dashboard")[0];
 
@@ -96,6 +97,22 @@ describe("SettingsPage", () => {
     expect(
       screen.getByRole("button", { name: `Descendre ${dash[dash.length - 1].label}` }),
     ).toBeDisabled();
+  });
+
+  it("propose les profils intégrés et en applique un en un clic", () => {
+    renderPage();
+    expect(screen.getByRole("button", { name: "Appliquer le profil Value investor" })).toBeInTheDocument();
+    // 'Trader' masque certains panneaux dashboard ; après application, un panneau
+    // hors-profil (ex. risk-command-center, absent de la liste trader dashboard)
+    // doit passer en 'Masqué'.
+    const trader = getBuiltinProfile("trader");
+    const hiddenDash = getFeaturesBySurface("dashboard")
+      .map((f) => f.id)
+      .find((id) => !trader.surfaces.dashboard.includes(id));
+    const hiddenFeature = getFeatureById(hiddenDash);
+    expect(screen.getByRole("switch", { name: `Afficher ${hiddenFeature.label}` })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Appliquer le profil Trader" }));
+    expect(screen.getByRole("switch", { name: `Afficher ${hiddenFeature.label}` })).toHaveAttribute("aria-checked", "false");
   });
 
   it("réordonne via un drop natif (drag-and-drop)", () => {
