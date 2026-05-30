@@ -1,4 +1,11 @@
 const STORAGE_KEY = "financial-intelligence-suite.portfolio.v1";
+const DEFAULT_PORTFOLIO_ID = "default";
+
+// Positions are namespaced per mandate (P3.2). The 'default' mandate keeps the
+// legacy key for back-compat (existing users' data); others get a suffixed key.
+function storageKeyFor(portfolioId = DEFAULT_PORTFOLIO_ID) {
+  return portfolioId && portfolioId !== DEFAULT_PORTFOLIO_ID ? `${STORAGE_KEY}::${portfolioId}` : STORAGE_KEY;
+}
 
 function hasStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
@@ -28,11 +35,11 @@ export function normalizePortfolioAsset(asset) {
   };
 }
 
-export function loadPortfolioAssets(defaultAssets) {
+export function loadPortfolioAssets(defaultAssets, portfolioId = DEFAULT_PORTFOLIO_ID) {
   if (!hasStorage()) return defaultAssets.map(normalizePortfolioAsset);
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKeyFor(portfolioId));
     if (!raw) return defaultAssets.map(normalizePortfolioAsset);
 
     const parsed = JSON.parse(raw);
@@ -46,10 +53,10 @@ export function loadPortfolioAssets(defaultAssets) {
   }
 }
 
-export function savePortfolioAssets(assets) {
+export function savePortfolioAssets(assets, portfolioId = DEFAULT_PORTFOLIO_ID) {
   if (!hasStorage()) return;
   const normalized = assets.map(normalizePortfolioAsset).filter((asset) => asset.symbol);
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  window.localStorage.setItem(storageKeyFor(portfolioId), JSON.stringify(normalized));
 }
 
 export function upsertPortfolioAsset(assets, asset, position) {
