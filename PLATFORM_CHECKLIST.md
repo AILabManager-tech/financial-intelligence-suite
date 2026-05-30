@@ -71,7 +71,8 @@ Légende:
   - Actuel: journal de transactions (P3.3b), réalisé FIFO/LIFO par symbole via `lotEngine` (`applyTransactions`+`summarize`).
 - [x] Gestion des frais
   - Actuel: frais d'achat capitalisés au coût, frais de vente déduits du réalisé (journal P3.3b).
-- [ ] Gestion des devises
+- [x] Gestion des devises
+  - Actuel: conversion multi-devises (P3.4) — `CurrencyExposurePanel` convertit valeur/coût/P&L latent de l'USD (devise de reporting) vers la devise base du mandat via taux ECB live (`/api/fx`, Frankfurter keyless + fallback exchangerate.host), source + date affichées, valeur masquée si taux manquant.
 - [x] Dividendes
   - Actuel: saisis dans le journal de transactions, suivis par symbole (P3.3b).
 - [x] Lots fiscaux
@@ -253,7 +254,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (561 tests)
+- [x] `npm test` vert (584 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI
@@ -327,6 +328,7 @@ Programmé aujourd'hui:
 - cleanup audit F4 + F5: retrait de `src/data/portfolioData.js` (seed mock avec valeurs fictives `aiVerdict`/`score`/`recommendation`/`aiAnalysis`/`deterministic` non rendues dans l'UI), suppression du code mort dans `portfolioAnalytics.js` (`avgScore`, `riskScore`, `riskLabel`, `scoreVolatility`, `maxDrawdown`, `weakAssets`, `highConviction`, `driftedAssets`, `alerts`, `buildStressScenarios` et tous les helpers internes associés — jamais consommés par la UI vérifié par grep), portefeuille par défaut désormais vide (factualité maximale, l'utilisateur ajoute via `MarketLookup` ou import CSV broker), retrait du dossier orphelin `n8n_batch-ops_diagnose/` (5 fichiers Python sans rapport avec FIS). Tests portfolioAnalytics ré-écrits pour les API restantes (totalMarketValue, sectorExposure, rebalanceActions, empty-portfolio safety).
 - journal de transactions (P3.3b): route `/transactions`, saisie achat/vente/dividende/frais scopée par mandat (`fis:transactions:v1`), synthèse réalisé/lots ouverts par symbole (FIFO/LIFO) via le moteur de lots P3.3a, survente signalée, migration `003_transactions.sql` (parité dev);
 - parité dev SQLite multi-portefeuille (P3.2c): migration `002_portfolio_mandate_columns.sql` (colonnes mandat), `portfolioRepository` mandate-aware (positions/snapshots/mandats scopés par `portfolio_id`), API dev `/api/portfolios` + `/api/portfolio[/snapshots]?portfolio=<id>` scopés, client + App branchés sur tous les mandats — dev-only, prod reste localStorage;
+- conversion multi-devises (P3.4): provider de taux ECB live (`server/fx.js` Frankfurter keyless + fallback exchangerate.host), endpoint dev+prod `/api/fx?base=<ccy>` (cache 6h), `CurrencyExposurePanel` (dashboard) convertit les totaux portefeuille USD vers la devise base du mandat, taux jamais inventé (valeur masquée si manquant), sonde healthcheck `fx_rates`;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
