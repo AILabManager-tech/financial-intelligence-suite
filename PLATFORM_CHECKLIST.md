@@ -81,7 +81,7 @@ Légende:
 - [x] Export CSV/JSON
   - Actuel: export depuis le gestionnaire de positions avec métriques portefeuille.
 - [x] Plusieurs portefeuilles par utilisateur
-  - Actuel: mandats multiples (P3.2) — sélecteur header (switch/créer/renommer/supprimer), positions scopées par mandat (localStorage `fis:portfolios:v1` + clé positions namespacée). Prod via localStorage ; parité dev SQLite (P3.2c) à faire.
+  - Actuel: mandats multiples (P3.2) — sélecteur header (switch/créer/renommer/supprimer), positions scopées par mandat (localStorage `fis:portfolios:v1` + clé positions namespacée). Prod via localStorage ; parité dev SQLite faite (P3.2c) — `portfolioRepository` mandate-aware + API dev `/api/portfolios` (CRUD) et `/api/portfolio[/snapshots]?portfolio=<id>` scopés, dev-only.
 - [x] Snapshots historiques du portefeuille
   - Actuel: snapshots locaux SQLite via `/api/portfolio/snapshots`.
 
@@ -253,7 +253,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (552 tests)
+- [x] `npm test` vert (561 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI
@@ -326,6 +326,7 @@ Programmé aujourd'hui:
 - CI GitHub Actions: `.github/workflows/ci.yml` enchaîne lint + test + build sur Node 20 LTS à chaque pull request et à chaque push sur `main`, avec cache npm, concurrency cancel-in-progress et permissions minimales `contents: read`. Badge live dans le README;
 - cleanup audit F4 + F5: retrait de `src/data/portfolioData.js` (seed mock avec valeurs fictives `aiVerdict`/`score`/`recommendation`/`aiAnalysis`/`deterministic` non rendues dans l'UI), suppression du code mort dans `portfolioAnalytics.js` (`avgScore`, `riskScore`, `riskLabel`, `scoreVolatility`, `maxDrawdown`, `weakAssets`, `highConviction`, `driftedAssets`, `alerts`, `buildStressScenarios` et tous les helpers internes associés — jamais consommés par la UI vérifié par grep), portefeuille par défaut désormais vide (factualité maximale, l'utilisateur ajoute via `MarketLookup` ou import CSV broker), retrait du dossier orphelin `n8n_batch-ops_diagnose/` (5 fichiers Python sans rapport avec FIS). Tests portfolioAnalytics ré-écrits pour les API restantes (totalMarketValue, sectorExposure, rebalanceActions, empty-portfolio safety).
 - journal de transactions (P3.3b): route `/transactions`, saisie achat/vente/dividende/frais scopée par mandat (`fis:transactions:v1`), synthèse réalisé/lots ouverts par symbole (FIFO/LIFO) via le moteur de lots P3.3a, survente signalée, migration `003_transactions.sql` (parité dev);
+- parité dev SQLite multi-portefeuille (P3.2c): migration `002_portfolio_mandate_columns.sql` (colonnes mandat), `portfolioRepository` mandate-aware (positions/snapshots/mandats scopés par `portfolio_id`), API dev `/api/portfolios` + `/api/portfolio[/snapshots]?portfolio=<id>` scopés, client + App branchés sur tous les mandats — dev-only, prod reste localStorage;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
