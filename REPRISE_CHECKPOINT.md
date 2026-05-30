@@ -65,6 +65,8 @@ Branche: `main`. Aucun push à faire sans demande explicite.
 >
 > Tests : 370 → **395 verts**. Reprise propre, prêt pour le prochain bloc (candidats Phase 0 ci-dessous).
 
+> **P1.1 livré — 2026-05-30 (niveau 3 MISSION).** Moteur d'agencement déterministe `src/core/layoutEngine.js` (+ 8 tests) : `optimizeLayout`/`optimizeSurface` réordonnent par priorité de catégorie (overview/KPI → portfolio → comparison → sentiment → calendar → monitoring → documents), ordre canonique en départage, visibilité+colonnage préservés. Pur, idempotent. Bouton « Agencement optimal » dans `/settings` (applique via `controls.apply`). **Vérifié live** : « Centre de risque » (overview) remonte avec les KPI, monitoring repoussé en bas. Suite 466 → **475 tests verts**, lint + build verts. `main` ~26 commits devant `origin`, non poussé. **Prochain bloc : P1.2 — suggestion IA opt-in (Qwen-gencore local / provider), fallback déterministe P1.1, non bloquante.**
+
 > **🏁 P0.5 livré — PHASE 0 COMPLÈTE — 2026-05-29 (niveau 3 MISSION).** Profils de gestionnaire. `P0.5a 584ab56` : 4 presets en données pures (`src/core/layoutProfiles.js` : overview/value/trader/advisor) + `buildLayoutFromProfile` + contrôle `apply(layout)` au provider + `ProfilePicker` dans SettingsPage. `P0.5b 3bd62a6` : profils custom (`src/services/profileStore.js`, `fis:profiles:v1`) — enregistrer l'agencement courant, appliquer, supprimer. **Vérifié live** : « Trader » réduit le dashboard à 4 panneaux ; profil custom « Mon setup » sauvegardé/listé/persisté. Suite 446 → **466 tests verts**, lint + build verts. `main` est **24 commits en avance sur `origin/main`** (incluant le bloc de reprise post-panne + toute la Phase 0), non poussé — `git push` à faire sur demande explicite.
 >
 > **Le noyau personnalisable (Phase 0) est COMPLET** : registre (P0.1) → store réactif (P0.2) → rendu piloté (P0.3) → UI Paramètres toggles/colonnage/DnD (P0.4) → profils intégrés+custom (P0.5). **Prochain bloc : P1.1 — moteur d'agencement déterministe (`src/core/layoutEngine.js`), 1re brique de Phase 1.**
@@ -369,7 +371,7 @@ L'utilisateur ne veut PLUS qu'on lui demande "axe A vs B vs C ?" en début de se
 
 > **P0.1 livré 2026-05-29** — registre central `src/core/featureRegistry.js` + `featureRegistry.test.js` (16 tests). 8 panels asset + 8 sections dashboard enregistrés sans toucher leur code. `componentKey` = string stable (mapping→composant déféré à P0.3). Données pures gelées en profondeur + helpers (`getFeatureById`, `getFeaturesBySurface`, `groupFeaturesByCategory`, `getDefaultLayout`). Suite : 379 → **395 tests verts**, lint + build verts. Commits chirurgicaux (WIP étranger laissé intact, non stagé).
 
-**Recommandation par défaut sur « on continue »** : **P1.1 — moteur d'agencement déterministe** (`src/core/layoutEngine.js`, pur/testable), 1re brique de Phase 1. À partir des features cochées + un profil, génère ordre + colonnage par règles (KPI en haut, documentaires en bas, groupage par catégorie, panels lourds pleine largeur, responsive). Produit un layout appliqué via `apply()` (P0.5a). Fiable, instantané, gratuit — la suggestion IA (P1.2) viendra en surcouche optionnelle non bloquante (fallback déterministe). Effort M, dépend de Phase 0 (complète). NB : penser au rendu effectif du colonnage 1/2 dans `LayoutSurface` (persisté mais pas encore gridé) — utile dès que le moteur produira des colonnages ≠ 1.
+**Recommandation par défaut sur « on continue »** : **P1.2 — suggestion IA opt-in**. Bouton « Suggérer un agencement » à côté de « Agencement optimal » : appel LLM (Qwen-gencore local via Ollama `http://localhost:11434`, modèle `qwen2.5:32b` ou `qwen-gencore`, cf. `~/.claude/CLAUDE.md`) qui reçoit features + profil et propose un layout. **Non bloquant** : fallback sur `optimizeLayout` (P1.1) si IA absente/lente/échoue ; sortie **validée contre le registre** (réutiliser la réconciliation de `layoutStore` → aucune feature inventée/ id inconnu écarté). Jamais automatique (l'utilisateur clique et accepte). Effort M, dépend de P1.1 (livré). ⚠️ Challenge : si P1.1 suffit en pratique, P1.2 est gelable — ne pas faire de l'IA un prérequis. NB toujours ouvert : rendu effectif du colonnage 1/2 dans `LayoutSurface` (persisté, pas encore gridé).
 
 Candidats restants (ordre = chemin recommandé du roadmap) :
 
@@ -380,9 +382,9 @@ Candidats restants (ordre = chemin recommandé du roadmap) :
 - ~~**P0.4** onglet Paramètres `/settings` : toggles + drag-and-drop + colonnage + reset~~ ✅ livré.
 - ~~**P0.5** profils de gestionnaire (presets + custom)~~ ✅ livré — **🏁 PHASE 0 COMPLÈTE**.
 
-**Phase 1 — agencement optimal (prochaine phase) :**
-- **P1.1** moteur d'agencement déterministe (`src/core/layoutEngine.js`) — *recommandation par défaut, ci-dessus*.
-- **P1.2** suggestion IA opt-in (bouton « Suggérer un agencement », fallback déterministe P1.1, jamais bloquant).
+**Phase 1 — agencement optimal :**
+- ~~**P1.1** moteur d'agencement déterministe (`src/core/layoutEngine.js`)~~ ✅ livré.
+- **P1.2** suggestion IA opt-in (bouton « Suggérer un agencement », fallback déterministe P1.1, jamais bloquant) — *recommandation par défaut, ci-dessus*.
 
 **Phase 1 — agencement optimal :**
 - **P1.1** moteur d'agencement déterministe (`src/core/layoutEngine.js`, règles de placement) ; **P1.2** suggestion IA opt-in (Qwen-gencore local), fallback déterministe, jamais bloquante.

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown, LayoutTemplate, Save, Trash2 } from "lucide-react";
+import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown, LayoutTemplate, Save, Trash2, Wand2 } from "lucide-react";
 import { getFeatureById } from "../core/featureRegistry";
 import { useLayout, useLayoutControls } from "../core/layoutContext";
 import { BUILTIN_PROFILES, buildLayoutFromProfile } from "../core/layoutProfiles";
+import { optimizeLayout } from "../core/layoutEngine";
 import {
   loadProfiles,
   saveProfiles,
@@ -257,14 +258,24 @@ export default function SettingsPage() {
             Choisis les panneaux à afficher, leur ordre (glisser-déposer ou flèches) et leur largeur. Tes réglages sont conservés sur cet appareil.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={controls.reset}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-800 text-slate-300 hover:text-white border border-white/5 text-xs font-semibold cursor-pointer"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          Réinitialiser
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => controls.apply(optimizeLayout(layout))}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 text-violet-300 hover:bg-violet-500/15 border border-violet-500/20 text-xs font-semibold cursor-pointer"
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            Agencement optimal
+          </button>
+          <button
+            type="button"
+            onClick={controls.reset}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-800 text-slate-300 hover:text-white border border-white/5 text-xs font-semibold cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Réinitialiser
+          </button>
+        </div>
       </div>
 
       <ProfilePicker

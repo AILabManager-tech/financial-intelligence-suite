@@ -253,6 +253,15 @@ P0.5 [x] livré 2026-05-29 — profils de gestionnaire (presets). CLÔT LA PHASE
 
 > **🏁 PHASE 0 COMPLÈTE (2026-05-29).** Le noyau personnalisable est livré : registre de features (P0.1) → store de layout réactif (P0.2) → rendu piloté (P0.3) → onglet Paramètres avec toggles/colonnage/drag-and-drop (P0.4) → profils intégrés + custom (P0.5). N'importe quel gestionnaire ouvre l'app, choisit un profil ou compose son espace (activer/désactiver/repositionner), et le retrouve à la session suivante. 466 tests verts.
 
+```
+P1.1 [x] livré 2026-05-30 — moteur d'agencement déterministe (src/core/layoutEngine.js + 8 tests).
+        optimizeLayout/optimizeSurface réordonnent par priorité de catégorie (overview/KPI en haut
+        → monitoring → documents en bas), ordre canonique en départage, visibilité+colonnage
+        préservés. Pur, idempotent. Bouton « Agencement optimal » dans /settings → controls.apply.
+        Vérifié live : « Centre de risque » remonte avec les KPI, monitoring repoussé en bas.
+        475 tests verts, lint + build verts.
+```
+
 ### Améliorations terminal hors track P0.x (livrées 2026-05-29, sécurisées post-panne)
 
 ```
@@ -267,9 +276,9 @@ P0.5 [x] livré 2026-05-29 — profils de gestionnaire (presets). CLÔT LA PHASE
 
 ## Prochain bloc recommandé
 
-**P1.1 (moteur d'agencement déterministe)** — première brique de Phase 1. `src/core/layoutEngine.js` (pur, testable) : à partir des features cochées + un profil, génère un ordre + colonnage selon des règles (KPI de pilotage en haut, panels documentaires en bas, groupage par catégorie, panels lourds en pleine largeur, responsive). C'est ce qui « positionne optimalement » de façon fiable et gratuite, avant la surcouche IA suggestive (P1.2). Produit un layout que l'on applique via `apply()` (P0.5a) ou que l'on propose à l'utilisateur. Effort M, dépend de Phase 0 (complète). NB : la suggestion IA P1.2 reste optionnelle/non bloquante (fallback déterministe).
+**P1.2 (suggestion IA opt-in)** — surcouche optionnelle au moteur déterministe. Bouton « Suggérer un agencement » : un appel LLM (Qwen-gencore local dispo chez gear-code via Ollama, ou provider configuré) reçoit la liste des features + le profil et **propose** un layout que l'utilisateur accepte/ajuste. **Fallback déterministe (P1.1) si l'IA échoue/lente/absente** — jamais bloquant, jamais automatique. Garde-fou : sortie validée contre le registre (réconciliation via `layoutStore`, aucune feature inventée). Effort M, dépend de P1.1 (livré). **Challenge intégré** : si P1.1 suffit en pratique, P1.2 reste gelable — ne pas faire de l'IA un prérequis.
 
-Séquence Phase 0 : ~~P0.1 registre~~ ✅ → ~~P0.2 store~~ ✅ → ~~P0.3 rendu piloté~~ ✅ → ~~P0.4 onglet Paramètres~~ ✅ → ~~P0.5 profils~~ ✅ — **🏁 PHASE 0 COMPLÈTE**. Prochaine : **Phase 1 (P1.1 moteur d'agencement déterministe → P1.2 suggestion IA opt-in)**.
+Séquence Phase 0 : ~~P0.1~~ → ~~P0.2~~ → ~~P0.3~~ → ~~P0.4~~ → ~~P0.5~~ ✅ **🏁 COMPLÈTE**. Phase 1 : ~~P1.1 moteur déterministe~~ ✅ → **P1.2 suggestion IA opt-in**.
 
 ## Mise à jour de ce document
 

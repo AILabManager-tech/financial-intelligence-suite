@@ -146,6 +146,22 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("switch", { name: `Afficher ${dash0.label}` })).toHaveAttribute("aria-checked", "false");
   });
 
+  it("« Agencement optimal » réordonne le dashboard (KPI en tête)", () => {
+    renderPage();
+    const region = screen.getByLabelText("Paramètres — Tableau de bord");
+    const order = () =>
+      within(region)
+        .getAllByTestId(/^row-/)
+        .map((el) => el.dataset.testid.replace("row-", ""));
+    // par défaut, risk-command-center n'est pas dans les 3 premiers
+    expect(order().slice(0, 3)).not.toContain("risk-command-center");
+    fireEvent.click(screen.getByRole("button", { name: /Agencement optimal/ }));
+    // après optimisation, les 3 panneaux 'overview' (dont risk-command-center) sont en tête
+    expect(order().slice(0, 3).sort()).toEqual(
+      ["risk-command-center", "safety-badge", "top-performers"].sort(),
+    );
+  });
+
   it("réordonne via un drop natif (drag-and-drop)", () => {
     renderPage();
     const dash = getFeaturesBySurface("dashboard").map((f) => f.id);
