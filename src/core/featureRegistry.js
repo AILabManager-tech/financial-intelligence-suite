@@ -142,6 +142,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 110,
   },
+  {
+    id: "investment-journal",
+    label: "Journal d'investissement",
+    category: "decisions",
+    surface: "asset",
+    componentKey: "InvestmentJournalPanel",
+    dataDeps: [],
+    defaultVisible: true,
+    order: 115,
+  },
 
   // --- Surface dashboard (bloc composable du tableau de bord, App.jsx) --------
   // `order` = empilage RÉEL du bloc central de App.jsx (vérifié 2026-05-29).

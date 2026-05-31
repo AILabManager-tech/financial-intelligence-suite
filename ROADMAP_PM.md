@@ -130,7 +130,7 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
-| P5.1 Journal d'investissement par position | Thèse d'achat (markdown), conviction 1-5, prix cible, stop, date de revue. | M | P3.2 |
+| P5.1 Journal d'investissement par position ✅ | Thèse d'achat, conviction 1-5, prix cible, stop, date de revue. **Livré 2026-05-31** : feature catalogue fiche actif, persistance localStorage par symbole (comme la watchlist), catégorie `decisions`. | M | P3.2 |
 | P5.2 Contraintes / compliance par portefeuille | Max % titre/secteur, exclusions ESG, cash floor. Validations bloquantes à l'ajout/import. | M | P3.2 |
 | P5.3 Rééquilibrage avec coûts | Suggestion d'ordres au target en minimisant transactions + frais, respecte P5.2. | M | P5.2, P3.3 |
 | P5.4 Watchlists thématiques | Plusieurs watchlists nommées au lieu d'une seule. | S | — |
@@ -360,15 +360,15 @@ P4.10 [x] livré 2026-05-30 — distribution des returns (feature catalogue dist
 
 ## Prochain bloc recommandé
 
-**P4.1 ✅ + P4.10 ✅ + P4.12 ✅** livrés. **Toutes les features Phase 4 dérivables sans snapshots sont faites.** La suite Phase 4 (P4.2 TWR, P4.3 MWR/IRR, P4.4 vol/drawdown, P4.5 Sharpe) **exige l'accrual de snapshots** (cf. pré-requis ci-dessous). Deux candidats pour le prochain bloc :
+**P4.1 ✅ + P4.10 ✅ + P4.12 ✅** (Phase 4 hors-snapshots) **+ P5.1 ✅** (journal d'investissement) livrés. La suite Phase 4 (P4.2 TWR, P4.3 MWR/IRR, P4.4 vol/drawdown, P4.5 Sharpe) **exige l'accrual de snapshots** (cf. pré-requis ci-dessous). Deux candidats pour le prochain bloc :
 - **Accrual de snapshots SQLite** (brique socle qui débloque P4.2→P4.5) : capture quotidienne de la valeur du mandat dans la table `snapshots` (présente, non peuplée). C'est le seul chemin factuel vers le factsheet portefeuille — sans série de valeur réelle, pas de TWR/vol/Sharpe.
-- **Une feature de catalogue dérivable sans snapshots** alignée modularité (ex. Phase 5 : watchlists thématiques P5.4, journal d'investissement P5.1, ou une feature dashboard dérivée des positions/transactions existantes).
+- **Une autre feature de catalogue dérivable sans snapshots** alignée modularité : Phase 5 watchlists thématiques P5.4 (S, mais mute la watchlist existante), contraintes/compliance P5.2 (M), ou une feature dashboard dérivée des positions/transactions existantes.
 
 > **Pré-requis snapshots pour P4.2+ (TWR/MWR/vol/Sharpe portefeuille).** P4.2 (TWR GIPS), P4.3 (MWR/IRR), P4.4 (vol/drawdown), P4.5 (Sharpe) exigent une **série de valeur du portefeuille dans le temps** — c.-à-d. l'**accrual de snapshots SQLite** (la table existe, n'est pas peuplée). Factualité stricte : ne pas fabriquer une série de valeur portefeuille tant que les snapshots ne sont pas accumulés. Donc soit on attaque d'abord l'**accrual de snapshots** (brique socle), soit on avance sur les features dérivables du prix/des lots (P4.10, P4.12) en attendant.
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
-Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 — toutes les features hors-snapshots livrées (P4.1 returns ✅ + P4.10 distribution ✅ + P4.12 stats op. ✅) → prochain socle = accrual de snapshots, qui débloque P4.2 TWR / P4.3 MWR / P4.4 vol / P4.5 Sharpe**.
+Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 — features hors-snapshots livrées (P4.1 returns ✅ + P4.10 distribution ✅ + P4.12 stats op. ✅)** · **Phase 5 amorcée (P5.1 journal d'investissement ✅)** → prochain socle = accrual de snapshots, qui débloque P4.2 TWR / P4.3 MWR / P4.4 vol / P4.5 Sharpe.
 
 ## Mise à jour de ce document
 

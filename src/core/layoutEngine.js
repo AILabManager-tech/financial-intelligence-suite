@@ -16,6 +16,7 @@ const CATEGORY_PRIORITY = {
   overview: 10, // pilotage / KPI -> haut
   performance: 15, // rendements / ratios PM (Phase 4) -> haut, juste sous l'overview
   fundamentals: 20,
+  decisions: 25, // thèse / conviction / journal (Phase 5) -> contexte de décision, sous les fondamentaux
   portfolio: 30,
   comparison: 40,
   sentiment: 50,
