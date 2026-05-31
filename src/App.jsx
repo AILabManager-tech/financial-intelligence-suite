@@ -76,6 +76,7 @@ import {
 } from "./services/transactionStore";
 import { fetchTransactionsFromApi, saveTransactionsToApi } from "./services/transactionApi";
 import { useLayout } from "./core/layoutContext";
+import { buildDashboardPanelProps } from "./core/dashboardPanelProps";
 import { applyTheme, loadTheme } from "./services/themeStore";
 
 // Maps the registry componentKeys of the "dashboard" surface to their
@@ -603,28 +604,23 @@ export default function App() {
 
   // Per-component props for the layout-driven dashboard block. Keyed by the
   // registry componentKey; LayoutSurface feeds each visible panel its slice.
-  const dashboardPanelProps = {
-    TopPerformers: { assets, buffettSummaries, onSelect: handleSelect },
-    SafetyBadge: { assets },
-    MarketDataHealthPanel: {},
-    OperatorAlerts: { assets, userTriggers: alertTriggers },
-    AlertManager: {
-      alerts,
-      availableSymbols: portfolioAssets.map((asset) => asset.symbol),
-      onAddAlert: handleAddAlert,
-      onRemoveAlert: handleRemoveAlert,
-      onToggleAlert: handleToggleAlert,
-    },
-    RiskCommandCenter: { assets, snapshots: portfolioSnapshots },
-    PortfolioManager: {
-      assets,
-      onSavePosition: handleSavePosition,
-      onRemoveAsset: handleRemoveAsset,
-      onImportPositions: handleImportPositions,
-    },
-    CurrencyExposurePanel: { assets, baseCurrency: getActivePortfolio(portfolioList).baseCurrency },
-    PortfolioConcentrationPanel: { assets },
-  };
+  const dashboardPanelProps = buildDashboardPanelProps({
+    assets,
+    buffettSummaries,
+    onSelect: handleSelect,
+    alertTriggers,
+    alerts,
+    availableSymbols: portfolioAssets.map((asset) => asset.symbol),
+    onAddAlert: handleAddAlert,
+    onRemoveAlert: handleRemoveAlert,
+    onToggleAlert: handleToggleAlert,
+    snapshots: portfolioSnapshots,
+    onSavePosition: handleSavePosition,
+    onRemoveAsset: handleRemoveAsset,
+    onImportPositions: handleImportPositions,
+    baseCurrency: getActivePortfolio(portfolioList).baseCurrency,
+    transactions,
+  });
 
   // Settings and the demo simulator don't depend on live quotes — keep them
   // reachable while prices load.
