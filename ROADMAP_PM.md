@@ -319,6 +319,19 @@ P4.1 [x] livré 2026-05-30 — rendements standards (première feature analytiqu
         source serveur (même voie que SimulationPanel). Rendements de prix hors dividendes, mention
         affichée ; périodes hors-portée masquées (jamais de 0 inventé). Dogfood curl MSFT : 1M/3M/6M/
         YTD/1Y peuplés, 3Y masqué, 17 rendements mensuels. 593 → 611 tests verts.
+P4.12 [x] livré 2026-05-31 — statistiques opérationnelles (1re feature de performance côté dashboard).
+        src/utils/operationalStats.js (pur, 12 tests) : computeOperationalStats(transactions, {method}) →
+        transactions clôturées, taux de réussite, ratio gain/perte, détention moyenne pondérée par quantité,
+        rotation (coût vendu / coût total), rendement sur coût (dividendes / coût ouvert), P&L réalisé,
+        dividendes. Branché sur le moteur de lots P3.3a enrichi (lotEngine.closedLots : round-trips datés
+        entrée/sortie avec quantité + P&L, +5 tests). src/utils/operationalStatsFormatters.js (formatCount/
+        formatDays/formatMultiple, 9 tests). src/components/OperationalStatsPanel.jsx (surface dashboard,
+        registre catégorie `portfolio` order 90, 4 tests). returnsFormatters.formatPct gagne {signed:false}
+        pour les grandeurs non signées (rétro-compat). Dérivé des transactions saisies SEULEMENT — zéro API,
+        zéro snapshot. Factualité : mandat vide = état vide honnête, mesures de clôture masquées (—) tant
+        qu'aucune vente (jamais un 0), survente signalée en ambre. Dogfood (3 round-trips multi-symboles) :
+        hit ratio 66.67 %, win/loss 3.05×, détention 294.8 j, rotation 81.55 %, yield-on-cost 0.92 %.
+        624 → 647 tests verts.
 P4.10 [x] livré 2026-05-30 — distribution des returns (feature catalogue distincte de P4.1).
         src/utils/returnsDistribution.js (pur, 7 tests) : computeDistribution(monthlyReturns) → %
         mois positifs, meilleur/pire mois, moyenne, écart-type échantillon, skewness g1, kurtosis
@@ -347,13 +360,15 @@ P4.10 [x] livré 2026-05-30 — distribution des returns (feature catalogue dist
 
 ## Prochain bloc recommandé
 
-**P4.12 (stats opérationnelles)** — turnover, holding period moyen, hit ratio, win/loss, yield-on-cost, branché sur le **moteur de lots P3.3a** déjà réalisé. Dérivable des transactions saisies (sans snapshots). NB : se peuple seulement avec des transactions réelles dans un mandat — moins « démontrable à froid » que les features prix, mais c'est la dernière brique Phase 4 hors-snapshots. Alternative encore plus alignée « modularité » : enrichir le **catalogue dashboard** (les nouvelles features récentes sont toutes sur la fiche actif ; le tableau de bord composable gagnerait une feature de performance agrégée). **P4.1 ✅ + P4.10 ✅** livrés.
+**P4.1 ✅ + P4.10 ✅ + P4.12 ✅** livrés. **Toutes les features Phase 4 dérivables sans snapshots sont faites.** La suite Phase 4 (P4.2 TWR, P4.3 MWR/IRR, P4.4 vol/drawdown, P4.5 Sharpe) **exige l'accrual de snapshots** (cf. pré-requis ci-dessous). Deux candidats pour le prochain bloc :
+- **Accrual de snapshots SQLite** (brique socle qui débloque P4.2→P4.5) : capture quotidienne de la valeur du mandat dans la table `snapshots` (présente, non peuplée). C'est le seul chemin factuel vers le factsheet portefeuille — sans série de valeur réelle, pas de TWR/vol/Sharpe.
+- **Une feature de catalogue dérivable sans snapshots** alignée modularité (ex. Phase 5 : watchlists thématiques P5.4, journal d'investissement P5.1, ou une feature dashboard dérivée des positions/transactions existantes).
 
 > **Pré-requis snapshots pour P4.2+ (TWR/MWR/vol/Sharpe portefeuille).** P4.2 (TWR GIPS), P4.3 (MWR/IRR), P4.4 (vol/drawdown), P4.5 (Sharpe) exigent une **série de valeur du portefeuille dans le temps** — c.-à-d. l'**accrual de snapshots SQLite** (la table existe, n'est pas peuplée). Factualité stricte : ne pas fabriquer une série de valeur portefeuille tant que les snapshots ne sont pas accumulés. Donc soit on attaque d'abord l'**accrual de snapshots** (brique socle), soit on avance sur les features dérivables du prix/des lots (P4.10, P4.12) en attendant.
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
-Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 (P4.1 returns ✅ + P4.10 distribution ✅ → P4.12 stats op. dérivable, puis accrual snapshots → P4.2 TWR / P4.4 vol / P4.5 Sharpe)**.
+Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 — toutes les features hors-snapshots livrées (P4.1 returns ✅ + P4.10 distribution ✅ + P4.12 stats op. ✅) → prochain socle = accrual de snapshots, qui débloque P4.2 TWR / P4.3 MWR / P4.4 vol / P4.5 Sharpe**.
 
 ## Mise à jour de ce document
 

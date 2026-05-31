@@ -230,6 +230,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 80,
   },
+  {
+    id: "operational-stats",
+    label: "Statistiques opérationnelles",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "OperationalStatsPanel",
+    dataDeps: [],
+    defaultVisible: true,
+    order: 90,
+  },
 ];
 
 /**

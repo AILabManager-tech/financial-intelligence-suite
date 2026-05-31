@@ -3,13 +3,16 @@
 // placeholder inventé — CLAUDE.md factualité stricte).
 
 /**
- * Pourcentage signé à deux décimales. null si non fini.
+ * Pourcentage à deux décimales. null si non fini.
+ * Signé par défaut (rendements : +X / −X) ; `{ signed: false }` pour les
+ * grandeurs non signées (taux de réussite, rotation, rendement sur coût).
  * @param {number} value
+ * @param {{signed?: boolean}} [options]
  * @returns {string|null}
  */
-export function formatPct(value) {
+export function formatPct(value, { signed = true } = {}) {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  const sign = value >= 0 ? "+" : "";
+  const sign = signed && value >= 0 ? "+" : "";
   return `${sign}${value.toFixed(2)} %`;
 }
 

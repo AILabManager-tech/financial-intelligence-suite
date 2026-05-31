@@ -19,6 +19,7 @@ function toTime(d) {
 function emptySymbol() {
   return {
     lots: [], // { date, quantity, costPerShare }
+    closedLots: [], // realized round-trips: { entryDate, exitDate, quantity, costPerShare, proceedsPerShare, pnl }
     realizedPnl: 0,
     dividends: 0,
     fees: 0,
@@ -63,7 +64,19 @@ export function applyTransactions(transactions, { method = "fifo" } = {}) {
         const idx = lifo ? acc.lots.length - 1 : 0;
         const lot = acc.lots[idx];
         const matched = Math.min(remaining, lot.quantity);
-        acc.realizedPnl += matched * (proceedsPerShare - lot.costPerShare);
+        const pnl = matched * (proceedsPerShare - lot.costPerShare);
+        acc.realizedPnl += pnl;
+        // Record the realized round-trip (gross of the sell fee, which is applied
+        // once to the whole sell below). Feeds holding-period / hit-ratio stats
+        // (P4.12) and per-lot fiscal exports (P6.2).
+        acc.closedLots.push({
+          entryDate: lot.date,
+          exitDate: t.date,
+          quantity: matched,
+          costPerShare: lot.costPerShare,
+          proceedsPerShare,
+          pnl,
+        });
         lot.quantity -= matched;
         remaining -= matched;
         if (lot.quantity <= EPS) acc.lots.splice(idx, 1);
