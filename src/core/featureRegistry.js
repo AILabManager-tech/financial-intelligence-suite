@@ -250,6 +250,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 90,
   },
+  {
+    id: "portfolio-concentration",
+    label: "Concentration & diversification",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "PortfolioConcentrationPanel",
+    dataDeps: ["quotes"],
+    defaultVisible: true,
+    order: 100,
+  },
 ];
 
 /**

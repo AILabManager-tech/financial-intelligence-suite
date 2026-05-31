@@ -137,6 +137,7 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 | P5.5 Couverture canadienne | `.TO`/`.V`/`.CN`, dividendes CAD brut/net, SEDAR+, retenue 15 % US comptes enregistrés. | L | P3.4 |
 | P5.6 Macro (taux, inflation, courbe) | BoC + Fed via FRED (gratuit). Panel macro global, tags d'exposition. | M | — |
 | P5.7 ESG / insider / short interest | Fallback Yahoo `esgScores` gratuit ; Finnhub insider + short interest. Panels de catalogue. | M | — |
+| P5.8 Concentration & diversification ✅ | HHI + bandes standards, nombre effectif de positions, plus grosse position, top-5, spread sectoriel. **Livré 2026-05-31** : panel dashboard dérivé des positions (valeur de marché), catégorie `portfolio`, zéro API/snapshot. | S | P3.2 |
 
 ---
 
@@ -368,7 +369,7 @@ P4.10 [x] livré 2026-05-30 — distribution des returns (feature catalogue dist
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
-Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 — features hors-snapshots livrées (P4.1 returns ✅ + P4.10 distribution ✅ + P4.12 stats op. ✅)** · **Phase 5 amorcée (P5.1 journal d'investissement ✅)** → prochain socle = accrual de snapshots, qui débloque P4.2 TWR / P4.3 MWR / P4.4 vol / P4.5 Sharpe.
+Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 — features hors-snapshots livrées (P4.1 returns ✅ + P4.10 distribution ✅ + P4.12 stats op. ✅)** · **Phase 5 en cours (P5.1 journal d'investissement ✅ + P5.8 concentration & diversification ✅)** → prochain socle = accrual de snapshots, qui débloque P4.2 TWR / P4.3 MWR / P4.4 vol / P4.5 Sharpe.
 
 ## Mise à jour de ce document
 

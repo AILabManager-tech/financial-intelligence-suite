@@ -67,6 +67,7 @@ import DemoPortfolioPanel from "./components/DemoPortfolioPanel";
 import TransactionJournalPanel from "./components/TransactionJournalPanel";
 import CurrencyExposurePanel from "./components/CurrencyExposurePanel";
 import OperationalStatsPanel from "./components/OperationalStatsPanel";
+import PortfolioConcentrationPanel from "./components/PortfolioConcentrationPanel";
 import {
   addTransaction,
   loadTransactions,
@@ -92,6 +93,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
   PortfolioManager,
   CurrencyExposurePanel,
   OperationalStatsPanel,
+  PortfolioConcentrationPanel,
 };
 
 // Apply persisted theme synchronously at module load so the first paint
@@ -621,6 +623,7 @@ export default function App() {
       onImportPositions: handleImportPositions,
     },
     CurrencyExposurePanel: { assets, baseCurrency: getActivePortfolio(portfolioList).baseCurrency },
+    PortfolioConcentrationPanel: { assets },
   };
 
   // Settings and the demo simulator don't depend on live quotes — keep them
