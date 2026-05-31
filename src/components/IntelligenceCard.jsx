@@ -16,6 +16,7 @@ import PeersComparisonPanel from "./PeersComparisonPanel";
 import SimulationPanel from "./SimulationPanel";
 import ReturnsMatrixPanel from "./ReturnsMatrixPanel";
 import ReturnsDistributionPanel from "./ReturnsDistributionPanel";
+import DrawdownPanel from "./DrawdownPanel";
 import InvestmentJournalPanel from "./InvestmentJournalPanel";
 import LayoutSurface from "./LayoutSurface";
 import { useLayout } from "../core/layoutContext";
@@ -36,6 +37,7 @@ const ASSET_FEATURE_COMPONENTS = {
   SimulationPanel,
   ReturnsMatrixPanel,
   ReturnsDistributionPanel,
+  DrawdownPanel,
   InvestmentJournalPanel,
 };
 

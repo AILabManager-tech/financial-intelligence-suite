@@ -138,6 +138,7 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 | P5.6 Macro (taux, inflation, courbe) | BoC + Fed via FRED (gratuit). Panel macro global, tags d'exposition. | M | — |
 | P5.7 ESG / insider / short interest | Fallback Yahoo `esgScores` gratuit ; Finnhub insider + short interest. Panels de catalogue. | M | — |
 | P5.8 Concentration & diversification ✅ | HHI + bandes standards, nombre effectif de positions, plus grosse position, top-5, spread sectoriel. **Livré 2026-05-31** : panel dashboard dérivé des positions (valeur de marché), catégorie `portfolio`, zéro API/snapshot. | S | P3.2 |
+| P5.9 Analyse de repli (drawdown) niveau actif ✅ | Repli maximal + dates + durée sommet→creux, repli courant, statut récupéré/sous l'eau. **Livré 2026-05-31** : panel fiche actif dérivé de `/api/history` (catégorie `performance`), distinct du drawdown PORTEFEUILLE P4.4 (qui exige les snapshots). Zéro fichier serveur. | S | P4.1 |
 
 ---
 
@@ -369,7 +370,7 @@ P4.10 [x] livré 2026-05-30 — distribution des returns (feature catalogue dist
 
 > **P1.2 (suggestion IA d'agencement) — GELÉ (décision 2026-05-30)**, optionnel. La prise est prête (un suggéreur IA = frère de `optimizeLayout`, validé contre le registre, puis `apply()`). À rouvrir seulement si le déterministe P1.1 s'avère insuffisant à l'usage.
 
-Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 — features hors-snapshots livrées (P4.1 returns ✅ + P4.10 distribution ✅ + P4.12 stats op. ✅)** · **Phase 5 en cours (P5.1 journal d'investissement ✅ + P5.8 concentration & diversification ✅)** → prochain socle = accrual de snapshots, qui débloque P4.2 TWR / P4.3 MWR / P4.4 vol / P4.5 Sharpe.
+Séquence : 🏁 **Phases 0→3 complètes** · Phase 1 P1.2 IA **gelé** · En cours : **Phase 4 — features hors-snapshots livrées (P4.1 returns ✅ + P4.10 distribution ✅ + P4.12 stats op. ✅)** · **Phase 5 en cours (P5.1 journal d'investissement ✅ + P5.8 concentration & diversification ✅ + P5.9 drawdown actif ✅)** → prochain socle = accrual de snapshots, qui débloque P4.2 TWR / P4.3 MWR / P4.4 vol / P4.5 Sharpe.
 
 ## Mise à jour de ce document
 

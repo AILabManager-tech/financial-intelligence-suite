@@ -143,6 +143,16 @@ const RAW_FEATURES = [
     order: 110,
   },
   {
+    id: "drawdown",
+    label: "Analyse de repli (drawdown)",
+    category: "performance",
+    surface: "asset",
+    componentKey: "DrawdownPanel",
+    dataDeps: ["history"],
+    defaultVisible: true,
+    order: 120,
+  },
+  {
     id: "investment-journal",
     label: "Journal d'investissement",
     category: "decisions",
