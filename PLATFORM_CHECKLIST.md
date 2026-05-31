@@ -144,6 +144,8 @@ Légende:
   - Actuel: `PortfolioConcentrationPanel` (feature surface **dashboard**, registre catégorie `portfolio`, order 100, dataDeps `["quotes"]`) — indice HHI (somme des carrés des poids en %, échelle 0-10000) avec bandes standards DOJ/FTC (< 1500 diversifié / 1500-2500 modéré / > 2500 concentré), nombre effectif de positions (10000/HHI), plus grosse position, concentration top-5, nombre de positions/secteurs, secteur principal, et barres de poids par position + par secteur. Calcul `src/utils/portfolioConcentration.js` (pur, pondéré par valeur de marché des positions détenues, agrégation sectorielle par famille via `getSectorFamily` de `portfolioAnalytics`). **Zéro API, zéro snapshot, zéro fichier serveur** — dérivé des positions déjà mergées avec quotes live. Factualité stricte: portefeuille sans valeur = état vide honnête, alerte ambre si concentré, « pas un conseil ». Complète le teaser top-4 secteurs de `RiskCommandCenter` sans le dupliquer. +12 tests (7 util + 5 panel).
 - [x] Analyse de repli / drawdown niveau actif (P5.9)
   - Actuel: `DrawdownPanel` (feature surface **fiche actif**, registre catégorie `performance`, order 120, dataDeps `["history"]`) — repli maximal (pic→creux) avec dates et durée, repli courant depuis le sommet courant, statut récupéré / sous l'eau. Calcul `src/utils/assetDrawdown.js` (pur, `computeDrawdown(points)` sur la série de clôtures factuelle, même `/api/history` days=1825 que `ReturnsMatrixPanel`/`ReturnsDistributionPanel`). **Zéro fichier serveur.** Niveau ACTIF uniquement — distinct du drawdown PORTEFEUILLE (P4.4) qui exige la série de snapshots. Factualité stricte: série insuffisante = masquée (jamais de valeur inventée), série monotone montante = 0 % réel, prix de clôture hors dividendes, « pas un conseil ». +9 tests (5 util + 4 panel).
+- [x] Matrice de corrélation des positions (P5.10)
+  - Actuel: `CorrelationMatrixPanel` (feature surface **dashboard**, registre catégorie `portfolio`, order 110, dataDeps `["history"]`) — matrice symétrique des corrélations de Pearson entre les rendements mensuels des positions détenues, heatmap colorée (rose ≥ 0,7 co-mouvement / amber 0,3-0,7 / emerald faible / blue inverse), KPIs corrélation moyenne + paire la plus / la moins corrélée + positions analysées. Calcul `src/utils/correlationMatrix.js` (pur, `computeCorrelationMatrix(seriesBySymbol, {minOverlap=6})` — Pearson par paire sur les **mois communs**, cellule `null` si overlap insuffisant ou variance nulle, clamp ±1, `hasData:false` si < 2 symboles utilisables). Fetch `/api/history` days=1825 par symbole via `Promise.allSettled` (dégrade si un fetch échoue), cap 10 symboles. **Point d'efficacité**: l'effet est clé sur la liste de symboles (pas `assets`) pour ne pas refetcher tout l'historique à chaque tick de cotation. **Zéro fichier serveur** — réutilise `/api/history` + `computeMonthlyReturns`. Complète la concentration P5.8 (poids) par le co-mouvement: deux titres de faible poids peuvent bouger à l'unisson. Factualité stricte: cellule masquée si historique chevauchant insuffisant (jamais de corrélation inventée), « pas un conseil ». +13 tests (8 util + 5 panel).
 
 ## 6. Interface opérateur
 
@@ -266,7 +268,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (593 tests)
+- [x] `npm test` vert (714 tests)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI
@@ -348,6 +350,7 @@ Programmé aujourd'hui:
 - journal d'investissement (P5.1, première feature Phase 5, catégorie `decisions`): `InvestmentJournalPanel` sur la fiche actif — thèse, conviction 1-5, prix cible, stop, date de revue par symbole; persistance localStorage par symbole (modèle watchlist, zéro fichier serveur); formatters purs (conviction labellisée, statut de revue en retard/imminente/planifiée); données saisies par l'utilisateur, champs absents masqués, cible/stop étiquetés « pas un conseil »;
 - concentration & diversification (P5.8, feature dashboard catégorie `portfolio`): `PortfolioConcentrationPanel` — HHI + bandes standards, nombre effectif de positions, plus grosse position, top-5, spread sectoriel, via `portfolioConcentration` pur pondéré par valeur de marché des positions détenues; zéro API/snapshot/fichier serveur, état vide honnête, alerte ambre si concentré, « pas un conseil »; complète le teaser sectoriel de RiskCommandCenter;
 - analyse de repli / drawdown (P5.9, feature fiche actif catégorie `performance`): `DrawdownPanel` — repli maximal pic→creux (dates + durée), repli courant, statut récupéré/sous l'eau, via `assetDrawdown` pur sur la série `/api/history`; niveau actif distinct du drawdown portefeuille P4.4 (snapshots); zéro fichier serveur, série insuffisante masquée, « pas un conseil »;
+- matrice de corrélation des positions (P5.10, feature dashboard catégorie `portfolio`): `CorrelationMatrixPanel` — heatmap des corrélations de Pearson entre rendements mensuels des positions, corrélation moyenne + paires la plus/moins corrélée, via `correlationMatrix` pur (alignement sur mois communs, cellule masquée si overlap insuffisant ou variance nulle); fetch `/api/history` par symbole (`Promise.allSettled`, cap 10), effet clé sur la liste de symboles pour éviter le refetch à chaque tick; zéro fichier serveur, complète la concentration P5.8 (poids) par le co-mouvement, « pas un conseil »;
 - affichage provenance;
 - courbe factuelle;
 - build/test/lint propres.
@@ -357,7 +360,7 @@ Principaux manques pour devenir une plateforme complète:
 - authentification et portefeuilles multi-utilisateur;
 - alertes avancées (volume inhabituel, notifications email/navigateur, jobs planifiés);
 - repli Twelve Data sur les fondamentaux pour couvrir les non-US (V2 prévue);
-- visualisations avancées (volume sous courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, drawdown, volatilité, corrélation);
+- visualisations avancées (volume sous courbe, candlesticks OHLC, comparaison benchmark/multi-actifs, volatilité);
 - rate limiting avancé, cache partagé et observabilité;
 - CI/CD et monitoring production;
 - conformité complète (politique confidentialité, mentions légales, conservation).

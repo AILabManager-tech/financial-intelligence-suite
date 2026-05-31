@@ -270,6 +270,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 100,
   },
+  {
+    id: "correlation-matrix",
+    label: "Corrélation des positions",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "CorrelationMatrixPanel",
+    dataDeps: ["history"],
+    defaultVisible: true,
+    order: 110,
+  },
 ];
 
 /**

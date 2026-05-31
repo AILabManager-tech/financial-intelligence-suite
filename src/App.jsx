@@ -68,6 +68,7 @@ import TransactionJournalPanel from "./components/TransactionJournalPanel";
 import CurrencyExposurePanel from "./components/CurrencyExposurePanel";
 import OperationalStatsPanel from "./components/OperationalStatsPanel";
 import PortfolioConcentrationPanel from "./components/PortfolioConcentrationPanel";
+import CorrelationMatrixPanel from "./components/CorrelationMatrixPanel";
 import {
   addTransaction,
   loadTransactions,
@@ -95,6 +96,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
   CurrencyExposurePanel,
   OperationalStatsPanel,
   PortfolioConcentrationPanel,
+  CorrelationMatrixPanel,
 };
 
 // Apply persisted theme synchronously at module load so the first paint

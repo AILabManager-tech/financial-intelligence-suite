@@ -34,5 +34,6 @@ export function buildDashboardPanelProps(deps) {
     CurrencyExposurePanel: { assets, baseCurrency },
     OperationalStatsPanel: { transactions, method: "fifo" },
     PortfolioConcentrationPanel: { assets },
+    CorrelationMatrixPanel: { assets },
   };
 }
