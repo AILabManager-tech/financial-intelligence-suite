@@ -320,6 +320,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 125,
   },
+  {
+    id: "portfolio-mwr",
+    label: "Rendement pondéré-argent (MWR)",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "PortfolioMwrPanel",
+    dataDeps: ["portfolio"],
+    defaultVisible: true,
+    order: 117,
+  },
 ];
 
 /**
