@@ -48,14 +48,18 @@ export function computeFlowsByDay(transactions) {
   return flows;
 }
 
-function daysBetween(fromDay, toDay) {
+export function daysBetween(fromDay, toDay) {
   const from = new Date(`${fromDay}T00:00:00.000Z`).getTime();
   const to = new Date(`${toDay}T00:00:00.000Z`).getTime();
   if (Number.isNaN(from) || Number.isNaN(to)) return null;
   return Math.round((to - from) / MS_PER_DAY);
 }
 
-export function computeTimeWeightedReturn(snapshots, transactions = []) {
+// Rendements de sous-période FACTUELS et flux-neutralisés entre snapshots
+// journaliers consécutifs. Primitif partagé : le TWR (P4.2) en fait le produit,
+// la volatilité/drawdown portefeuille (P4.4) en fait l'écart-type et la courbe.
+// Chaque entrée : { fromDay, toDay, growth (=1+r), ret }. Saute les bases ≤ 0.
+export function computeSubPeriodReturns(snapshots, transactions = []) {
   const points = (Array.isArray(snapshots) ? snapshots : [])
     .map((s) => ({
       day: dayKey(s?.snapshotDate) ?? dayKey(s?.capturedAt),
@@ -64,17 +68,9 @@ export function computeTimeWeightedReturn(snapshots, transactions = []) {
     .filter((p) => p.day && Number.isFinite(p.value))
     .sort((a, b) => a.day.localeCompare(b.day));
 
-  if (points.length < 2) {
-    return { hasData: false };
-  }
-
   const flows = computeFlowsByDay(transactions);
   const flowEntries = [...flows.entries()];
-
-  let cumulative = 1;
-  let periods = 0;
-  let firstDay = null;
-  let lastDay = null;
+  const series = [];
 
   for (let i = 1; i < points.length; i += 1) {
     const prev = points[i - 1];
@@ -92,18 +88,24 @@ export function computeTimeWeightedReturn(snapshots, transactions = []) {
     const growth = (cur.value - flow) / prev.value;
     if (!Number.isFinite(growth)) continue;
 
-    cumulative *= growth;
-    periods += 1;
-    if (!firstDay) firstDay = prev.day;
-    lastDay = cur.day;
+    series.push({ fromDay: prev.day, toDay: cur.day, growth, ret: growth - 1 });
   }
 
-  if (periods === 0 || !firstDay) {
+  return series;
+}
+
+export function computeTimeWeightedReturn(snapshots, transactions = []) {
+  const series = computeSubPeriodReturns(snapshots, transactions);
+  if (series.length === 0) {
     return { hasData: false };
   }
 
+  const cumulative = series.reduce((acc, s) => acc * s.growth, 1);
+  const from = series[0].fromDay;
+  const to = series[series.length - 1].toDay;
+  const spanDays = daysBetween(from, to);
+
   const twrPct = (cumulative - 1) * 100;
-  const spanDays = daysBetween(firstDay, lastDay);
   let annualizedPct = null;
   if (spanDays && spanDays >= 365 && cumulative > 0) {
     annualizedPct = (cumulative ** (365 / spanDays) - 1) * 100;
@@ -113,9 +115,9 @@ export function computeTimeWeightedReturn(snapshots, transactions = []) {
     hasData: true,
     twrPct,
     annualizedPct, // null tant que la série ne couvre pas ≥ 1 an
-    periods,
-    from: firstDay,
-    to: lastDay,
+    periods: series.length,
+    from,
+    to,
     days: spanDays,
   };
 }

@@ -36,5 +36,6 @@ export function buildDashboardPanelProps(deps) {
     PortfolioConcentrationPanel: { assets },
     CorrelationMatrixPanel: { assets },
     TwrPanel: { snapshots, transactions },
+    PortfolioRiskPanel: { snapshots, transactions },
   };
 }

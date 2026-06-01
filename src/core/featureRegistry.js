@@ -300,6 +300,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 115,
   },
+  {
+    id: "portfolio-risk",
+    label: "Risque — volatilité & repli",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "PortfolioRiskPanel",
+    dataDeps: ["portfolio"],
+    defaultVisible: true,
+    order: 120,
+  },
 ];
 
 /**
