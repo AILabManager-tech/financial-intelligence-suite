@@ -9,6 +9,7 @@ import { fetchCompanyNews } from './server/companyNews.js'
 import { fetchEarningsCalendar } from './server/earningsCalendar.js'
 import { fetchDividends } from './server/dividends.js'
 import { fetchAnalystRatings } from './server/analystRatings.js'
+import { fetchInsiderTransactions } from './server/insiderTransactions.js'
 import { fetchSecFilings } from './server/secFilings.js'
 import { fetchPeers } from './server/peers.js'
 import { fetchFxRates } from './server/fx.js'
@@ -26,6 +27,7 @@ const cacheTtlMs = {
   earnings: 6 * 60 * 60 * 1000,
   dividends: 24 * 60 * 60 * 1000,
   analystRatings: 6 * 60 * 60 * 1000,
+  insiderTransactions: 6 * 60 * 60 * 1000,
   secFilings: 24 * 60 * 60 * 1000,
   peers: 24 * 60 * 60 * 1000,
   fx: 6 * 60 * 60 * 1000,
@@ -560,6 +562,35 @@ export default defineConfig(({ mode }) => {
               cache: {
                 status: cacheStatus,
                 ttlMs: cacheTtlMs.analystRatings,
+                expiresAt: new Date(expiresAt).toISOString(),
+              },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
+          }
+        })
+
+        server.middlewares.use('/api/insider-transactions', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const symbol = (requestUrl.searchParams.get('symbol') ?? '').trim().toUpperCase()
+          const limit = Math.min(Math.max(Number(requestUrl.searchParams.get('limit') ?? 20), 1), 50)
+
+          if (!symbol) {
+            sendJson(response, 400, { error: 'symbol query parameter is required' })
+            return
+          }
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `insider-transactions:${symbol}:${limit}`,
+              cacheTtlMs.insiderTransactions,
+              () => fetchInsiderTransactions(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY, limit }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: {
+                status: cacheStatus,
+                ttlMs: cacheTtlMs.insiderTransactions,
                 expiresAt: new Date(expiresAt).toISOString(),
               },
             })

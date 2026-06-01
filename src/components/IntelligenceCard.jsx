@@ -8,6 +8,7 @@ import { DEFAULT_PERIOD, PERIOD_OPTIONS } from "../services/priceHistoryPeriods"
 import FundamentalsPanel from "./FundamentalsPanel";
 import BuffettAnalysisPanel from "./BuffettAnalysisPanel";
 import AnalystRatingsPanel from "./AnalystRatingsPanel";
+import InsiderTransactionsPanel from "./InsiderTransactionsPanel";
 import CompanyNewsPanel from "./CompanyNewsPanel";
 import EarningsCalendarPanel from "./EarningsCalendarPanel";
 import DividendHistoryPanel from "./DividendHistoryPanel";
@@ -29,6 +30,7 @@ const ASSET_FEATURE_COMPONENTS = {
   FundamentalsPanel,
   BuffettAnalysisPanel,
   AnalystRatingsPanel,
+  InsiderTransactionsPanel,
   EarningsCalendarPanel,
   DividendHistoryPanel,
   CompanyNewsPanel,

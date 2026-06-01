@@ -162,6 +162,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 115,
   },
+  {
+    id: "insider-transactions",
+    label: "Transactions d'initiés",
+    category: "sentiment",
+    surface: "asset",
+    componentKey: "InsiderTransactionsPanel",
+    dataDeps: ["insider-transactions"],
+    defaultVisible: true,
+    order: 35,
+  },
 
   // --- Surface dashboard (bloc composable du tableau de bord, App.jsx) --------
   // `order` = empilage RÉEL du bloc central de App.jsx (vérifié 2026-05-29).
