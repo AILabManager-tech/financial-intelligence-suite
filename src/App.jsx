@@ -77,6 +77,7 @@ import BenchmarkPanel from "./components/BenchmarkPanel";
 import BetaCorrelationPanel from "./components/BetaCorrelationPanel";
 import BenchmarkRatiosPanel from "./components/BenchmarkRatiosPanel";
 import ValueAtRiskPanel from "./components/ValueAtRiskPanel";
+import CompliancePanel from "./components/CompliancePanel";
 import {
   addTransaction,
   loadTransactions,
@@ -113,6 +114,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
   BetaCorrelationPanel,
   BenchmarkRatiosPanel,
   ValueAtRiskPanel,
+  CompliancePanel,
 };
 
 // Apply persisted theme synchronously at module load so the first paint
@@ -655,6 +657,7 @@ export default function App() {
     onImportPositions: handleImportPositions,
     baseCurrency: getActivePortfolio(portfolioList).baseCurrency,
     transactions,
+    activePortfolioId: portfolioList.activeId,
   });
 
   // Settings and the demo simulator don't depend on live quotes — keep them

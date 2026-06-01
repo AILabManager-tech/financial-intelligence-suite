@@ -21,6 +21,7 @@ export function buildDashboardPanelProps(deps) {
     onImportPositions,
     baseCurrency,
     transactions,
+    activePortfolioId,
   } = deps;
 
   return {
@@ -43,5 +44,6 @@ export function buildDashboardPanelProps(deps) {
     BetaCorrelationPanel: { snapshots, transactions },
     BenchmarkRatiosPanel: { snapshots, transactions },
     ValueAtRiskPanel: { snapshots, transactions },
+    CompliancePanel: { assets, portfolioId: activePortfolioId ?? "default" },
   };
 }

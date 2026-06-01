@@ -370,6 +370,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 145,
   },
+  {
+    id: "compliance",
+    label: "Conformité du mandat",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "CompliancePanel",
+    dataDeps: ["quotes"],
+    defaultVisible: true,
+    order: 105,
+  },
 ];
 
 /**

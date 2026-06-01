@@ -131,7 +131,7 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
 | P5.1 Journal d'investissement par position ✅ | Thèse d'achat, conviction 1-5, prix cible, stop, date de revue. **Livré 2026-05-31** : feature catalogue fiche actif, persistance localStorage par symbole (comme la watchlist), catégorie `decisions`. | M | P3.2 |
-| P5.2 Contraintes / compliance par portefeuille | Max % titre/secteur, exclusions ESG, cash floor. Validations bloquantes à l'ajout/import. | M | P3.2 |
+| P5.2 Contraintes / compliance par portefeuille ✅ | Max % titre/secteur, exclusions. **Livré 2026-06-01** : `checkCompliance` pur (poids max/titre, poids max/secteur, exclusions ; pondéré valeur de marché ; règle absente non évaluée — garde `Number(null)`), `complianceStore` (règles par mandat localStorage), `CompliancePanel` (dashboard `portfolio`, éditeur de règles + violations). Contrôle **indicatif** (affichage des violations), pas de blocage dur de l'ajout/import (mute le flux central — reporté). Cash floor N/A (pas de compte cash modélisé). | M | P3.2 |
 | P5.3 Rééquilibrage avec coûts | Suggestion d'ordres au target en minimisant transactions + frais, respecte P5.2. | M | P5.2, P3.3 |
 | P5.4 Watchlists thématiques | Plusieurs watchlists nommées au lieu d'une seule. | S | — |
 | P5.5 Couverture canadienne | `.TO`/`.V`/`.CN`, dividendes CAD brut/net, SEDAR+, retenue 15 % US comptes enregistrés. | L | P3.4 |
