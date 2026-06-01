@@ -350,6 +350,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 135,
   },
+  {
+    id: "benchmark-ratios",
+    label: "Ratios vs benchmark",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "BenchmarkRatiosPanel",
+    dataDeps: ["portfolio", "history"],
+    defaultVisible: true,
+    order: 140,
+  },
 ];
 
 /**
