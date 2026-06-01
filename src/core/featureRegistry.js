@@ -360,6 +360,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 140,
   },
+  {
+    id: "value-at-risk",
+    label: "Valeur à risque (VaR)",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "ValueAtRiskPanel",
+    dataDeps: ["portfolio"],
+    defaultVisible: true,
+    order: 145,
+  },
 ];
 
 /**
