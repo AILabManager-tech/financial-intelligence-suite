@@ -108,7 +108,7 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 | Module | Périmètre | Effort | Dépend de |
 |---|---|---|---|
 | P4.1 Returns standards | CAGR, return cumulé, matrice par période (1J→inception), monthly returns. Base de tout factsheet. | M | P3.3 |
-| P4.2 TWR (time-weighted return) | Calcul GIPS à partir des snapshots + flux. Annualisé + cumulé. Remplace la valeur brute actuelle. | M | P4.1 |
+| P4.2 TWR (time-weighted return) ✅ | Calcul GIPS à partir des snapshots + flux. Annualisé + cumulé. **Livré 2026-06-01** : `computeTimeWeightedReturn` pur (chaîne les rendements de sous-période entre snapshots journaliers, neutralise les flux buy/sell, annualise si série ≥ 1 an), `TwrPanel` (dashboard, catégorie `performance`). Dogfood réel : +1,38 % / 21 j sur la série dev. | M | P4.1 |
 | P4.3 MWR / IRR | Newton-Raphson sur flux nets, annualisé. Effet timing client vs effet PM. | S | P4.2 |
 | P4.4 Volatilité + drawdown + duration | σ × √252, fenêtres 30j/90j/1a/inception, max DD + duration de récupération. | M | P4.2 |
 | P4.5 Sharpe + Sortino + Calmar | Taux sans risque configurable. Formules pures côté serveur. | S | P4.4 |

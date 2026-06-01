@@ -290,6 +290,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 110,
   },
+  {
+    id: "twr",
+    label: "Rendement pondéré-temps (TWR)",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "TwrPanel",
+    dataDeps: ["portfolio"],
+    defaultVisible: true,
+    order: 115,
+  },
 ];
 
 /**

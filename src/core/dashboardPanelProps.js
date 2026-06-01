@@ -35,5 +35,6 @@ export function buildDashboardPanelProps(deps) {
     OperationalStatsPanel: { transactions, method: "fifo" },
     PortfolioConcentrationPanel: { assets },
     CorrelationMatrixPanel: { assets },
+    TwrPanel: { snapshots, transactions },
   };
 }
