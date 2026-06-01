@@ -172,6 +172,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 35,
   },
+  {
+    id: "insider-sentiment",
+    label: "Sentiment des initiés (MSPR)",
+    category: "sentiment",
+    surface: "asset",
+    componentKey: "InsiderSentimentPanel",
+    dataDeps: ["insider-sentiment"],
+    defaultVisible: true,
+    order: 37,
+  },
 
   // --- Surface dashboard (bloc composable du tableau de bord, App.jsx) --------
   // `order` = empilage RÉEL du bloc central de App.jsx (vérifié 2026-05-29).

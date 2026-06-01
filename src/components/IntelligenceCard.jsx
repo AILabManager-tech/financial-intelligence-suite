@@ -9,6 +9,7 @@ import FundamentalsPanel from "./FundamentalsPanel";
 import BuffettAnalysisPanel from "./BuffettAnalysisPanel";
 import AnalystRatingsPanel from "./AnalystRatingsPanel";
 import InsiderTransactionsPanel from "./InsiderTransactionsPanel";
+import InsiderSentimentPanel from "./InsiderSentimentPanel";
 import CompanyNewsPanel from "./CompanyNewsPanel";
 import EarningsCalendarPanel from "./EarningsCalendarPanel";
 import DividendHistoryPanel from "./DividendHistoryPanel";
@@ -31,6 +32,7 @@ const ASSET_FEATURE_COMPONENTS = {
   BuffettAnalysisPanel,
   AnalystRatingsPanel,
   InsiderTransactionsPanel,
+  InsiderSentimentPanel,
   EarningsCalendarPanel,
   DividendHistoryPanel,
   CompanyNewsPanel,
