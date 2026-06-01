@@ -330,6 +330,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 117,
   },
+  {
+    id: "benchmark",
+    label: "Comparaison au benchmark",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "BenchmarkPanel",
+    dataDeps: ["portfolio", "history"],
+    defaultVisible: true,
+    order: 130,
+  },
 ];
 
 /**
