@@ -340,6 +340,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 130,
   },
+  {
+    id: "beta-correlation",
+    label: "Beta & corrélation",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "BetaCorrelationPanel",
+    dataDeps: ["portfolio", "history"],
+    defaultVisible: true,
+    order: 135,
+  },
 ];
 
 /**

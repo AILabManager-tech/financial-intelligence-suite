@@ -40,5 +40,6 @@ export function buildDashboardPanelProps(deps) {
     PortfolioRatiosPanel: { snapshots, transactions },
     PortfolioMwrPanel: { snapshots, transactions },
     BenchmarkPanel: { snapshots, transactions },
+    BetaCorrelationPanel: { snapshots, transactions },
   };
 }
