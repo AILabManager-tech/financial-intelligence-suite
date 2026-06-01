@@ -310,6 +310,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 120,
   },
+  {
+    id: "portfolio-ratios",
+    label: "Ratios de risque ajusté",
+    category: "performance",
+    surface: "dashboard",
+    componentKey: "PortfolioRatiosPanel",
+    dataDeps: ["portfolio"],
+    defaultVisible: true,
+    order: 125,
+  },
 ];
 
 /**
