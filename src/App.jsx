@@ -78,6 +78,7 @@ import BetaCorrelationPanel from "./components/BetaCorrelationPanel";
 import BenchmarkRatiosPanel from "./components/BenchmarkRatiosPanel";
 import ValueAtRiskPanel from "./components/ValueAtRiskPanel";
 import CompliancePanel from "./components/CompliancePanel";
+import RebalancePanel from "./components/RebalancePanel";
 import {
   addTransaction,
   loadTransactions,
@@ -115,6 +116,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
   BenchmarkRatiosPanel,
   ValueAtRiskPanel,
   CompliancePanel,
+  RebalancePanel,
 };
 
 // Apply persisted theme synchronously at module load so the first paint

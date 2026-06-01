@@ -45,5 +45,6 @@ export function buildDashboardPanelProps(deps) {
     BenchmarkRatiosPanel: { snapshots, transactions },
     ValueAtRiskPanel: { snapshots, transactions },
     CompliancePanel: { assets, portfolioId: activePortfolioId ?? "default" },
+    RebalancePanel: { assets },
   };
 }

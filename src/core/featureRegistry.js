@@ -380,6 +380,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 105,
   },
+  {
+    id: "rebalance",
+    label: "Rééquilibrage",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "RebalancePanel",
+    dataDeps: ["quotes"],
+    defaultVisible: true,
+    order: 107,
+  },
 ];
 
 /**
