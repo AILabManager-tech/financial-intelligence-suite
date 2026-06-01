@@ -400,6 +400,16 @@ const RAW_FEATURES = [
     defaultVisible: true,
     order: 107,
   },
+  {
+    id: "macro",
+    label: "Macro — taux & courbe",
+    category: "monitoring",
+    surface: "dashboard",
+    componentKey: "MacroPanel",
+    dataDeps: ["macro"],
+    defaultVisible: true,
+    order: 35,
+  },
 ];
 
 /**

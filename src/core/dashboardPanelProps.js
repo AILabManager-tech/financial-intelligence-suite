@@ -46,5 +46,6 @@ export function buildDashboardPanelProps(deps) {
     ValueAtRiskPanel: { snapshots, transactions },
     CompliancePanel: { assets, portfolioId: activePortfolioId ?? "default" },
     RebalancePanel: { assets },
+    MacroPanel: {},
   };
 }

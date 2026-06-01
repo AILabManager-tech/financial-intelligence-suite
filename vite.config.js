@@ -11,6 +11,7 @@ import { fetchDividends } from './server/dividends.js'
 import { fetchAnalystRatings } from './server/analystRatings.js'
 import { fetchInsiderTransactions } from './server/insiderTransactions.js'
 import { fetchInsiderSentiment } from './server/insiderSentiment.js'
+import { fetchMacroIndicators } from './server/macro.js'
 import { fetchSecFilings } from './server/secFilings.js'
 import { fetchPeers } from './server/peers.js'
 import { fetchFxRates } from './server/fx.js'
@@ -30,6 +31,7 @@ const cacheTtlMs = {
   analystRatings: 6 * 60 * 60 * 1000,
   insiderTransactions: 6 * 60 * 60 * 1000,
   insiderSentiment: 6 * 60 * 60 * 1000,
+  macro: 6 * 60 * 60 * 1000,
   secFilings: 24 * 60 * 60 * 1000,
   peers: 24 * 60 * 60 * 1000,
   fx: 6 * 60 * 60 * 1000,
@@ -243,6 +245,9 @@ export default defineConfig(({ mode }) => {
   }
   if (twelveDataApiKey) {
     process.env.TWELVE_DATA_API_KEY = twelveDataApiKey
+  }
+  if (env.FRED_API_KEY) {
+    process.env.FRED_API_KEY = env.FRED_API_KEY
   }
 
   return {
@@ -598,6 +603,22 @@ export default defineConfig(({ mode }) => {
             })
           } catch (error) {
             sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
+          }
+        })
+
+        server.middlewares.use('/api/macro', async (request, response) => {
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              'macro',
+              cacheTtlMs.macro,
+              () => fetchMacroIndicators({ fredApiKey: process.env.FRED_API_KEY }),
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: { status: cacheStatus, ttlMs: cacheTtlMs.macro, expiresAt: new Date(expiresAt).toISOString() },
+            })
+          } catch (error) {
+            sendJson(response, 502, { error: error.message, source: 'fred.stlouisfed.org' })
           }
         })
 
