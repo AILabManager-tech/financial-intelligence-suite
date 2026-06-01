@@ -46,6 +46,13 @@ describe("PortfolioSelector", () => {
     expect(onRename).toHaveBeenCalledWith("default", { name: "Renommé" });
   });
 
+  it("change le type de compte du mandat actif", () => {
+    const { onRename } = setup();
+    fireEvent.click(screen.getByLabelText("Sélecteur de mandat"));
+    fireEvent.change(screen.getByLabelText("Type de compte du mandat actif"), { target: { value: "rrsp" } });
+    expect(onRename).toHaveBeenCalledWith("default", { accountType: "rrsp" });
+  });
+
   it("supprime un mandat (bouton présent quand >1)", () => {
     const { onDelete } = setup();
     fireEvent.click(screen.getByLabelText("Sélecteur de mandat"));

@@ -20,6 +20,7 @@ export function buildDashboardPanelProps(deps) {
     onRemoveAsset,
     onImportPositions,
     baseCurrency,
+    accountType,
     transactions,
     activePortfolioId,
   } = deps;
@@ -47,5 +48,6 @@ export function buildDashboardPanelProps(deps) {
     CompliancePanel: { assets, portfolioId: activePortfolioId ?? "default" },
     RebalancePanel: { assets },
     MacroPanel: {},
+    WithholdingTaxPanel: { assets, accountType },
   };
 }

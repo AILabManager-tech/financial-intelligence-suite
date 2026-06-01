@@ -411,6 +411,16 @@ const RAW_FEATURES = [
     order: 107,
   },
   {
+    id: "withholding-tax",
+    label: "Retenue US sur dividendes",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "WithholdingTaxPanel",
+    dataDeps: ["dividends"],
+    defaultVisible: true,
+    order: 108,
+  },
+  {
     id: "macro",
     label: "Macro — taux & courbe",
     category: "monitoring",

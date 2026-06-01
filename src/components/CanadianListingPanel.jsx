@@ -44,8 +44,11 @@ export default function CanadianListingPanel({ asset }) {
         </div>
         <ul className="text-[11px] text-slate-500 space-y-1 list-disc list-inside">
           <li>Dépôts réglementaires SEDAR+ (aucune API publique gratuite équivalente à EDGAR).</li>
-          <li>Dividendes CAD brut/net et retenue 15 % US sur comptes enregistrés (REER/CELI) — exige une modélisation du type de compte que la plateforme n'a pas.</li>
+          <li>Traitement fiscal des dividendes canadiens déterminés (majoration + crédit d'impôt pour dividendes) — hors périmètre.</li>
         </ul>
+        <p className="text-[11px] text-slate-500 mt-1.5">
+          La retenue 15 % US sur dividendes (comptes REER/CELI/imposable) est désormais traitée par le panneau « Retenue US sur dividendes » du tableau de bord.
+        </p>
       </div>
 
       <p className="mt-3 text-[11px] text-slate-500">

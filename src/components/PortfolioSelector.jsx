@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Briefcase, ChevronDown, Plus, Trash2, Check } from "lucide-react";
+import { ACCOUNT_TYPES } from "../services/portfolioListStore";
 
 // Header mandate selector (P3.2): switch the active portfolio and manage mandates
 // (create / rename / delete). Pure presentational — all state lives in App via
@@ -67,6 +68,19 @@ export default function PortfolioSelector({ state, onSwitch, onCreate, onRename,
                 aria-label="Renommer le mandat actif"
                 className="mt-1 w-full px-2 py-1 rounded-lg bg-surface-800 border border-white/5 text-sm text-white focus:outline-none focus:border-violet-500/50"
               />
+            </label>
+            <label className="block px-2 pt-2">
+              <span className="text-[10px] text-slate-500">Type de compte (retenue US)</span>
+              <select
+                value={active?.accountType ?? "taxable"}
+                onChange={(e) => onRename(active.id, { accountType: e.target.value })}
+                aria-label="Type de compte du mandat actif"
+                className="mt-1 w-full px-2 py-1 rounded-lg bg-surface-800 border border-white/5 text-sm text-white focus:outline-none focus:border-violet-500/50 cursor-pointer"
+              >
+                {ACCOUNT_TYPES.map((a) => (
+                  <option key={a.id} value={a.id}>{a.label}</option>
+                ))}
+              </select>
             </label>
             <div className="flex items-center gap-1 px-2 pt-2 pb-1">
               <input

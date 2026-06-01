@@ -32,6 +32,14 @@ describe("portfolioListStore — load/save", () => {
     expect(loaded.activeId).toBe(loaded.portfolios[1].id);
   });
 
+  it("défaut le type de compte à 'taxable' et valide les valeurs connues", () => {
+    expect(defaultPortfolioState().portfolios[0].accountType).toBe("taxable");
+    const rrsp = createPortfolio(defaultPortfolioState(), { name: "REER", accountType: "rrsp" });
+    expect(rrsp.portfolios[1].accountType).toBe("rrsp");
+    const bogus = createPortfolio(defaultPortfolioState(), { name: "X", accountType: "bogus" });
+    expect(bogus.portfolios[1].accountType).toBe("taxable"); // valeur inconnue → défaut
+  });
+
   it("récupère sur JSON corrompu / activeId invalide", () => {
     localStorage.setItem("fis:portfolios:v1", "{cassé");
     expect(loadPortfolioList()).toEqual(defaultPortfolioState());

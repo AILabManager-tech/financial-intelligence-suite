@@ -13,7 +13,7 @@ describe("CanadianListingPanel", () => {
   it("discloses the blocked-data limitations honestly", () => {
     render(<CanadianListingPanel asset={{ symbol: "XYZ.CN" }} />);
     expect(screen.getByText(/SEDAR\+/)).toBeInTheDocument();
-    expect(screen.getByText(/retenue 15/i)).toBeInTheDocument();
+    expect(screen.getByText(/crédit d'impôt pour dividendes/i)).toBeInTheDocument();
   });
 
   it("renders nothing for non-Canadian symbols", () => {

@@ -89,6 +89,7 @@ import ValueAtRiskPanel from "./components/ValueAtRiskPanel";
 import CompliancePanel from "./components/CompliancePanel";
 import RebalancePanel from "./components/RebalancePanel";
 import MacroPanel from "./components/MacroPanel";
+import WithholdingTaxPanel from "./components/WithholdingTaxPanel";
 import {
   addTransaction,
   loadTransactions,
@@ -128,6 +129,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
   CompliancePanel,
   RebalancePanel,
   MacroPanel,
+  WithholdingTaxPanel,
 };
 
 // Apply persisted theme synchronously at module load so the first paint
@@ -710,6 +712,7 @@ export default function App() {
     onRemoveAsset: handleRemoveAsset,
     onImportPositions: handleImportPositions,
     baseCurrency: getActivePortfolio(portfolioList).baseCurrency,
+    accountType: getActivePortfolio(portfolioList).accountType,
     transactions,
     activePortfolioId: portfolioList.activeId,
   });

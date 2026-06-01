@@ -9,11 +9,23 @@
 const KEY = "fis:portfolios:v1";
 export const DEFAULT_PORTFOLIO_ID = "default";
 
+// Account type drives US dividend withholding treatment (P5.5 unblock). The
+// Canada-US treaty exempts RRSP/RRIF from the 15% US withholding; TFSA is
+// withheld at 15% but not creditable; a taxable account is withheld at 15% but
+// recoverable via the foreign tax credit. Persisted on the mandate (the account).
+export const ACCOUNT_TYPES = Object.freeze([
+  { id: "taxable", label: "Non enregistré (imposable)" },
+  { id: "rrsp", label: "REER / FERR" },
+  { id: "tfsa", label: "CELI" },
+]);
+const VALID_ACCOUNT_TYPES = new Set(ACCOUNT_TYPES.map((a) => a.id));
+const DEFAULT_ACCOUNT_TYPE = "taxable";
+
 export function defaultPortfolioState() {
   return {
     activeId: DEFAULT_PORTFOLIO_ID,
     portfolios: [
-      { id: DEFAULT_PORTFOLIO_ID, name: "Portefeuille principal", client: "", baseCurrency: "USD", openedAt: null },
+      { id: DEFAULT_PORTFOLIO_ID, name: "Portefeuille principal", client: "", baseCurrency: "USD", accountType: DEFAULT_ACCOUNT_TYPE, openedAt: null },
     ],
   };
 }
@@ -28,6 +40,7 @@ function normalizeMandate(m) {
     name: m.name,
     client: typeof m.client === "string" ? m.client : "",
     baseCurrency: typeof m.baseCurrency === "string" && m.baseCurrency ? m.baseCurrency.toUpperCase() : "USD",
+    accountType: VALID_ACCOUNT_TYPES.has(m.accountType) ? m.accountType : DEFAULT_ACCOUNT_TYPE,
     openedAt: m.openedAt ?? null,
   };
 }
@@ -72,11 +85,11 @@ export function makePortfolioId(name, existing = []) {
 
 // --- Pure mutators (return new state) ----------------------------------------
 
-export function createPortfolio(state, { name, client = "", baseCurrency = "USD", openedAt = null } = {}) {
+export function createPortfolio(state, { name, client = "", baseCurrency = "USD", accountType = DEFAULT_ACCOUNT_TYPE, openedAt = null } = {}) {
   const trimmed = String(name ?? "").trim();
   if (!trimmed) return state;
   const id = makePortfolioId(trimmed, state.portfolios);
-  const mandate = normalizeMandate({ id, name: trimmed, client, baseCurrency, openedAt });
+  const mandate = normalizeMandate({ id, name: trimmed, client, baseCurrency, accountType, openedAt });
   return { activeId: id, portfolios: [...state.portfolios, mandate] };
 }
 
