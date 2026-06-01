@@ -1,4 +1,12 @@
 const STORAGE_KEY = "financial-intelligence-suite.watchlist.v1";
+const DEFAULT_WATCHLIST_ID = "default";
+
+// Assets are namespaced per thematic list (P5.4). The 'default' list keeps the
+// legacy key for back-compat (existing users' flat watchlist becomes "Défaut");
+// others get a suffixed key.
+function storageKeyFor(watchlistId = DEFAULT_WATCHLIST_ID) {
+  return watchlistId && watchlistId !== DEFAULT_WATCHLIST_ID ? `${STORAGE_KEY}::${watchlistId}` : STORAGE_KEY;
+}
 
 function hasStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
@@ -23,11 +31,11 @@ export function normalizeWatchlistAsset(asset) {
   };
 }
 
-export function loadWatchlistAssets(defaultAssets = []) {
+export function loadWatchlistAssets(defaultAssets = [], watchlistId = DEFAULT_WATCHLIST_ID) {
   if (!hasStorage()) return defaultAssets.map(normalizeWatchlistAsset);
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKeyFor(watchlistId));
     if (!raw) return defaultAssets.map(normalizeWatchlistAsset);
 
     const parsed = JSON.parse(raw);
@@ -41,10 +49,10 @@ export function loadWatchlistAssets(defaultAssets = []) {
   }
 }
 
-export function saveWatchlistAssets(assets) {
+export function saveWatchlistAssets(assets, watchlistId = DEFAULT_WATCHLIST_ID) {
   if (!hasStorage()) return;
   const normalized = assets.map(normalizeWatchlistAsset).filter((asset) => asset.symbol);
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  window.localStorage.setItem(storageKeyFor(watchlistId), JSON.stringify(normalized));
 }
 
 export function upsertWatchlistAsset(assets, asset) {

@@ -45,6 +45,15 @@ import {
   upsertWatchlistAsset,
 } from "./services/watchlistStore";
 import {
+  loadWatchlistList,
+  saveWatchlistList,
+  createWatchlist,
+  updateWatchlist,
+  removeWatchlist,
+  setActiveWatchlist,
+} from "./services/watchlistListStore";
+import WatchlistSelector from "./components/WatchlistSelector";
+import {
   isFavoriteSymbol,
   loadFavoriteSymbols,
   saveFavoriteSymbols,
@@ -221,7 +230,9 @@ export default function App() {
   const activeId = portfolioList.activeId;
   const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets([], portfolioList.activeId));
   const [transactions, setTransactions] = useState(() => loadTransactions(portfolioList.activeId));
-  const [watchlistAssets, setWatchlistAssets] = useState(() => loadWatchlistAssets([]));
+  const [watchlistList, setWatchlistList] = useState(() => loadWatchlistList());
+  const activeWatchlistId = watchlistList.activeId;
+  const [watchlistAssets, setWatchlistAssets] = useState(() => loadWatchlistAssets([], watchlistList.activeId));
   const [favoriteSymbols, setFavoriteSymbols] = useState(() => loadFavoriteSymbols([]));
   const [alerts, setAlerts] = useState(() => loadAlerts());
   const [alertTriggers, setAlertTriggers] = useState([]);
@@ -397,9 +408,48 @@ export default function App() {
   }, [persistTransactions, transactions]);
 
   const persistWatchlist = useCallback((nextAssets) => {
-    saveWatchlistAssets(nextAssets);
+    saveWatchlistAssets(nextAssets, activeWatchlistId);
     setWatchlistAssets(nextAssets);
+  }, [activeWatchlistId]);
+
+  // --- Thematic watchlists (P5.4) --------------------------------------------
+  // Mirrors the mandate pattern: list metadata in watchlistListStore, assets
+  // namespaced per list in watchlistStore. The toggle on each asset targets the
+  // active list. Client-only (no SQLite mirror).
+  const persistWatchlistList = useCallback((nextState) => {
+    saveWatchlistList(nextState);
+    setWatchlistList(nextState);
   }, []);
+
+  const activateWatchlist = useCallback((nextState) => {
+    persistWatchlistList(nextState);
+    setWatchlistAssets(loadWatchlistAssets([], nextState.activeId));
+  }, [persistWatchlistList]);
+
+  const handleSwitchWatchlist = useCallback((id) => {
+    if (id === watchlistList.activeId) return;
+    activateWatchlist(setActiveWatchlist(watchlistList, id));
+  }, [watchlistList, activateWatchlist]);
+
+  const handleCreateWatchlist = useCallback((draft) => {
+    const next = createWatchlist(watchlistList, draft);
+    if (next === watchlistList) return; // empty name ignored
+    activateWatchlist(next);
+  }, [watchlistList, activateWatchlist]);
+
+  const handleRenameWatchlist = useCallback((id, fields) => {
+    persistWatchlistList(updateWatchlist(watchlistList, id, fields));
+  }, [watchlistList, persistWatchlistList]);
+
+  const handleDeleteWatchlist = useCallback((id) => {
+    const next = removeWatchlist(watchlistList, id);
+    if (next === watchlistList) return; // last list protected
+    if (next.activeId !== watchlistList.activeId) {
+      activateWatchlist(next);
+    } else {
+      persistWatchlistList(next);
+    }
+  }, [watchlistList, activateWatchlist, persistWatchlistList]);
 
   const persistFavorites = useCallback((nextSymbols) => {
     saveFavoriteSymbols(nextSymbols);
@@ -779,7 +829,17 @@ export default function App() {
               </section>
             )}
 
-            <section aria-label="Watchlist indépendante">
+            <section aria-label="Watchlist indépendante" className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-slate-500">Listes thématiques — l'ajout d'un actif cible la liste active</span>
+                <WatchlistSelector
+                  state={watchlistList}
+                  onSwitch={handleSwitchWatchlist}
+                  onCreate={handleCreateWatchlist}
+                  onRename={handleRenameWatchlist}
+                  onDelete={handleDeleteWatchlist}
+                />
+              </div>
               <WatchlistPanel
                 assets={watchlistAssets}
                 favoriteSymbols={favoriteSymbols}
