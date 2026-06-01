@@ -14,6 +14,7 @@ import CompanyNewsPanel from "./CompanyNewsPanel";
 import EarningsCalendarPanel from "./EarningsCalendarPanel";
 import DividendHistoryPanel from "./DividendHistoryPanel";
 import SecFilingsPanel from "./SecFilingsPanel";
+import CanadianListingPanel from "./CanadianListingPanel";
 import PeersComparisonPanel from "./PeersComparisonPanel";
 import SimulationPanel from "./SimulationPanel";
 import ReturnsMatrixPanel from "./ReturnsMatrixPanel";
@@ -37,6 +38,7 @@ const ASSET_FEATURE_COMPONENTS = {
   DividendHistoryPanel,
   CompanyNewsPanel,
   SecFilingsPanel,
+  CanadianListingPanel,
   PeersComparisonPanel,
   SimulationPanel,
   ReturnsMatrixPanel,

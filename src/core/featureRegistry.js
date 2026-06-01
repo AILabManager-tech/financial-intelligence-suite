@@ -103,6 +103,16 @@ const RAW_FEATURES = [
     order: 70,
   },
   {
+    id: "canadian-listing",
+    label: "Cotation canadienne",
+    category: "documents",
+    surface: "asset",
+    componentKey: "CanadianListingPanel",
+    dataDeps: [],
+    defaultVisible: true,
+    order: 65,
+  },
+  {
     id: "peers",
     label: "Comparaison sectorielle",
     category: "comparison",

@@ -22,6 +22,8 @@ export const KNOWN_SUFFIXES = [
   { suffix: ".ME", exchange: "Moscou", country: "RU", countryLabel: "Russie" },
   { suffix: ".TO", exchange: "TSX", country: "CA", countryLabel: "Canada" },
   { suffix: ".V", exchange: "TSX-V", country: "CA", countryLabel: "Canada" },
+  { suffix: ".CN", exchange: "CSE", country: "CA", countryLabel: "Canada" },
+  { suffix: ".NE", exchange: "Cboe Canada", country: "CA", countryLabel: "Canada" },
   { suffix: ".MX", exchange: "Mexico", country: "MX", countryLabel: "Mexique" },
   { suffix: ".SA", exchange: "B3", country: "BR", countryLabel: "Brésil" },
   { suffix: ".BA", exchange: "Buenos Aires", country: "AR", countryLabel: "Argentine" },

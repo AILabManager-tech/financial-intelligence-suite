@@ -32,6 +32,8 @@ describe('parseSymbolExchange', () => {
   it('parses Canadian suffixes', () => {
     expect(parseSymbolExchange('SHOP.TO')).toMatchObject({ country: 'CA', exchange: 'TSX' });
     expect(parseSymbolExchange('XYZ.V')).toMatchObject({ country: 'CA', exchange: 'TSX-V' });
+    expect(parseSymbolExchange('XYZ.CN')).toMatchObject({ country: 'CA', exchange: 'CSE' });
+    expect(parseSymbolExchange('XYZ.NE')).toMatchObject({ country: 'CA', exchange: 'Cboe Canada' });
   });
 
   it('keeps unknown suffix as raw and marks exchange null', () => {
