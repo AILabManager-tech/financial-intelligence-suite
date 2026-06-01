@@ -42,7 +42,7 @@ describe('portfolioRepository', () => {
     cleanup();
   });
 
-  it('persists portfolio snapshots chronologically', () => {
+  it('accumule un seul snapshot par jour : une re-capture le même jour met à jour la valeur (005)', () => {
     const { repository, cleanup } = freshRepo();
 
     repository.saveSnapshot({
@@ -54,6 +54,7 @@ describe('portfolioRepository', () => {
       positionsCount: 2,
       liveQuotesCount: 2,
     });
+    // Même jour calendaire, plus tard : ne crée PAS une 2e ligne, met à jour.
     repository.saveSnapshot({
       capturedAt: '2026-05-08T11:00:00.000Z',
       totalMarketValue: 1050,
@@ -64,18 +65,30 @@ describe('portfolioRepository', () => {
       liveQuotesCount: 1,
     });
 
-    expect(repository.listSnapshots()).toEqual([
-      expect.objectContaining({
-        capturedAt: '2026-05-08T10:00:00.000Z',
-        totalMarketValue: 1000,
-        liveQuotesCount: 2,
-      }),
+    const snapshots = repository.listSnapshots();
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0]).toEqual(
       expect.objectContaining({
         capturedAt: '2026-05-08T11:00:00.000Z',
+        snapshotDate: '2026-05-08',
         totalMarketValue: 1050,
         liveQuotesCount: 1,
       }),
-    ]);
+    );
+
+    cleanup();
+  });
+
+  it('accumule une série journalière sur plusieurs jours, en ordre chronologique', () => {
+    const { repository, cleanup } = freshRepo();
+
+    repository.saveSnapshot({ capturedAt: '2026-05-08T16:00:00.000Z', totalMarketValue: 1000 });
+    repository.saveSnapshot({ capturedAt: '2026-05-09T16:00:00.000Z', totalMarketValue: 1020 });
+    repository.saveSnapshot({ capturedAt: '2026-05-10T16:00:00.000Z', totalMarketValue: 990 });
+
+    const series = repository.listSnapshots();
+    expect(series.map((s) => s.snapshotDate)).toEqual(['2026-05-08', '2026-05-09', '2026-05-10']);
+    expect(series.map((s) => s.totalMarketValue)).toEqual([1000, 1020, 990]);
 
     cleanup();
   });

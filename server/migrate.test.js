@@ -92,6 +92,21 @@ describe("loadMigrations / runMigrations (dossier réel)", () => {
     expect(() => ins.run("t1", "a")).toThrow();
   });
 
+  it("applique 005 : index unique (mandat, jour) sur les snapshots", () => {
+    const db = memDb();
+    const applied = runMigrations(db);
+    expect(applied).toContain("005");
+    db.exec("INSERT INTO portfolios (id, name) VALUES ('default', 'default')");
+    const ins = db.prepare(
+      "INSERT INTO portfolio_snapshots (portfolio_id, captured_at, snapshot_date, total_market_value) VALUES (?, ?, ?, ?)",
+    );
+    ins.run("default", "2026-05-08T10:00:00.000Z", "2026-05-08", 1000);
+    // Deuxième ligne le même jour → bloquée par l'index unique.
+    expect(() => ins.run("default", "2026-05-08T11:00:00.000Z", "2026-05-08", 1050)).toThrow();
+    // Jour différent → autorisé.
+    expect(() => ins.run("default", "2026-05-09T11:00:00.000Z", "2026-05-09", 1050)).not.toThrow();
+  });
+
   it("loadMigrations ignore les fichiers non conformes et lit le SQL", () => {
     const migrations = loadMigrations(MIGRATIONS_DIR);
     expect(migrations.length).toBeGreaterThanOrEqual(1);

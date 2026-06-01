@@ -67,9 +67,13 @@ function normalizeMandate(mandate) {
 
 function normalizeSnapshot(snapshot) {
   const metrics = snapshot.metrics ?? snapshot;
+  const capturedAt = snapshot.capturedAt || new Date().toISOString();
 
   return {
-    capturedAt: snapshot.capturedAt || new Date().toISOString(),
+    capturedAt,
+    // Jour calendaire (UTC, littéral) servant de clé d'idempotence : un seul
+    // snapshot par mandat par jour, la dernière capture du jour gagne.
+    snapshotDate: capturedAt.slice(0, 10),
     totalMarketValue: cleanNumber(metrics.totalMarketValue, 0),
     totalCost: cleanNumber(metrics.totalCost, 0),
     unrealizedPnl: cleanNumber(metrics.unrealizedPnl, 0),
@@ -83,6 +87,7 @@ function rowToSnapshot(row) {
   return {
     id: row.id,
     capturedAt: row.captured_at,
+    snapshotDate: row.snapshot_date,
     totalMarketValue: row.total_market_value,
     totalCost: row.total_cost,
     unrealizedPnl: row.unrealized_pnl,
@@ -204,18 +209,36 @@ export function createPortfolioRepository(dbPath = defaultDbPath) {
     touchPortfolio.run(id);
   });
 
+  // Daily accrual (005) : un seul snapshot par (mandat, snapshot_date). Une
+  // re-capture le même jour met à jour la ligne existante (dernière valeur du
+  // jour) au lieu d'empiler une ligne intraday de plus.
   const insertSnapshot = db.prepare(`
     INSERT INTO portfolio_snapshots (
-      portfolio_id, captured_at, total_market_value, total_cost,
+      portfolio_id, captured_at, snapshot_date, total_market_value, total_cost,
       unrealized_pnl, unrealized_pnl_pct, positions_count, live_quotes_count
     ) VALUES (
-      @portfolioId, @capturedAt, @totalMarketValue, @totalCost,
+      @portfolioId, @capturedAt, @snapshotDate, @totalMarketValue, @totalCost,
       @unrealizedPnl, @unrealizedPnlPct, @positionsCount, @liveQuotesCount
     )
+    ON CONFLICT(portfolio_id, snapshot_date) DO UPDATE SET
+      captured_at = excluded.captured_at,
+      total_market_value = excluded.total_market_value,
+      total_cost = excluded.total_cost,
+      unrealized_pnl = excluded.unrealized_pnl,
+      unrealized_pnl_pct = excluded.unrealized_pnl_pct,
+      positions_count = excluded.positions_count,
+      live_quotes_count = excluded.live_quotes_count
+  `);
+
+  const getSnapshotByDayStmt = db.prepare(`
+    SELECT id, captured_at, snapshot_date, total_market_value, total_cost, unrealized_pnl,
+           unrealized_pnl_pct, positions_count, live_quotes_count
+    FROM portfolio_snapshots
+    WHERE portfolio_id = @portfolioId AND snapshot_date = @snapshotDate
   `);
 
   const listSnapshotsStmt = db.prepare(`
-    SELECT id, captured_at, total_market_value, total_cost, unrealized_pnl,
+    SELECT id, captured_at, snapshot_date, total_market_value, total_cost, unrealized_pnl,
            unrealized_pnl_pct, positions_count, live_quotes_count
     FROM portfolio_snapshots
     WHERE portfolio_id = @portfolioId
@@ -290,8 +313,12 @@ export function createPortfolioRepository(dbPath = defaultDbPath) {
       const scoped = portfolioId(id);
       ensurePortfolio.run({ id: scoped, name: scoped });
       const normalized = normalizeSnapshot(snapshot ?? {});
-      const result = insertSnapshot.run({ ...normalized, portfolioId: scoped });
-      return { id: result.lastInsertRowid, ...normalized };
+      insertSnapshot.run({ ...normalized, portfolioId: scoped });
+      // Re-read so an upsert (UPDATE of the day's row) returns the stored row,
+      // not a fabricated lastInsertRowid (which is 0 on a conflict update).
+      return rowToSnapshot(
+        getSnapshotByDayStmt.get({ portfolioId: scoped, snapshotDate: normalized.snapshotDate }),
+      );
     },
     listSnapshots(limit = 120, id = DEFAULT_PORTFOLIO_ID) {
       const normalizedLimit = Math.min(Math.max(Number(limit) || 120, 1), 500);

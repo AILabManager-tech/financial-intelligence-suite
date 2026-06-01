@@ -386,6 +386,9 @@ export default function App() {
 
   const alertsRef = useRef(alerts);
   const assetsRef = useRef(assets);
+  // Accrual journalier des snapshots : dernier jour capturé par mandat (évite de
+  // POST un snapshot à chaque tick de cotation 20 s — un point par jour suffit).
+  const snapshotDayRef = useRef(new Map());
 
   useEffect(() => {
     alertsRef.current = alerts;
@@ -501,21 +504,35 @@ export default function App() {
       }
 
       if (liveCount > 0 && analytics.totalMarketValue > 0) {
-        savePortfolioSnapshot({
-          capturedAt: payload.fetchedAt,
-          totalMarketValue: analytics.totalMarketValue,
-          totalCost: analytics.totalCost,
-          unrealizedPnl: analytics.unrealizedPnl,
-          unrealizedPnlPct: analytics.unrealizedPnlPct,
-          positionsCount: mergedAssets.length,
-          liveQuotesCount: liveCount,
-        }, activeId)
-          .then((snapshot) => {
-            setPortfolioSnapshots((current) => [...current, snapshot].slice(-120));
-          })
-          .catch(() => {
-            // Snapshot history must never block live market display.
-          });
+        const captureDay = (payload.fetchedAt ?? new Date().toISOString()).slice(0, 10);
+        // Un seul snapshot par mandat par jour calendaire. Le serveur upsert de
+        // toute façon (dernière capture du jour gagne) ; ce garde évite de POST à
+        // chaque tick. Valeur RÉELLE (positions × cotations), jamais fabriquée ;
+        // pas de backfill des jours passés (les quantités ont changé).
+        if (snapshotDayRef.current.get(activeId) !== captureDay) {
+          savePortfolioSnapshot({
+            capturedAt: payload.fetchedAt,
+            totalMarketValue: analytics.totalMarketValue,
+            totalCost: analytics.totalCost,
+            unrealizedPnl: analytics.unrealizedPnl,
+            unrealizedPnlPct: analytics.unrealizedPnlPct,
+            positionsCount: mergedAssets.length,
+            liveQuotesCount: liveCount,
+          }, activeId)
+            .then((snapshot) => {
+              snapshotDayRef.current.set(activeId, captureDay);
+              setPortfolioSnapshots((current) => {
+                const day = (snapshot.capturedAt ?? "").slice(0, 10);
+                const withoutToday = current.filter(
+                  (entry) => (entry.capturedAt ?? "").slice(0, 10) !== day,
+                );
+                return [...withoutToday, snapshot].slice(-120);
+              });
+            })
+            .catch(() => {
+              // Snapshot history must never block live market display.
+            });
+        }
       }
     } catch {
       setMarketStatus({
