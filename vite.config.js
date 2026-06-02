@@ -15,6 +15,7 @@ import { fetchMacroIndicators } from './server/macro.js'
 import { fetchSecFilings } from './server/secFilings.js'
 import { fetchPeers } from './server/peers.js'
 import { fetchFxRates } from './server/fx.js'
+import { createRateLimiter, clientIp } from './server/rateLimiter.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const fallbackQuoteSource = 'stooq.com'
@@ -272,6 +273,27 @@ export default defineConfig(({ mode }) => {
         name: 'financial-quotes-api',
         configureServer(server) {
           const portfolioRepository = createPortfolioRepository()
+
+          // Rate limiting (P8.1): cap /api/* per IP to protect the upstream
+          // Finnhub free quota. Registered first so it gates every handler
+          // below; generous default so normal dev use is never throttled.
+          // Env-tunable; production needs a shared store (Vercel KV) across
+          // serverless instances.
+          const apiRateLimiter = createRateLimiter({
+            limit: Number(process.env.API_RATE_LIMIT) || 600,
+            windowMs: Number(process.env.API_RATE_WINDOW_MS) || 60_000,
+          })
+          server.middlewares.use('/api', (request, response, next) => {
+            const verdict = apiRateLimiter.check(clientIp(request), Date.now())
+            response.setHeader('X-RateLimit-Limit', String(verdict.limit))
+            response.setHeader('X-RateLimit-Remaining', String(verdict.remaining))
+            if (!verdict.allowed) {
+              response.setHeader('Retry-After', String(Math.ceil(verdict.retryAfterMs / 1000)))
+              sendJson(response, 429, { error: 'rate limit exceeded', retryAfterMs: verdict.retryAfterMs })
+              return
+            }
+            next()
+          })
 
           server.middlewares.use('/api/health/market-data', async (request, response) => {
             if (request.method !== 'GET') {
