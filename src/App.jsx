@@ -91,6 +91,7 @@ import RebalancePanel from "./components/RebalancePanel";
 import MacroPanel from "./components/MacroPanel";
 import WithholdingTaxPanel from "./components/WithholdingTaxPanel";
 import TaxReportPanel from "./components/TaxReportPanel";
+import MandateReportView from "./components/MandateReportView";
 import {
   addTransaction,
   loadTransactions,
@@ -255,7 +256,8 @@ export default function App() {
   const isSettingsRoute = currentPath === "/settings";
   const isDemoRoute = currentPath === "/demo";
   const isTransactionsRoute = currentPath === "/transactions";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute;
+  const isReportRoute = currentPath === "/report";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute;
   const layout = useLayout();
 
   useEffect(() => {
@@ -733,7 +735,7 @@ export default function App() {
       </a>
 
       {/* Header */}
-      <header className="border-b border-white/5 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50" role="banner">
+      <header className="border-b border-white/5 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50 print:hidden" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -779,6 +781,13 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => navigateTo("/report")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isReportRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                >
+                  Rapport
+                </button>
+                <button
+                  type="button"
                   onClick={() => navigateTo("/settings")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isSettingsRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
                 >
@@ -803,6 +812,13 @@ export default function App() {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8" role="main">
         {isSettingsRoute ? (
           <SettingsPage />
+        ) : isReportRoute ? (
+          <MandateReportView
+            mandate={getActivePortfolio(portfolioList)}
+            assets={assets}
+            snapshots={portfolioSnapshots}
+            transactions={transactions}
+          />
         ) : isDemoRoute ? (
           <DemoPortfolioPanel />
         ) : isTransactionsRoute ? (
