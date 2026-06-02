@@ -98,6 +98,9 @@ import MacroPanel from "./components/MacroPanel";
 import WithholdingTaxPanel from "./components/WithholdingTaxPanel";
 import TaxReportPanel from "./components/TaxReportPanel";
 import MandateReportView from "./components/MandateReportView";
+import LegalPage from "./components/LegalPage";
+import ConsentBanner from "./components/ConsentBanner";
+import { hasValidConsent, acceptConsent, saveConsent } from "./services/consentStore";
 import {
   addTransaction,
   loadTransactions,
@@ -264,7 +267,9 @@ export default function App() {
   const isDemoRoute = currentPath === "/demo";
   const isTransactionsRoute = currentPath === "/transactions";
   const isReportRoute = currentPath === "/report";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute;
+  const isLegalRoute = currentPath === "/legal";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isLegalRoute;
+  const [consentOpen, setConsentOpen] = useState(() => !hasValidConsent());
   const layout = useLayout();
 
   useEffect(() => {
@@ -834,6 +839,8 @@ export default function App() {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8" role="main">
         {isSettingsRoute ? (
           <SettingsPage />
+        ) : isLegalRoute ? (
+          <LegalPage />
         ) : isReportRoute ? (
           <MandateReportView
             mandate={getActivePortfolio(portfolioList)}
@@ -956,8 +963,34 @@ export default function App() {
           <p className="text-xs text-slate-700 mt-1">
             Financial Intelligence Suite v1.0 — Mode factuel
           </p>
+          <div className="mt-2 flex items-center justify-center gap-3 text-xs">
+            <button
+              type="button"
+              onClick={() => navigateTo("/legal")}
+              className="text-slate-500 hover:text-slate-300 underline cursor-pointer"
+            >
+              Mentions légales & confidentialité
+            </button>
+            <span className="text-slate-700" aria-hidden="true">·</span>
+            <button
+              type="button"
+              onClick={() => setConsentOpen(true)}
+              className="text-slate-500 hover:text-slate-300 underline cursor-pointer"
+            >
+              Gérer le consentement
+            </button>
+          </div>
         </footer>
       </main>
+
+      <ConsentBanner
+        open={consentOpen}
+        onAccept={() => {
+          saveConsent(acceptConsent(new Date().toISOString()));
+          setConsentOpen(false);
+        }}
+        onLearnMore={() => navigateTo("/legal")}
+      />
     </div>
   );
 }
