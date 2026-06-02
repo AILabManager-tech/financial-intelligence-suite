@@ -41,10 +41,23 @@ export const ROUTES = {
   fx,
 };
 
+// Resolve the endpoint name. Prefer the catch-all route param when Vercel
+// populates it; fall back to parsing request.url (the reliable source — the
+// route param injection has proven flaky for the raw Node handler shape).
+export function resolveEndpoint(request) {
+  const fromParam = [].concat(request?.query?.path ?? []).filter(Boolean);
+  if (fromParam.length) return fromParam[0];
+
+  const pathname = String(request?.url ?? "").split("?")[0];
+  const parts = pathname.split("/").filter(Boolean); // e.g. ["api","quotes"]
+  const apiIdx = parts.indexOf("api");
+  const after = apiIdx >= 0 ? parts.slice(apiIdx + 1) : parts;
+  return after[0];
+}
+
 // Dispatch /api/<endpoint> to its handler. `routes` is injectable for tests.
 export async function dispatch(request, response, routes = ROUTES) {
-  const segments = [].concat(request.query?.path ?? []);
-  const endpoint = segments[0];
+  const endpoint = resolveEndpoint(request);
   const route = routes[endpoint];
 
   if (!route) {

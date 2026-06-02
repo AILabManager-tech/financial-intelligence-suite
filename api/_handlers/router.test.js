@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { dispatch, ROUTES } from "./router.js";
+import { dispatch, ROUTES, resolveEndpoint } from "./router.js";
 
 function fakeRes() {
   return {
@@ -25,6 +25,23 @@ describe("api router", () => {
     ]) {
       expect(typeof ROUTES[key]).toBe("function");
     }
+  });
+
+  it("resolves the endpoint from the route param or the URL", () => {
+    expect(resolveEndpoint({ query: { path: ["quotes"] } })).toBe("quotes");
+    expect(resolveEndpoint({ query: { path: "fx" } })).toBe("fx");
+    // Fallback when Vercel does not inject the param: parse request.url.
+    expect(resolveEndpoint({ query: {}, url: "/api/quotes?symbols=AAPL" })).toBe("quotes");
+    expect(resolveEndpoint({ url: "/api/company-news?symbol=AAPL" })).toBe("company-news");
+    expect(resolveEndpoint({ url: "/api/" })).toBeUndefined();
+  });
+
+  it("dispatches a URL-only request (no route param) to the handler", async () => {
+    const quotes = vi.fn(async (_req, res) => res.end("ok"));
+    const req = { query: { symbols: "AAPL" }, url: "/api/quotes?symbols=AAPL" };
+    const res = fakeRes();
+    await dispatch(req, res, { quotes });
+    expect(quotes).toHaveBeenCalledWith(req, res);
   });
 
   it("dispatches the array path param to the matching handler", async () => {
