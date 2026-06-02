@@ -1,4 +1,4 @@
-import { fetchMacroIndicators } from "../server/macro.js";
+import { fetchMacroIndicators } from "../../server/macro.js";
 
 const TTL_MS = 6 * 60 * 60 * 1000;
 let cached = null;

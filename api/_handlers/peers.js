@@ -1,4 +1,4 @@
-import { fetchSecFilings } from "../server/secFilings.js";
+import { fetchPeers } from "../../server/peers.js";
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 const cache = new Map();
@@ -12,7 +12,7 @@ function sendJson(response, statusCode, payload) {
 
 export default async function handler(request, response) {
   const symbol = String(request.query?.symbol ?? "").trim().toUpperCase();
-  const limit = Math.min(Math.max(Number(request.query?.limit ?? 15), 1), 25);
+  const limit = Math.min(Math.max(Number(request.query?.limit ?? 10), 1), 25);
 
   if (!symbol) {
     sendJson(response, 400, { error: "symbol query parameter is required" });
@@ -31,7 +31,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const value = await fetchSecFilings(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY, limit });
+    const value = await fetchPeers(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY, limit });
     const expiresAt = now + TTL_MS;
     cache.set(cacheKey, { value, expiresAt });
     sendJson(response, 200, {

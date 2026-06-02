@@ -1,4 +1,4 @@
-import { fetchEarningsCalendar } from "../server/earningsCalendar.js";
+import { fetchEarningsCalendar } from "../../server/earningsCalendar.js";
 
 const TTL_MS = 6 * 60 * 60 * 1000;
 const cache = new Map();

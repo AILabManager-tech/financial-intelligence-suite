@@ -1,6 +1,6 @@
-import { fetchPeers } from "../server/peers.js";
+import { fetchFundamentals } from "../../server/fundamentals.js";
 
-const TTL_MS = 24 * 60 * 60 * 1000;
+const TTL_MS = 6 * 60 * 60 * 1000;
 const cache = new Map();
 
 function sendJson(response, statusCode, payload) {
@@ -12,15 +12,13 @@ function sendJson(response, statusCode, payload) {
 
 export default async function handler(request, response) {
   const symbol = String(request.query?.symbol ?? "").trim().toUpperCase();
-  const limit = Math.min(Math.max(Number(request.query?.limit ?? 10), 1), 25);
 
   if (!symbol) {
     sendJson(response, 400, { error: "symbol query parameter is required" });
     return;
   }
 
-  const cacheKey = `${symbol}:${limit}`;
-  const cached = cache.get(cacheKey);
+  const cached = cache.get(symbol);
   const now = Date.now();
   if (cached && cached.expiresAt > now) {
     sendJson(response, 200, {
@@ -31,9 +29,9 @@ export default async function handler(request, response) {
   }
 
   try {
-    const value = await fetchPeers(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY, limit });
+    const value = await fetchFundamentals(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY });
     const expiresAt = now + TTL_MS;
-    cache.set(cacheKey, { value, expiresAt });
+    cache.set(symbol, { value, expiresAt });
     sendJson(response, 200, {
       ...value,
       cache: { status: "miss", ttlMs: TTL_MS, expiresAt: new Date(expiresAt).toISOString() },
