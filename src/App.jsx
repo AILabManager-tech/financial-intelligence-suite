@@ -54,6 +54,12 @@ import {
 } from "./services/watchlistListStore";
 import WatchlistSelector from "./components/WatchlistSelector";
 import {
+  loadCommentary,
+  saveCommentary,
+  addComment,
+  removeComment,
+} from "./services/pmCommentaryStore";
+import {
   isFavoriteSymbol,
   loadFavoriteSymbols,
   saveFavoriteSymbols,
@@ -235,6 +241,7 @@ export default function App() {
   const activeId = portfolioList.activeId;
   const [portfolioAssets, setPortfolioAssets] = useState(() => loadPortfolioAssets([], portfolioList.activeId));
   const [transactions, setTransactions] = useState(() => loadTransactions(portfolioList.activeId));
+  const [commentary, setCommentary] = useState(() => loadCommentary(portfolioList.activeId));
   const [watchlistList, setWatchlistList] = useState(() => loadWatchlistList());
   const activeWatchlistId = watchlistList.activeId;
   const [watchlistAssets, setWatchlistAssets] = useState(() => loadWatchlistAssets([], watchlistList.activeId));
@@ -342,6 +349,7 @@ export default function App() {
     const id = nextState.activeId;
     setPortfolioAssets(loadPortfolioAssets([], id));
     setTransactions(loadTransactions(id));
+    setCommentary(loadCommentary(id));
     setAssets([]);
     setFiltered([]);
     setSelected(null);
@@ -417,6 +425,20 @@ export default function App() {
     saveWatchlistAssets(nextAssets, activeWatchlistId);
     setWatchlistAssets(nextAssets);
   }, [activeWatchlistId]);
+
+  // --- PM commentary (P6.3) — dated notes scoped per mandate, shown in the report.
+  const persistCommentary = useCallback((next) => {
+    saveCommentary(next, activeId);
+    setCommentary(next);
+  }, [activeId]);
+
+  const handleAddComment = useCallback((draft) => {
+    persistCommentary(addComment(commentary, draft));
+  }, [persistCommentary, commentary]);
+
+  const handleRemoveComment = useCallback((id) => {
+    persistCommentary(removeComment(commentary, id));
+  }, [persistCommentary, commentary]);
 
   // --- Thematic watchlists (P5.4) --------------------------------------------
   // Mirrors the mandate pattern: list metadata in watchlistListStore, assets
@@ -818,6 +840,9 @@ export default function App() {
             assets={assets}
             snapshots={portfolioSnapshots}
             transactions={transactions}
+            commentary={commentary}
+            onAddComment={handleAddComment}
+            onRemoveComment={handleRemoveComment}
           />
         ) : isDemoRoute ? (
           <DemoPortfolioPanel />

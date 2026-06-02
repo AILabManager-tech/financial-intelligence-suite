@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
 vi.mock("../services/priceHistory", () => ({ fetchPriceHistory: vi.fn() }));
@@ -33,5 +33,23 @@ describe("MandateReportView", () => {
     screen.getByLabelText(/Imprimer ou enregistrer le rapport en PDF/i).click();
     await waitFor(() => expect(printSpy).toHaveBeenCalled());
     printSpy.mockRestore();
+  });
+
+  it("renders PM commentary entries and adds a new dated note", () => {
+    fetchPriceHistory.mockResolvedValue({ points: [] });
+    const onAddComment = vi.fn();
+    render(
+      <MandateReportView
+        mandate={MANDATE}
+        assets={ASSETS}
+        commentary={[{ id: "c1", date: "2026-03-31", text: "Trimestre solide." }]}
+        onAddComment={onAddComment}
+        onRemoveComment={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Trimestre solide.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Texte du commentaire"), { target: { value: "Nouvelle note" } });
+    fireEvent.click(screen.getByLabelText("Ajouter le commentaire"));
+    expect(onAddComment).toHaveBeenCalledWith(expect.objectContaining({ text: "Nouvelle note" }));
   });
 });

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Printer, RefreshCw } from "lucide-react";
+import { FileText, Printer, Plus, Trash2 } from "lucide-react";
 import { buildMandateReport } from "../utils/mandateReport";
 import { computeBenchmarkComparison } from "../utils/benchmarkComparison";
 import { fetchPriceHistory } from "../services/priceHistory";
@@ -27,7 +27,7 @@ function Section({ title, children }) {
   );
 }
 
-export default function MandateReportView({ mandate = {}, assets = [], snapshots = [], transactions = [] }) {
+export default function MandateReportView({ mandate = {}, assets = [], snapshots = [], transactions = [], commentary = [], onAddComment, onRemoveComment }) {
   const asOf = useMemo(() => new Date().toISOString(), []);
   const report = useMemo(
     () => buildMandateReport({ mandate, assets, snapshots, transactions, asOf }),
@@ -56,6 +56,13 @@ export default function MandateReportView({ mandate = {}, assets = [], snapshots
 
   const asOfLabel = new Date(asOf).toLocaleDateString("fr-CA", { dateStyle: "long" });
   const comparison = bench.comparison;
+
+  const [draft, setDraft] = useState({ date: asOf.slice(0, 10), text: "" });
+  const submitComment = () => {
+    if (!draft.text.trim()) return;
+    onAddComment?.({ date: draft.date, text: draft.text });
+    setDraft((d) => ({ date: d.date, text: "" }));
+  };
 
   return (
     <div className="space-y-5 animate-slide-up" role="region" aria-label="Rapport de mandat">
@@ -208,6 +215,67 @@ export default function MandateReportView({ mandate = {}, assets = [], snapshots
           <p className="text-[11px] text-slate-500 mt-2">Appariement {realized.method.toUpperCase()} ; au Canada le gain officiel se calcule par PBR/ACB. Montants USD.</p>
         </Section>
       )}
+
+      <Section title="Commentaire du gestionnaire">
+        {onAddComment && (
+          <div className="print:hidden mb-3 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="date"
+                value={draft.date}
+                onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
+                aria-label="Date du commentaire"
+                className="px-2 py-1 rounded-lg bg-surface-900 border border-white/5 text-sm text-white focus:outline-none focus:border-violet-500/50"
+              />
+              <button
+                type="button"
+                onClick={submitComment}
+                disabled={!draft.text.trim()}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-300 hover:bg-violet-500/15 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold cursor-pointer"
+                aria-label="Ajouter le commentaire"
+              >
+                <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                Ajouter
+              </button>
+            </div>
+            <textarea
+              value={draft.text}
+              onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
+              placeholder="Commentaire de période (markdown accepté)…"
+              rows={3}
+              aria-label="Texte du commentaire"
+              className="w-full px-2 py-1.5 rounded-lg bg-surface-900 border border-white/5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-violet-500/50"
+            />
+          </div>
+        )}
+
+        {commentary.length === 0 ? (
+          <p className="text-xs text-slate-500">Aucun commentaire enregistré pour ce mandat.</p>
+        ) : (
+          <div className="space-y-3">
+            {commentary.map((c) => (
+              <div key={c.id} className="rounded-lg bg-surface-900/60 border border-white/5 p-3 break-inside-avoid">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    {new Date(c.date).toLocaleDateString("fr-CA", { dateStyle: "long" })}
+                  </span>
+                  {onRemoveComment && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveComment(c.id)}
+                      className="print:hidden p-1 rounded text-slate-500 hover:text-rose-400 cursor-pointer"
+                      aria-label={`Supprimer le commentaire du ${c.date}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-slate-200 whitespace-pre-wrap">{c.text}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
 
       <Section title="Notes">
         <ul className="text-[11px] text-slate-500 space-y-1 list-disc list-inside">
