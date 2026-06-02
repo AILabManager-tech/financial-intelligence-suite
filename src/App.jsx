@@ -99,6 +99,8 @@ import WithholdingTaxPanel from "./components/WithholdingTaxPanel";
 import TaxReportPanel from "./components/TaxReportPanel";
 import MandateReportView from "./components/MandateReportView";
 import LegalPage from "./components/LegalPage";
+import AuthPanel from "./components/AuthPanel";
+import { useAuth } from "./core/authContext";
 import ConsentBanner from "./components/ConsentBanner";
 import { hasValidConsent, acceptConsent, saveConsent } from "./services/consentStore";
 import {
@@ -268,9 +270,11 @@ export default function App() {
   const isTransactionsRoute = currentPath === "/transactions";
   const isReportRoute = currentPath === "/report";
   const isLegalRoute = currentPath === "/legal";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isLegalRoute;
+  const isLoginRoute = currentPath === "/login";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isLegalRoute && !isLoginRoute;
   const [consentOpen, setConsentOpen] = useState(() => !hasValidConsent());
   const layout = useLayout();
+  const { authEnabled, user: authUser } = useAuth();
 
   useEffect(() => {
     let active = true;
@@ -829,6 +833,16 @@ export default function App() {
                 onDelete={handleDeletePortfolio}
               />
               <ThemeSelector />
+              {authEnabled && (
+                <button
+                  type="button"
+                  onClick={() => navigateTo("/login")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium max-w-[10rem] truncate ${isLoginRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                  title={authUser ? authUser.email : "Se connecter"}
+                >
+                  {authUser ? authUser.email : "Se connecter"}
+                </button>
+              )}
               <MarketDataStatus status={marketStatus} onRefresh={loadLiveQuotes} />
             </div>
           </div>
@@ -839,6 +853,8 @@ export default function App() {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8" role="main">
         {isSettingsRoute ? (
           <SettingsPage />
+        ) : isLoginRoute ? (
+          <AuthPanel />
         ) : isLegalRoute ? (
           <LegalPage />
         ) : isReportRoute ? (
