@@ -90,6 +90,7 @@ import CompliancePanel from "./components/CompliancePanel";
 import RebalancePanel from "./components/RebalancePanel";
 import MacroPanel from "./components/MacroPanel";
 import WithholdingTaxPanel from "./components/WithholdingTaxPanel";
+import TaxReportPanel from "./components/TaxReportPanel";
 import {
   addTransaction,
   loadTransactions,
@@ -130,6 +131,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
   RebalancePanel,
   MacroPanel,
   WithholdingTaxPanel,
+  TaxReportPanel,
 };
 
 // Apply persisted theme synchronously at module load so the first paint

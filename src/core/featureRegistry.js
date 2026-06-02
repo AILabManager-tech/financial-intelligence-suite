@@ -291,6 +291,16 @@ const RAW_FEATURES = [
     order: 90,
   },
   {
+    id: "tax-report",
+    label: "Gains/pertes réalisés par année",
+    category: "portfolio",
+    surface: "dashboard",
+    componentKey: "TaxReportPanel",
+    dataDeps: [],
+    defaultVisible: true,
+    order: 95,
+  },
+  {
     id: "portfolio-concentration",
     label: "Concentration & diversification",
     category: "portfolio",

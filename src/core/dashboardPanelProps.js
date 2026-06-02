@@ -35,6 +35,7 @@ export function buildDashboardPanelProps(deps) {
     PortfolioManager: { assets, onSavePosition, onRemoveAsset, onImportPositions },
     CurrencyExposurePanel: { assets, baseCurrency },
     OperationalStatsPanel: { transactions, method: "fifo" },
+    TaxReportPanel: { transactions, method: "fifo" },
     PortfolioConcentrationPanel: { assets },
     CorrelationMatrixPanel: { assets },
     TwrPanel: { snapshots, transactions },
