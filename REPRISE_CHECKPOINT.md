@@ -52,6 +52,25 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ---
 
+## 🚀 PHASE 7 — KICKOFF (prochaine session, environnement AVEC réseau requis)
+
+> Préparé le 2026-06-02. Phase 7 = passage d'outil solo à produit multi-utilisateur, exigé par la direction **commercialisation**. Débloque P6.4 (portail client read-only).
+
+**⚠️ Contrainte d'environnement** : Phase 7 exige d'**installer des dépendances** et/ou de **provisionner une base** → la session DOIT tourner dans un environnement avec accès réseau (la session précédente était hors-réseau, d'où le report). Vérifier d'abord : `npm install <x>` fonctionne ? réseau ok ?
+
+**Décision n°1 à trancher AVANT de coder (auth + base)** — recommandation :
+- ✅ **Supabase** (recommandé) : bundle **Auth + Postgres + Row-Level-Security**. Couvre P7.1 (auth) + P7.4 (multi-tenant via RLS par `org_id`) + P7.5 (SQLite→Postgres) d'un coup. Des outils **Supabase MCP sont déjà disponibles** dans l'environnement Claude (list_projects, apply_migration, execute_sql…). Le plus court chemin vers un produit commercialisable.
+- Alternative : **in-house** (sessions httpOnly + hachage bcrypt/`node:crypto` + Postgres self-hosted). Plus de contrôle, beaucoup plus de plomberie.
+- Pas de SSO au début (cf. roadmap P7.1).
+
+**Scope Phase 7** (roadmap lignes 162-166) : P7.1 Auth → P7.2 Rôles (PM full / client read-only / compliance read-all+audit / admin) → P7.3 Audit trail (`audit_log` : chaque mutation horodatée, user_id + diff JSON) → P7.4 Multi-tenant (`organizations`, scope par `org_id`) → P7.5 Migration SQLite→Postgres.
+
+**Garde-fou architectural** : NE PAS casser le fonctionnement **client-first localStorage** existant (l'app doit rester utilisable en solo/hors-ligne). L'auth/multi-tenant s'ajoute comme une **couche**, le localStorage reste le fallback durable — même principe que le mirror SQLite dev actuel. Préserver la « prise IA » (frontières de données pures).
+
+**Avant toute mise en ligne** (rappel, non codable) : remplir les `[À COMPLÉTER]` de `/legal` (P8.5) + validation juridique, et **rotation des 3 clés API** (repo a été public).
+
+---
+
 ## Etat git
 
 Tip de `main` au moment du checkpoint (post-bloc cleanup audit F4+F5, à committer dans le même bloc que ce docs) :
