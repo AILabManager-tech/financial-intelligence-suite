@@ -59,7 +59,7 @@ export default function MacroPanel() {
               </div>
             ))}
           </div>
-          <div className="mt-3 text-[11px] text-slate-500">Dernier point publié par la FED (FRED). Donnée factuelle, pas un conseil.</div>
+          <div className="mt-3 text-[11px] text-slate-500">Dernier point publié, agrégé via FRED (taux US/Canada, inflation IPC sur 1 an calculée par FRED). Donnée factuelle, pas un conseil.</div>
         </>
       )}
     </div>
