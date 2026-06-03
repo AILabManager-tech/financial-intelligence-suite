@@ -143,6 +143,10 @@ export const DEMO_PROFILES = [
     accountType: "taxable",
     baseCurrency: "USD",
     dateDebut: "2021-11-01",
+    // Prix de référence statiques (2026) bien sous le sommet 2021 → P&L latent et
+    // performance fortement négatifs (l'intention du cas limite). Évite aussi le
+    // faux −100 % si la cotation live d'un de ces titres ne résout pas.
+    prixCourant: { PYPL: 71.0, INTC: 21.0, BABA: 82.0 },
     transactions: [
       { type: "buy", symbol: "PYPL", date: "2021-07-26", quantity: 60, price: 308.0 },
       { type: "buy", symbol: "INTC", date: "2021-04-09", quantity: 200, price: 67.0 },

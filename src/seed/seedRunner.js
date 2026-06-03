@@ -17,6 +17,8 @@ import {
 import { saveTransactions, STORAGE_KEY as TX_KEY } from "../services/transactionStore";
 import { savePortfolioAssets, STORAGE_KEY as POS_KEY } from "../services/portfolioStore";
 import { DEMO_PREFIX, DEMO_PROFILES } from "./profils.seed";
+import { buildDemoSnapshots } from "./demoSnapshots";
+import { saveDemoSnapshots, removeDemoSnapshots } from "./demoSnapshotStore";
 
 const EPS = 1e-9;
 
@@ -92,6 +94,7 @@ export function buildSeedPlan(profiles = DEMO_PROFILES, { method = "fifo" } = {}
       mandate: buildDemoMandate(profile),
       transactions,
       positions: derivePositions(transactions, method, profile.prixCourant),
+      snapshots: buildDemoSnapshots(profile, transactions),
     };
   });
 }
@@ -110,9 +113,10 @@ export function applyDemoSeed(profiles = DEMO_PROFILES, { method = "fifo" } = {}
     portfolios: [...realMandates, ...demoMandates],
   });
   savePortfolioList(next);
-  for (const { mandate, transactions, positions } of plan) {
+  for (const { mandate, transactions, positions, snapshots } of plan) {
     saveTransactions(transactions, mandate.id);
     savePortfolioAssets(positions, mandate.id);
+    saveDemoSnapshots(snapshots, mandate.id);
   }
   return demoMandates.map((m) => m.id);
 }
@@ -129,6 +133,7 @@ export function resetDemoSeed() {
     } catch {
       // private browsing / quota — non-fatal
     }
+    removeDemoSnapshots(id);
   }
   const realMandates = state.portfolios.filter((p) => !isDemoMandate(p));
   const next = normalizeState({ activeId: state.activeId, portfolios: realMandates });

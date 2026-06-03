@@ -11,6 +11,7 @@ import { DEMO_PROFILES } from "./profils.seed";
 import { loadPortfolioList } from "../services/portfolioListStore";
 import { loadTransactions } from "../services/transactionStore";
 import { loadPortfolioAssets } from "../services/portfolioStore";
+import { loadDemoSnapshots } from "./demoSnapshotStore";
 
 beforeEach(() => {
   localStorage.clear();
@@ -117,6 +118,15 @@ describe("buildSeedPlan", () => {
       expect(pos.price).toBeGreaterThan(0);
     }
   });
+
+  it("attaches a reconstituted snapshot series to funded profiles, none to empty ones", () => {
+    const plan = buildSeedPlan(DEMO_PROFILES);
+    const sophie = plan.find((p) => p.mandate.id === "demo-sophie-belanger");
+    expect(sophie.snapshots.length).toBeGreaterThan(0);
+    expect(sophie.snapshots.every((s) => s.reconstructed === true)).toBe(true);
+    const empty = plan.find((p) => p.mandate.id === "demo-edge-vide");
+    expect(empty.snapshots).toEqual([]);
+  });
 });
 
 describe("applyDemoSeed / resetDemoSeed", () => {
@@ -130,6 +140,8 @@ describe("applyDemoSeed / resetDemoSeed", () => {
 
     expect(loadTransactions("demo-julien-roy").length).toBeGreaterThan(0);
     expect(loadPortfolioAssets([], "demo-marc-tremblay").length).toBe(4);
+    // reconstituted snapshots are persisted per demo mandate
+    expect(loadDemoSnapshots("demo-sophie-belanger").length).toBeGreaterThan(0);
   });
 
   it("is idempotent — running twice does not duplicate mandates", () => {
@@ -153,6 +165,7 @@ describe("applyDemoSeed / resetDemoSeed", () => {
     expect(after.portfolios.some((p) => p.id === "mon-reel")).toBe(true);
     // namespaced demo keys are gone
     expect(localStorage.getItem("fis:transactions:v1::demo-julien-roy")).toBeNull();
+    expect(loadDemoSnapshots("demo-sophie-belanger")).toEqual([]);
   });
 });
 

@@ -37,6 +37,7 @@ import {
 } from "./services/portfolioListStore";
 import PortfolioSelector from "./components/PortfolioSelector";
 import { fetchPortfolioSnapshots, savePortfolioSnapshot } from "./services/portfolioSnapshots";
+import { isDemoMandateId, loadDemoSnapshots } from "./seed/demoSnapshotStore";
 import {
   isWatchlisted,
   loadWatchlistAssets,
@@ -77,6 +78,7 @@ import { evaluateAlerts } from "./utils/alertEvaluator";
 import AlertManager from "./components/AlertManager";
 import ThemeSelector from "./components/ThemeSelector";
 import LayoutSurface from "./components/LayoutSurface";
+import ReconstructedSnapshotsBanner from "./components/ReconstructedSnapshotsBanner";
 import SettingsPage from "./components/SettingsPage";
 import DemoPortfolioPanel from "./components/DemoPortfolioPanel";
 import TransactionJournalPanel from "./components/TransactionJournalPanel";
@@ -319,6 +321,13 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
+    // Demo mandates carry a reconstituted series in localStorage (dev-only);
+    // real mandates mirror their accrued snapshots in dev SQLite.
+    if (isDemoMandateId(activeId)) {
+      setPortfolioSnapshots(loadDemoSnapshots(activeId));
+      return () => {};
+    }
+
     fetchPortfolioSnapshots(120, activeId)
       .then((snapshots) => {
         if (active) {
@@ -374,9 +383,13 @@ export default function App() {
         if (remoteTransactions.length > 0) setTransactions(remoteTransactions);
       })
       .catch(() => {});
-    fetchPortfolioSnapshots(120, id)
-      .then(setPortfolioSnapshots)
-      .catch(() => setPortfolioSnapshots([]));
+    if (isDemoMandateId(id)) {
+      setPortfolioSnapshots(loadDemoSnapshots(id));
+    } else {
+      fetchPortfolioSnapshots(120, id)
+        .then(setPortfolioSnapshots)
+        .catch(() => setPortfolioSnapshots([]));
+    }
   }, [persistPortfolioList]);
 
   const handleSwitchPortfolio = useCallback((id) => {
@@ -612,7 +625,9 @@ export default function App() {
         evaluateAndPersistAlerts(alertsRef.current, mergedAssets, payload.fetchedAt);
       }
 
-      if (liveCount > 0 && analytics.totalMarketValue > 0) {
+      // Demo mandates keep their reconstituted series untouched — never overwrite
+      // it with a live-accrued real point.
+      if (liveCount > 0 && analytics.totalMarketValue > 0 && !isDemoMandateId(activeId)) {
         const captureDay = (payload.fetchedAt ?? new Date().toISOString()).slice(0, 10);
         // Un seul snapshot par mandat par jour calendaire. Le serveur upsert de
         // toute façon (dernière capture du jour gagne) ; ce garde évite de POST à
@@ -942,6 +957,14 @@ export default function App() {
             <section aria-label="Recherche marché globale">
               <MarketLookup onSelect={handleSelect} />
             </section>
+
+            {/* Reconstituted-performance notice for demo mandates (dev-only). */}
+            <ReconstructedSnapshotsBanner
+              active={
+                isDemoMandateId(portfolioList.activeId) &&
+                portfolioSnapshots.some((s) => s?.reconstructed)
+              }
+            />
 
             {/* Composable dashboard block — order & visibility from the layout
                 store (P0.2), driven by the feature registry (P0.1). */}
