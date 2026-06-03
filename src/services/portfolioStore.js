@@ -1,4 +1,4 @@
-const STORAGE_KEY = "financial-intelligence-suite.portfolio.v1";
+export const STORAGE_KEY = "financial-intelligence-suite.portfolio.v1";
 const DEFAULT_PORTFOLIO_ID = "default";
 
 // Positions are namespaced per mandate (P3.2). The 'default' mandate keeps the

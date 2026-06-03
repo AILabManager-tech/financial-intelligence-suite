@@ -9,7 +9,7 @@
 //   type: "buy" | "sell" | "dividend" | "fee"
 //   buy/sell carry quantity/price/fee; dividend/fee carry amount.
 
-const STORAGE_KEY = "fis:transactions:v1";
+export const STORAGE_KEY = "fis:transactions:v1";
 const DEFAULT_PORTFOLIO_ID = "default";
 const VALID_TYPES = new Set(["buy", "sell", "dividend", "fee"]);
 
