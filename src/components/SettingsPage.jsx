@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff, RotateCcw, Columns2, Square, GripVertical, ArrowUp, ArrowDown, LayoutTemplate, Save, Trash2, Wand2 } from "lucide-react";
 import { getFeatureById } from "../core/featureRegistry";
+import DemoSeedPanel from "./DemoSeedPanel";
 import { useLayout, useLayoutControls } from "../core/layoutContext";
 import { BUILTIN_PROFILES, buildLayoutFromProfile } from "../core/layoutProfiles";
 import { optimizeLayout } from "../core/layoutEngine";
@@ -295,6 +296,8 @@ export default function SettingsPage() {
           <SurfaceList surface={surface.key} entries={layout[surface.key] ?? []} controls={controls} />
         </section>
       ))}
+
+      {import.meta.env.DEV && <DemoSeedPanel />}
     </div>
   );
 }
