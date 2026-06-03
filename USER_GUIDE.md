@@ -1,11 +1,22 @@
-# Guide d'utilisation — Financial Intelligence Suite
+# User Guide — Financial Intelligence Suite
+### Version détaillée
 
 > Manuel complet, des bases à l'usage avancé. Public débutant en finance, ton pédagogique.
-> Version du guide : 2026-06-02. Application en ligne : https://devlabai.tech
+> Statut : **bêta** — première version, révisée au fil des retours d'usage.
+> Version du guide : 2026-06-03. Application en ligne : https://devlabai.tech
+>
+> 📄 **Besoin d'une référence rapide ?** Voir l'aide-mémoire : [`USER_GUIDE_CHEATSHEET.md`](./USER_GUIDE_CHEATSHEET.md).
 
 Ce manuel explique **chaque** fonction du logiciel : à quoi elle sert, où elle se trouve,
 et surtout **comment lire ce qu'elle affiche**. Aucune connaissance financière préalable
 n'est supposée — les termes sont définis au fil du texte, et regroupés dans le glossaire final.
+
+Deux formats de ce guide existent :
+
+- **Version détaillée** (ce document) — chaque fonction expliquée avec son utilité, ce qu'elle
+  affiche et comment l'interpréter. À lire de bout en bout ou à consulter par chapitre.
+- **Aide-mémoire** (`USER_GUIDE_CHEATSHEET.md`) — une page condensée, sous forme de tableaux, pour
+  retrouver une fonction d'un coup d'œil une fois le logiciel pris en main.
 
 ---
 
