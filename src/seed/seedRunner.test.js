@@ -65,6 +65,28 @@ describe("derivePositions", () => {
     ];
     expect(derivePositions(tx)).toEqual([]);
   });
+
+  it("defaults price to 0 when no static price is provided", () => {
+    const tx = [{ type: "buy", symbol: "X", date: "2024-01-01", quantity: 10, price: 10 }];
+    expect(derivePositions(tx)[0].price).toBe(0);
+  });
+
+  it("seeds price from a static price map (titres non cotés par le free tier)", () => {
+    const tx = [
+      { type: "buy", symbol: "RY.TO", date: "2024-01-01", quantity: 100, price: 132.5 },
+      { type: "buy", symbol: "X", date: "2024-01-01", quantity: 10, price: 10 },
+    ];
+    const positions = derivePositions(tx, "fifo", { "RY.TO": 178 });
+    const ry = positions.find((p) => p.symbol === "RY.TO");
+    const x = positions.find((p) => p.symbol === "X");
+    expect(ry.price).toBe(178); // static reference price → valeur factuelle, pas 0/−100 %
+    expect(x.price).toBe(0); // absent du map → reste 0, comblé par la cotation live si dispo
+  });
+
+  it("ignores a non-finite static price", () => {
+    const tx = [{ type: "buy", symbol: "X", date: "2024-01-01", quantity: 10, price: 10 }];
+    expect(derivePositions(tx, "fifo", { X: "n/a" })[0].price).toBe(0);
+  });
 });
 
 describe("buildSeedPlan", () => {
@@ -84,6 +106,16 @@ describe("buildSeedPlan", () => {
     const sophie = plan.find((p) => p.mandate.id === "demo-sophie-belanger");
     expect(sophie.mandate.accountType).toBe("rrsp");
     expect(sophie.mandate.baseCurrency).toBe("CAD");
+  });
+
+  it("seeds a non-zero static price for Canadian holdings the free tier won't quote", () => {
+    const plan = buildSeedPlan(DEMO_PROFILES);
+    const sophie = plan.find((p) => p.mandate.id === "demo-sophie-belanger");
+    // every held .TO position carries a static reference price > 0 (no 0/−100 %)
+    expect(sophie.positions.length).toBeGreaterThan(0);
+    for (const pos of sophie.positions) {
+      expect(pos.price).toBeGreaterThan(0);
+    }
   });
 });
 

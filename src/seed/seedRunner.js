@@ -42,19 +42,24 @@ export function expandTransactions(profile) {
 
 // Derive held positions from the transaction log (FIFO/LIFO open lots), so the
 // positions store and the transaction journal can never disagree. `price` is 0
-// here; live quotes fill it at mount, exactly like a manually-entered position.
-export function derivePositions(transactions, method = "fifo") {
+// by default; live quotes fill it at mount, exactly like a manually-entered
+// position. `prices` lets a profile seed a static reference price per symbol for
+// titles the free tier won't quote (e.g. `.TO` Canadian listings) — otherwise
+// they'd stay at 0 and read as a fake −100 % loss. A live quote, when available,
+// still overrides it at mount; when it isn't, the merge labels it static.
+export function derivePositions(transactions, method = "fifo", prices = {}) {
   const bySymbol = applyTransactions(transactions, { method });
   const positions = [];
   for (const [symbol, acc] of Object.entries(bySymbol)) {
     const quantity = acc.lots.reduce((sum, lot) => sum + lot.quantity, 0);
     if (quantity <= EPS) continue;
     const costBasis = acc.lots.reduce((sum, lot) => sum + lot.quantity * lot.costPerShare, 0);
+    const staticPrice = prices?.[symbol];
     positions.push({
       symbol,
       name: symbol,
       sector: "Démo",
-      price: 0,
+      price: Number.isFinite(staticPrice) ? staticPrice : 0,
       change: 0,
       changePct: 0,
       volume: 0,
@@ -86,7 +91,7 @@ export function buildSeedPlan(profiles = DEMO_PROFILES, { method = "fifo" } = {}
     return {
       mandate: buildDemoMandate(profile),
       transactions,
-      positions: derivePositions(transactions, method),
+      positions: derivePositions(transactions, method, profile.prixCourant),
     };
   });
 }

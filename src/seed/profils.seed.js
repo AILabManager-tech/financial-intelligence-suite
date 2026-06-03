@@ -9,8 +9,17 @@
 //     accountType: "taxable" | "rrsp" | "tfsa",   // ACCOUNT_TYPES réels
 //     baseCurrency: "USD" | "CAD",
 //     dateDebut: "YYYY-MM-DD",   // défaut appliqué aux transactions sans `date`
+//     prixCourant?: { SYMBOLE: prix },   // prix de référence STATIQUE par titre
 //     transactions: [ { type, symbol, date?, quantity?, price?, fee?, amount? } ]
 //   }
+//
+// `prixCourant` : prix de référence statique pour les titres que le free tier ne
+//   cote pas (typiquement les `.TO` canadiens). Sans lui, la position reste à
+//   `price: 0` → valeur 0 et faux P&L −100 %. Avec lui, la fiche affiche une
+//   valeur plausible ; une cotation live, quand elle existe (titres US), écrase
+//   ce prix au montage. Quand elle n'existe pas, le merge étiquette « données
+//   statiques conservées » — donc jamais présenté comme une cotation live.
+//   Clés en MAJUSCULES (symbole normalisé). Démo dev-only : non visible en prod.
 //
 // Transaction (transactionStore) : type ∈ buy|sell|dividend|fee ;
 //   buy/sell → quantity + price (+ fee) ; dividend/fee → amount.
@@ -45,6 +54,8 @@ export const DEMO_PROFILES = [
     accountType: "rrsp",
     baseCurrency: "CAD",
     dateDebut: "2024-01-10",
+    // Prix de référence statiques (TSX non couvert par le free tier de cotation).
+    prixCourant: { "RY.TO": 178.0, "TD.TO": 92.0, "ENB.TO": 62.0, "BCE.TO": 33.0 },
     transactions: [
       { type: "buy", symbol: "RY.TO", date: "2024-01-10", quantity: 100, price: 132.5 },
       { type: "buy", symbol: "TD.TO", date: "2024-01-10", quantity: 150, price: 81.2 },
@@ -99,6 +110,8 @@ export const DEMO_PROFILES = [
     accountType: "tfsa",
     baseCurrency: "CAD",
     dateDebut: "2024-01-08",
+    // Prix de référence statiques (TSX non couvert par le free tier de cotation).
+    prixCourant: { "SHOP.TO": 165.0, "AC.TO": 22.0 },
     transactions: [
       { type: "buy", symbol: "SHOP.TO", date: "2024-01-08", quantity: 100, price: 105.0, fee: 9.95 },
       { type: "buy", symbol: "SHOP.TO", date: "2024-02-20", quantity: 100, price: 92.0, fee: 9.95 },
