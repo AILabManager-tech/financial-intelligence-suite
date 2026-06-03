@@ -12,9 +12,9 @@ function enrichResult(result) {
   };
 }
 
-export async function searchSymbols(query) {
+export async function searchSymbols(query, { signal } = {}) {
   const params = new URLSearchParams({ q: query });
-  const response = await fetch(`/api/search?${params.toString()}`);
+  const response = await fetch(`/api/search?${params.toString()}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Symbol search unavailable (${response.status})`);

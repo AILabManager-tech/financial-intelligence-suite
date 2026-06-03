@@ -94,9 +94,9 @@ export function mergeQuotesIntoAssets(assets, quotes) {
   });
 }
 
-export async function fetchLiveQuotes(symbols) {
+export async function fetchLiveQuotes(symbols, { signal } = {}) {
   const params = new URLSearchParams({ symbols: symbols.join(",") });
-  const response = await fetch(`${QUOTE_ENDPOINT}?${params.toString()}`);
+  const response = await fetch(`${QUOTE_ENDPOINT}?${params.toString()}`, { signal });
 
   if (!response.ok) {
     throw new Error(`Quote API unavailable (${response.status})`);

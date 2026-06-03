@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Clock, Globe2, Search, Trash2, X } from "lucide-react";
 import { fetchLiveQuotes, normalizeQuote } from "../services/liveQuotes";
 import { searchSymbols } from "../services/symbolSearch";
@@ -10,6 +10,10 @@ import {
   saveSearchHistory,
 } from "../services/searchHistoryStore";
 import { uniqueCountriesFromResults } from "../utils/symbolExchange";
+import { collectLookupSymbols, indexQuotesBySymbol } from "../utils/lookupQuotes";
+
+const MIN_QUERY_LENGTH = 2;
+const DEBOUNCE_MS = 300;
 
 function buildLookupAsset(result, quote) {
   return {
@@ -35,10 +39,13 @@ function buildLookupAsset(result, quote) {
 export default function MarketLookup({ onSelect }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
+  const [quotesBySymbol, setQuotesBySymbol] = useState({});
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [history, setHistory] = useState(() => loadSearchHistory());
   const [countryFilter, setCountryFilter] = useState(null);
+
+  const showResults = query.trim().length >= MIN_QUERY_LENGTH;
 
   const availableCountries = useMemo(() => uniqueCountriesFromResults(results), [results]);
 
@@ -61,34 +68,78 @@ export default function MarketLookup({ onSelect }) {
     setHistory(next);
   }, []);
 
-  const performSearch = useCallback(async (rawQuery) => {
+  // Quotes are a bonus enrichment: fetched in one batch for the visible
+  // results, never surfaced as an error if a market is uncovered.
+  const enrichWithQuotes = useCallback(async (lookupResults, signal) => {
+    const symbols = collectLookupSymbols(lookupResults, 12);
+    if (!symbols.length) {
+      setQuotesBySymbol({});
+      return;
+    }
+    try {
+      const payload = await fetchLiveQuotes(symbols, { signal });
+      if (signal?.aborted) return;
+      setQuotesBySymbol(indexQuotesBySymbol(payload.quotes));
+    } catch (quoteError) {
+      if (signal?.aborted || quoteError.name === "AbortError") return;
+      setQuotesBySymbol({});
+    }
+  }, []);
+
+  const runLookup = useCallback(async (rawQuery, signal) => {
     const cleanQuery = rawQuery.trim();
-    if (cleanQuery.length < 2) return;
+    if (cleanQuery.length < MIN_QUERY_LENGTH) return;
 
     setStatus("loading");
     setError("");
 
     try {
-      const payload = await searchSymbols(cleanQuery);
+      const payload = await searchSymbols(cleanQuery, { signal });
+      if (signal?.aborted) return;
       setResults(payload.results);
+      setQuotesBySymbol({});
       setCountryFilter(null);
       setStatus("ready");
-      persistHistory(recordSearch(history, { query: cleanQuery, resultsCount: payload.results.length }));
+      enrichWithQuotes(payload.results, signal);
     } catch (searchError) {
+      if (signal?.aborted || searchError.name === "AbortError") return;
       setResults([]);
       setStatus("error");
       setError(searchError.message);
     }
-  }, [history, persistHistory]);
+  }, [enrichWithQuotes]);
+
+  // Live autocomplete: debounce the typed query, cancel stale in-flight requests.
+  useEffect(() => {
+    if (query.trim().length < MIN_QUERY_LENGTH) return undefined;
+    const controller = new AbortController();
+    const handle = setTimeout(() => runLookup(query, controller.signal), DEBOUNCE_MS);
+    return () => {
+      clearTimeout(handle);
+      controller.abort();
+    };
+  }, [query, runLookup]);
+
+  const handleQueryChange = (event) => {
+    const value = event.target.value;
+    setQuery(value);
+    if (value.trim().length < MIN_QUERY_LENGTH) {
+      setResults([]);
+      setQuotesBySymbol({});
+      setStatus("idle");
+      setError("");
+    }
+  };
 
   const runSearch = (event) => {
     event.preventDefault();
-    return performSearch(query);
+    // Explicit submit: search immediately (bypass the debounce).
+    const controller = new AbortController();
+    runLookup(query, controller.signal);
   };
 
   const replaySearch = (entry) => {
-    setQuery(entry.query);
-    return performSearch(entry.query);
+    setQuery(entry.query); // triggers the debounced effect
   };
 
   const removeHistoryEntry = (normalizedQuery) => {
@@ -99,7 +150,19 @@ export default function MarketLookup({ onSelect }) {
     persistHistory(clearSearchHistory());
   };
 
+  const clearQuery = () => {
+    setQuery("");
+    setResults([]);
+    setQuotesBySymbol({});
+    setStatus("idle");
+    setError("");
+  };
+
   const openResult = async (result) => {
+    // Record the intent at selection time — the most meaningful moment.
+    persistHistory(
+      recordSearch(history, { query: query.trim() || result.symbol, resultsCount: results.length }),
+    );
     setStatus("loading");
     setError("");
 
@@ -137,12 +200,12 @@ export default function MarketLookup({ onSelect }) {
           <input
             type="text"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={handleQueryChange}
             placeholder="Chercher une entreprise ou un symbole (ex: UnitedHealth, UNH, Nvidia...)"
             className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-surface-800 border border-white/5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-colors"
           />
           {query && (
-            <button type="button" onClick={() => { setQuery(""); setResults([]); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/5 cursor-pointer" aria-label="Effacer la recherche marché">
+            <button type="button" onClick={clearQuery} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/5 cursor-pointer" aria-label="Effacer la recherche marché">
               <X className="w-3.5 h-3.5 text-slate-500" />
             </button>
           )}
@@ -154,7 +217,7 @@ export default function MarketLookup({ onSelect }) {
 
       {error && <div className="text-xs text-amber-400">{error}</div>}
 
-      {results.length === 0 && history.length > 0 && (
+      {!showResults && history.length > 0 && (
         <div className="rounded-xl border border-white/5 bg-surface-900/40 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 bg-surface-800/70 border-b border-white/5">
             <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -198,7 +261,7 @@ export default function MarketLookup({ onSelect }) {
         </div>
       )}
 
-      {results.length > 0 && (
+      {showResults && results.length > 0 && (
         <div className="space-y-2">
           {availableCountries.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -241,6 +304,7 @@ export default function MarketLookup({ onSelect }) {
             ) : (
               filteredResults.map((result) => {
                 const isAmbiguous = ambiguousDescriptions.has((result.description ?? "").toUpperCase());
+                const quote = quotesBySymbol[(result.symbol ?? "").toUpperCase()];
                 return (
                   <button
                     key={result.symbol}
@@ -279,6 +343,23 @@ export default function MarketLookup({ onSelect }) {
                           )}
                         </div>
                       </div>
+                      {quote && (
+                        <div className="flex-shrink-0 text-right">
+                          <div className="text-sm font-semibold text-white tabular-nums">
+                            {quote.price.toFixed(2)}
+                          </div>
+                          {quote.changePct !== null && (
+                            <div
+                              className={`text-[11px] tabular-nums ${
+                                quote.changePct >= 0 ? "text-emerald-400" : "text-rose-400"
+                              }`}
+                            >
+                              {quote.changePct >= 0 ? "+" : ""}
+                              {quote.changePct.toFixed(2)}%
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
