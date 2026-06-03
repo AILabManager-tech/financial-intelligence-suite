@@ -106,7 +106,13 @@ export default function MarketLookup({ onSelect }) {
     try {
       const payload = await fetchLiveQuotes([result.symbol]);
       const quote = normalizeQuote(payload.quotes[0]);
-      if (!quote) throw new Error("Quote indisponible pour ce symbole.");
+      if (!quote) {
+        const market = result.exchange ?? "ce marché";
+        const where = result.country ? ` (${result.country})` : "";
+        throw new Error(
+          `Cotation indisponible pour ${result.symbol} — ${market}${where} n'est pas couvert par notre source de données gratuite.`,
+        );
+      }
       onSelect(buildLookupAsset(result, quote));
       setStatus("ready");
     } catch (quoteError) {

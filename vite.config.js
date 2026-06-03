@@ -364,9 +364,9 @@ export default defineConfig(({ mode }) => {
                 }
               },
             )
-            const quotes = value.quotes
-
-            response.statusCode = quotes.length ? 200 : 502
+            // Always 200: an uncovered symbol is carried per-symbol in `errors`,
+            // not a 502 outage (parity with api/_handlers/quotes.js).
+            response.statusCode = 200
             response.setHeader('Content-Type', 'application/json')
             response.setHeader('Cache-Control', 'no-store')
           response.end(JSON.stringify({

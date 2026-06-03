@@ -103,7 +103,11 @@ export default async function handler(request, response) {
     .filter((result) => result.status === "rejected")
     .map((result) => result.reason.message);
 
-  sendJson(response, quotes.length ? 200 : 502, {
+  // Always 200 when symbols were provided: the response is structured
+  // (quotes + per-symbol errors). An uncovered symbol (e.g. a Canadian listing
+  // the free data source does not quote) is a missing datum, not an endpoint
+  // outage — the client renders it as "unavailable" rather than a global error.
+  sendJson(response, 200, {
     source: quotes.some((quote) => quote.source === PRIMARY_SOURCE) ? PRIMARY_SOURCE : FALLBACK_SOURCE,
     fetchedAt: new Date().toISOString(),
     quotes,
