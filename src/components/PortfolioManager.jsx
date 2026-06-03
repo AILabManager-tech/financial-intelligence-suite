@@ -91,6 +91,8 @@ export default function PortfolioManager({ assets, onSavePosition, onRemoveAsset
             type="file"
             accept=".csv,text/csv"
             className="sr-only"
+            aria-label="Choisir un fichier CSV de courtier à importer"
+            tabIndex={-1}
             onChange={handleFileChange}
           />
           <button
