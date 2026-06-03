@@ -640,7 +640,8 @@ export default defineConfig(({ mode }) => {
               cache: { status: cacheStatus, ttlMs: cacheTtlMs.macro, expiresAt: new Date(expiresAt).toISOString() },
             })
           } catch (error) {
-            sendJson(response, 502, { error: error.message, source: 'fred.stlouisfed.org' })
+            // Degrade to 200 with an empty payload (parity with api/_handlers/macro.js).
+            sendJson(response, 200, { source: 'fred.stlouisfed.org', fetchedAt: new Date().toISOString(), indicators: [], unavailable: true, note: error.message })
           }
         })
 

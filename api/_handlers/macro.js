@@ -21,6 +21,15 @@ export default async function handler(request, response) {
     cached = { value, expiresAt: now + TTL_MS };
     sendJson(response, 200, { ...value, cache: { status: "miss", ttlMs: TTL_MS, expiresAt: new Date(now + TTL_MS).toISOString() } });
   } catch (error) {
-    sendJson(response, 502, { error: error.message, source: "fred.stlouisfed.org" });
+    // FRED unavailable (no key, upstream down): degrade to a structured empty
+    // payload (200) so the UI shows an honest "indisponible" state instead of a
+    // console 502. Never fabricate values.
+    sendJson(response, 200, {
+      source: "fred.stlouisfed.org",
+      fetchedAt: new Date().toISOString(),
+      indicators: [],
+      unavailable: true,
+      note: error.message,
+    });
   }
 }

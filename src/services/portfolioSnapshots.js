@@ -1,3 +1,5 @@
+import { devBackendAvailable } from "./devBackend";
+
 // Snapshots are mandate-scoped in dev SQLite (P3.2c). The 'default' mandate uses
 // the bare endpoint (back-compat); others append ?portfolio=<id>.
 function snapshotQuery(portfolioId) {
@@ -7,6 +9,7 @@ function snapshotQuery(portfolioId) {
 }
 
 export async function fetchPortfolioSnapshots(limit = 120, portfolioId = "default") {
+  if (!devBackendAvailable) return []; // prod: snapshots are a dev-only SQLite mirror
   const response = await fetch(
     `/api/portfolio/snapshots?limit=${encodeURIComponent(limit)}${snapshotQuery(portfolioId)}`,
     { headers: { accept: "application/json" } },
@@ -21,6 +24,7 @@ export async function fetchPortfolioSnapshots(limit = 120, portfolioId = "defaul
 }
 
 export async function savePortfolioSnapshot(snapshot, portfolioId = "default") {
+  if (!devBackendAvailable) return snapshot; // prod: no SQLite mirror, no-op
   const query = portfolioId && portfolioId !== "default"
     ? `?portfolio=${encodeURIComponent(portfolioId)}`
     : "";

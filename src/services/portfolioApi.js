@@ -1,3 +1,5 @@
+import { devBackendAvailable } from "./devBackend";
+
 const PORTFOLIO_ENDPOINT = "/api/portfolio";
 const PORTFOLIOS_ENDPOINT = "/api/portfolios";
 
@@ -10,6 +12,7 @@ function scoped(url, portfolioId) {
 }
 
 export async function fetchPortfolioFromApi(portfolioId = "default") {
+  if (!devBackendAvailable) return []; // prod: localStorage is the source of truth
   const response = await fetch(scoped(PORTFOLIO_ENDPOINT, portfolioId));
   if (!response.ok) {
     throw new Error(`Portfolio API unavailable (${response.status})`);
@@ -20,6 +23,7 @@ export async function fetchPortfolioFromApi(portfolioId = "default") {
 }
 
 export async function savePortfolioToApi(assets, portfolioId = "default") {
+  if (!devBackendAvailable) return assets; // prod: no SQLite mirror, no-op
   const response = await fetch(scoped(PORTFOLIO_ENDPOINT, portfolioId), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -36,6 +40,7 @@ export async function savePortfolioToApi(assets, portfolioId = "default") {
 
 // --- Mandate metadata (dev SQLite parity, P3.2c) ---------------------------
 export async function fetchPortfoliosFromApi() {
+  if (!devBackendAvailable) return []; // prod: localStorage is the source of truth
   const response = await fetch(PORTFOLIOS_ENDPOINT);
   if (!response.ok) {
     throw new Error(`Portfolios API unavailable (${response.status})`);
@@ -45,6 +50,7 @@ export async function fetchPortfoliosFromApi() {
 }
 
 export async function savePortfolioMandateToApi(mandate) {
+  if (!devBackendAvailable) return mandate; // prod: no SQLite mirror, no-op
   const response = await fetch(PORTFOLIOS_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -57,6 +63,7 @@ export async function savePortfolioMandateToApi(mandate) {
 }
 
 export async function deletePortfolioMandateFromApi(id) {
+  if (!devBackendAvailable) return id; // prod: no SQLite mirror, no-op
   const response = await fetch(`${PORTFOLIOS_ENDPOINT}?id=${encodeURIComponent(id)}`, {
     method: "DELETE",
   });

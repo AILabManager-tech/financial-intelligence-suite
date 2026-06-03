@@ -2,6 +2,8 @@
 // the 'default' mandate uses the bare endpoint, others append ?portfolio=<id>.
 // Dev SQLite is the mirror; localStorage (transactionStore) stays the durable
 // fallback, exactly like positions.
+import { devBackendAvailable } from "./devBackend";
+
 const TRANSACTIONS_ENDPOINT = "/api/transactions";
 
 function scoped(portfolioId) {
@@ -11,6 +13,7 @@ function scoped(portfolioId) {
 }
 
 export async function fetchTransactionsFromApi(portfolioId = "default") {
+  if (!devBackendAvailable) return []; // prod: localStorage is the source of truth
   const response = await fetch(scoped(portfolioId));
   if (!response.ok) {
     throw new Error(`Transactions API unavailable (${response.status})`);
@@ -20,6 +23,7 @@ export async function fetchTransactionsFromApi(portfolioId = "default") {
 }
 
 export async function saveTransactionsToApi(transactions, portfolioId = "default") {
+  if (!devBackendAvailable) return transactions; // prod: no SQLite mirror, no-op
   const response = await fetch(scoped(portfolioId), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
