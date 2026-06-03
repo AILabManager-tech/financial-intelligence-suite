@@ -1,22 +1,19 @@
 # User Guide — Financial Intelligence Suite
-### Version détaillée
-
-> Manuel complet, des bases à l'usage avancé. Public débutant en finance, ton pédagogique.
-> Statut : **bêta** — première version, révisée au fil des retours d'usage.
-> Version du guide : 2026-06-03. Application en ligne : https://devlabai.tech
+### Version intermédiaire (standard)
 >
-> 📄 **Besoin d'une référence rapide ?** Voir l'aide-mémoire : [`USER_GUIDE_CHEATSHEET.md`](./USER_GUIDE_CHEATSHEET.md).
+> Version du guide : 2026-06-03. Application en ligne : https://devlabai.tech
 
 Ce manuel explique **chaque** fonction du logiciel : à quoi elle sert, où elle se trouve,
 et surtout **comment lire ce qu'elle affiche**. Aucune connaissance financière préalable
 n'est supposée — les termes sont définis au fil du texte, et regroupés dans le glossaire final.
 
-Deux formats de ce guide existent :
+**Ce guide existe en trois formats** — même périmètre, profondeur croissante :
 
-- **Version détaillée** (ce document) — chaque fonction expliquée avec son utilité, ce qu'elle
-  affiche et comment l'interpréter. À lire de bout en bout ou à consulter par chapitre.
-- **Aide-mémoire** (`USER_GUIDE_CHEATSHEET.md`) — une page condensée, sous forme de tableaux, pour
-  retrouver une fonction d'un coup d'œil une fois le logiciel pris en main.
+| Format | Fichier | Pour quoi |
+|---|---|---|
+| **Détaillé** (pas-à-pas) | [`USER_GUIDE_DETAILED.md`](./USER_GUIDE_DETAILED.md) | Première prise en main, chaque étape décrite |
+| **Intermédiaire** (ce document) | `USER_GUIDE.md` | Comprendre chaque fonction et comment la lire |
+| **Aide-mémoire** (tables) | [`USER_GUIDE_CHEATSHEET.md`](./USER_GUIDE_CHEATSHEET.md) | Retrouver une fonction d'un coup d'œil |
 
 ---
 
@@ -59,7 +56,7 @@ hypothèse, jamais comme une prédiction.
 
 ### 1.4 — L'interface et les huit onglets
 
-En haut de l'écran se trouve une barre de navigation avec les onglets principaux :
+En haut de l'écran se trouve une barre de navigation avec les **six onglets principaux** :
 
 | Onglet | Rôle |
 |---|---|
@@ -69,8 +66,14 @@ En haut de l'écran se trouve une barre de navigation avec les onglets principau
 | **Transactions** (`/transactions`) | Journal de vos achats, ventes, dividendes et frais |
 | **Rapport** (`/report`) | Rapport imprimable par mandat |
 | **Paramètres** (`/settings`) | Personnalisation complète de l'espace de travail |
-| **Mentions légales** (`/legal`) | Politique de confidentialité et informations légales |
-| **Connexion** (`/login`) | Compte utilisateur (optionnel, désactivé par défaut) |
+
+À droite de ces onglets se trouvent aussi : le **sélecteur de mandat** (pour changer de
+portefeuille), le **sélecteur de thème**, et un **indicateur d'état du marché** (avec bouton de
+rafraîchissement). Deux pages supplémentaires existent hors de cette barre :
+
+- **Mentions légales** (`/legal`) — accessible par les **liens du pied de page**.
+- **Connexion** (`/login`) — n'apparaît dans le header **que si** la couche de comptes est activée
+  (désactivée par défaut ; voir partie 13).
 
 Quand vous cliquez sur une valeur (depuis la recherche, la watchlist ou le portefeuille), vous
 ouvrez sa **fiche** : une page dédiée empilant tous les panneaux d'analyse de cette valeur.

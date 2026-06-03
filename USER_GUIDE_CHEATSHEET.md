@@ -1,15 +1,21 @@
 # User Guide — Financial Intelligence Suite
 ### Aide-mémoire
 
-> Référence rapide, sous forme de tableaux. Pour les explications complètes, voir la
-> [version détaillée](./USER_GUIDE.md).
-> Statut : **bêta** · Version : 2026-06-03 · App : https://devlabai.tech
+> Référence rapide, sous forme de tableaux. Version : 2026-06-03 · App : https://devlabai.tech
+
+**Trois formats de ce guide** — même périmètre, profondeur croissante :
+
+| Format | Fichier | Pour quoi |
+|---|---|---|
+| **Détaillé** (pas-à-pas) | [`USER_GUIDE_DETAILED.md`](./USER_GUIDE_DETAILED.md) | Première prise en main |
+| **Intermédiaire** | [`USER_GUIDE.md`](./USER_GUIDE.md) | Comprendre chaque fonction |
+| **Aide-mémoire** (ce document) | `USER_GUIDE_CHEATSHEET.md` | Retrouver une fonction vite |
 
 ---
 
-## Les 8 onglets
+## Navigation : 6 onglets + 2 pages annexes
 
-| Onglet | Pour quoi faire |
+| Onglet (barre du haut) | Pour quoi faire |
 |---|---|
 | **Tableau de bord** (`/`) | Vue d'ensemble du mandat, panneaux personnalisables |
 | **Watchlist** (`/watchlist`) | Listes de surveillance nommées (sans détenir les titres) |
@@ -17,9 +23,13 @@
 | **Transactions** (`/transactions`) | Journal achats / ventes / dividendes / frais |
 | **Rapport** (`/report`) | Document imprimable (PDF) par mandat |
 | **Paramètres** (`/settings`) | Visibilité, ordre, colonnage, profils, thèmes |
-| **Mentions légales** (`/legal`) | Confidentialité, consentement (Loi 25) |
-| **Connexion** (`/login`) | Compte optionnel (désactivé par défaut) |
 
+| Page annexe | Accès |
+|---|---|
+| **Mentions légales** (`/legal`) | Liens du **pied de page** |
+| **Connexion** (`/login`) | Header, **seulement si** les comptes sont activés (off par défaut) |
+
+> Dans le header aussi : **sélecteur de mandat**, **sélecteur de thème**, **état du marché**.
 > Cliquer sur un titre ouvre sa **fiche** : tous les panneaux d'analyse de cette valeur.
 
 ---
