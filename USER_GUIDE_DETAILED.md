@@ -15,6 +15,9 @@ Cette version reprend les mêmes fonctions que la version intermédiaire, mais s
 | **Intermédiaire** | [`USER_GUIDE.md`](./USER_GUIDE.md) | Comprendre chaque fonction et comment la lire |
 | **Aide-mémoire** (tables) | [`USER_GUIDE_CHEATSHEET.md`](./USER_GUIDE_CHEATSHEET.md) | Retrouver une fonction d'un coup d'œil |
 
+> Les trois formats sont aussi consultables **dans l'application**, onglet **Guide** (`/guide`),
+> avec un sélecteur de niveau et un bouton « Imprimer / PDF ».
+
 > **Convention** : les étapes sont notées ▶ et numérotées. Les encadrés « 👀 À l'écran » décrivent
 > ce que vous devriez voir, et « ⚠️ Attention » signale les pièges. Les emplacements exacts de
 > certains boutons peuvent évoluer (logiciel en bêta) ; la logique des étapes, elle, reste valable.
@@ -47,7 +50,7 @@ sur « J'ai compris » pour le fermer (ou « En savoir plus » pour lire la poli
 confidentialité). Ce bandeau est un avis, pas un piège publicitaire.
 ▶ **3.** Repérez la **barre du haut** (le header). De gauche à droite, vous y trouvez :
 
-- les **six onglets** : `Tableau de bord` · `Watchlist` · `Démo` · `Transactions` · `Rapport` · `Paramètres` ;
+- les **sept onglets** : `Tableau de bord` · `Watchlist` · `Démo` · `Transactions` · `Rapport` · `Paramètres` · `Guide` ;
 - le **sélecteur de mandat** (le portefeuille actif) ;
 - le **sélecteur de thème** (couleurs) ;
 - l'**indicateur d'état du marché**, avec un bouton pour rafraîchir les cotations.

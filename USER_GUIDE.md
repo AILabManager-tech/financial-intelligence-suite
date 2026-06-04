@@ -15,6 +15,10 @@ n'est supposée — les termes sont définis au fil du texte, et regroupés dans
 | **Intermédiaire** (ce document) | `USER_GUIDE.md` | Comprendre chaque fonction et comment la lire |
 | **Aide-mémoire** (tables) | [`USER_GUIDE_CHEATSHEET.md`](./USER_GUIDE_CHEATSHEET.md) | Retrouver une fonction d'un coup d'œil |
 
+> Les trois formats sont aussi consultables **directement dans l'application**, onglet **Guide**
+> (`/guide`) : un sélecteur bascule entre Détaillé / Intermédiaire / Aide-mémoire, et le bouton
+> « Imprimer / PDF » exporte le niveau affiché.
+
 ---
 
 ## Partie 1 — Concepts et prise en main
@@ -56,7 +60,7 @@ hypothèse, jamais comme une prédiction.
 
 ### 1.4 — L'interface et les huit onglets
 
-En haut de l'écran se trouve une barre de navigation avec les **six onglets principaux** :
+En haut de l'écran se trouve une barre de navigation avec les **sept onglets principaux** :
 
 | Onglet | Rôle |
 |---|---|
@@ -66,6 +70,7 @@ En haut de l'écran se trouve une barre de navigation avec les **six onglets pri
 | **Transactions** (`/transactions`) | Journal de vos achats, ventes, dividendes et frais |
 | **Rapport** (`/report`) | Rapport imprimable par mandat |
 | **Paramètres** (`/settings`) | Personnalisation complète de l'espace de travail |
+| **Guide** (`/guide`) | Ce manuel, directement dans l'application (3 niveaux de détail, imprimable) |
 
 À droite de ces onglets se trouvent aussi : le **sélecteur de mandat** (pour changer de
 portefeuille), le **sélecteur de thème**, et un **indicateur d'état du marché** (avec bouton de
@@ -644,6 +649,7 @@ Les droits associés (accès, rectification, retrait, portabilité) et les recou
 - **Transactions** : journal des opérations, profit réalisé, lots.
 - **Rapport** : document imprimable par mandat + commentaire daté.
 - **Paramètres** : visibilité, colonnage, ordre, agencement, profils, thèmes.
+- **Guide** : ce manuel dans l'application, aux trois niveaux de détail, imprimable.
 - **Mentions légales** : confidentialité, consentement.
 - **Connexion** : compte optionnel.
 - **Fiche d'une valeur** (en cliquant un titre) : les seize panneaux d'analyse de la partie 3.

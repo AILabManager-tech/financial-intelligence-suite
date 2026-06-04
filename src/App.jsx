@@ -154,6 +154,7 @@ const DASHBOARD_FEATURE_COMPONENTS = {
 applyTheme(loadTheme());
 
 const IntelligenceCard = lazy(() => import("./components/IntelligenceCard"));
+const GuidePage = lazy(() => import("./components/GuidePage"));
 
 function CardSkeleton() {
   return (
@@ -273,7 +274,8 @@ export default function App() {
   const isReportRoute = currentPath === "/report";
   const isLegalRoute = currentPath === "/legal";
   const isLoginRoute = currentPath === "/login";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isLegalRoute && !isLoginRoute;
+  const isGuideRoute = currentPath === "/guide";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isLegalRoute && !isLoginRoute && !isGuideRoute;
   const [consentOpen, setConsentOpen] = useState(() => !hasValidConsent());
   const layout = useLayout();
   const { authEnabled, user: authUser } = useAuth();
@@ -769,7 +771,7 @@ export default function App() {
 
   // Settings and the demo simulator don't depend on live quotes — keep them
   // reachable while prices load.
-  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute) {
+  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isGuideRoute) {
     return <MarketBootScreen status={marketStatus} />;
   }
 
@@ -839,6 +841,13 @@ export default function App() {
                 >
                   Paramètres
                 </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo("/guide")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isGuideRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                >
+                  Guide
+                </button>
               </div>
               <PortfolioSelector
                 state={portfolioList}
@@ -872,6 +881,10 @@ export default function App() {
           <AuthPanel />
         ) : isLegalRoute ? (
           <LegalPage />
+        ) : isGuideRoute ? (
+          <Suspense fallback={<CardSkeleton />}>
+            <GuidePage />
+          </Suspense>
         ) : isReportRoute ? (
           <MandateReportView
             mandate={getActivePortfolio(portfolioList)}
@@ -1003,6 +1016,14 @@ export default function App() {
             Financial Intelligence Suite v1.0 — Mode factuel
           </p>
           <div className="mt-2 flex items-center justify-center gap-3 text-xs">
+            <button
+              type="button"
+              onClick={() => navigateTo("/guide")}
+              className="text-slate-500 hover:text-slate-300 underline cursor-pointer"
+            >
+              Guide d'utilisation
+            </button>
+            <span className="text-slate-700" aria-hidden="true">·</span>
             <button
               type="button"
               onClick={() => navigateTo("/legal")}

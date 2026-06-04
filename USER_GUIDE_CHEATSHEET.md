@@ -11,9 +11,11 @@
 | **Intermédiaire** | [`USER_GUIDE.md`](./USER_GUIDE.md) | Comprendre chaque fonction |
 | **Aide-mémoire** (ce document) | `USER_GUIDE_CHEATSHEET.md` | Retrouver une fonction vite |
 
+> Aussi **dans l'application**, onglet **Guide** (`/guide`) : sélecteur de niveau + « Imprimer / PDF ».
+
 ---
 
-## Navigation : 6 onglets + 2 pages annexes
+## Navigation : 7 onglets + 2 pages annexes
 
 | Onglet (barre du haut) | Pour quoi faire |
 |---|---|
@@ -23,6 +25,7 @@
 | **Transactions** (`/transactions`) | Journal achats / ventes / dividendes / frais |
 | **Rapport** (`/report`) | Document imprimable (PDF) par mandat |
 | **Paramètres** (`/settings`) | Visibilité, ordre, colonnage, profils, thèmes |
+| **Guide** (`/guide`) | Ce manuel dans l'app (3 niveaux, imprimable) |
 
 | Page annexe | Accès |
 |---|---|
