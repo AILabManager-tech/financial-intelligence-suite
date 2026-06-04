@@ -19,6 +19,7 @@ import { savePortfolioAssets, STORAGE_KEY as POS_KEY } from "../services/portfol
 import { DEMO_PREFIX, DEMO_PROFILES } from "./profils.seed";
 import { buildDemoSnapshots } from "./demoSnapshots";
 import { saveDemoSnapshots, removeDemoSnapshots } from "./demoSnapshotStore";
+import { resolveDemoProfiles } from "./priceResolver";
 
 const EPS = 1e-9;
 
@@ -37,6 +38,10 @@ export function expandTransactions(profile) {
   for (const t of raw) {
     const normalized = normalizeTransaction({ ...t, date: t.date ?? profile.dateDebut });
     if (!normalized) continue;
+    // A buy/sell with no positive price (e.g. price omitted and unresolved by
+    // the history resolver) would derive a 0-cost position — a fabrication.
+    // Drop it instead. Resolve the price (resolveProfilePrices) to keep it.
+    if ((normalized.type === "buy" || normalized.type === "sell") && !(normalized.price > 0)) continue;
     out.push({ ...normalized, id: `t${++n}` });
   }
   return out;
@@ -120,6 +125,18 @@ export function applyDemoSeed(profiles = DEMO_PROFILES, { method = "fifo" } = {}
     saveDemoSnapshots(snapshots, mandate.id);
   }
   return demoMandates.map((m) => m.id);
+}
+
+// Async variant: resolve any profiles that omit a transaction `price` from real
+// history first (via the injected `fetchHistory`), then seed. Profiles with
+// explicit prices do zero network work. Falls back to the plain sync seed when
+// no fetcher is provided (offline → price-less buys simply drop).
+export async function applyDemoSeedResolved({ fetchHistory } = {}, { method = "fifo" } = {}) {
+  const profiles =
+    typeof fetchHistory === "function"
+      ? await resolveDemoProfiles(DEMO_PROFILES, { fetchHistory })
+      : DEMO_PROFILES;
+  return applyDemoSeed(profiles, { method });
 }
 
 // Purge demo mandates and their namespaced keys; never touches real mandates.

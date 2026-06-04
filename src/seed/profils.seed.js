@@ -171,6 +171,22 @@ const DECLARED_PROFILES = [
       { type: "fee", symbol: "BRK.A", date: "2024-01-02", amount: 19.95 },
     ],
   },
+
+  // 9 — RESOLVER : prix d'achat OMIS → résolus depuis l'historique réel au
+  // chargement (dates récentes, couvertes par le free tier). Hors ligne / hors
+  // couverture, ces achats sont droppés (jamais de position coût-0 fabriquée).
+  {
+    id: "demo-resolver",
+    name: "Démo — prix résolus depuis l'historique",
+    client: "—",
+    accountType: "taxable",
+    baseCurrency: "USD",
+    dateDebut: "2025-09-15",
+    transactions: [
+      { type: "buy", symbol: "AAPL", date: "2025-09-15", quantity: 25 }, // price omis → résolu
+      { type: "buy", symbol: "MSFT", date: "2025-10-01", quantity: 12 }, // price omis → résolu
+    ],
+  },
 ];
 
 // Final list = hand-declared + programmatically generated (50+ positions,

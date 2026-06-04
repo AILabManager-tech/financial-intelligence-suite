@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { vi } from "vitest";
 import {
   applyDemoSeed,
+  applyDemoSeedResolved,
   buildSeedPlan,
   derivePositions,
   expandTransactions,
@@ -42,6 +44,18 @@ describe("expandTransactions", () => {
     });
     expect(out).toHaveLength(1);
     expect(out[0].symbol).toBe("OK");
+  });
+
+  it("drops a buy/sell with no positive price (omitted & unresolved) but keeps dividends", () => {
+    const out = expandTransactions({
+      dateDebut: "2024-01-01",
+      transactions: [
+        { type: "buy", symbol: "AAPL", quantity: 10 }, // price omitted → dropped
+        { type: "buy", symbol: "MSFT", quantity: 5, price: 400 }, // kept
+        { type: "dividend", symbol: "AAPL", amount: 12 }, // kept (no price needed)
+      ],
+    });
+    expect(out.map((t) => `${t.type}:${t.symbol}`)).toEqual(["buy:MSFT", "dividend:AAPL"]);
   });
 });
 
@@ -170,6 +184,21 @@ describe("applyDemoSeed / resetDemoSeed", () => {
     expect(loadPortfolioAssets([], "demo-marc-tremblay").length).toBe(4);
     // reconstituted snapshots are persisted per demo mandate
     expect(loadDemoSnapshots("demo-sophie-belanger").length).toBeGreaterThan(0);
+  });
+
+  it("resolves omitted prices from history before seeding (applyDemoSeedResolved)", async () => {
+    // demo-resolver omits its buy prices; the sync plan drops them (0 positions).
+    const planEmpty = buildSeedPlan().find((p) => p.mandate.id === "demo-resolver");
+    expect(planEmpty.positions).toEqual([]);
+
+    // With a history fetcher, the prices fill and the positions seed.
+    const fetchHistory = vi.fn(async (symbol) => ({
+      points: [{ date: "2025-09-01", close: symbol === "AAPL" ? 230 : 510 }],
+    }));
+    await applyDemoSeedResolved({ fetchHistory });
+    const positions = loadPortfolioAssets([], "demo-resolver");
+    expect(positions.map((p) => p.symbol).sort()).toEqual(["AAPL", "MSFT"]);
+    expect(positions.find((p) => p.symbol === "AAPL").position.averageCost).toBe(230);
   });
 
   it("is idempotent — running twice does not duplicate mandates", () => {

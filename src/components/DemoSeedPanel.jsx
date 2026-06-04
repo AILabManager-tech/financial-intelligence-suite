@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FlaskConical, Database, Eraser } from "lucide-react";
-import { applyDemoSeed, resetDemoSeed } from "../seed/seedRunner";
+import { applyDemoSeedResolved, resetDemoSeed } from "../seed/seedRunner";
+import { fetchPriceHistory } from "../services/priceHistory";
 
 // DEV-only tool: inject / remove fake demo portfolios to exercise the UI.
 // Rendered only under import.meta.env.DEV (hidden in production). Writing to
@@ -9,10 +10,14 @@ export default function DemoSeedPanel() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
-  const run = (action, label) => {
+  // Profiles that omit a transaction price get it filled from real history
+  // (free-tier coverage; uncovered dates simply drop). 1825 days = max reach.
+  const seedFetchHistory = (symbol) => fetchPriceHistory(symbol, { days: 1825 });
+
+  const run = async (action, label) => {
     setBusy(true);
     try {
-      const ids = action();
+      const ids = await action();
       setMessage(`${ids.length} portefeuille(s) de démo ${label}. Rechargement…`);
       setTimeout(() => window.location.reload(), 500);
     } catch (error) {
@@ -41,7 +46,7 @@ export default function DemoSeedPanel() {
         <button
           type="button"
           disabled={busy}
-          onClick={() => run(applyDemoSeed, "chargé(s)")}
+          onClick={() => run(() => applyDemoSeedResolved({ fetchHistory: seedFetchHistory }), "chargé(s)")}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-50 cursor-pointer text-xs font-medium"
         >
           <Database className="w-3.5 h-3.5" aria-hidden="true" />
