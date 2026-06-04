@@ -27,9 +27,12 @@
 //   (resolver), sinon utilisé tel quel. Ici les prix sont FOURNIS (déterminisme +
 //   pas de dépendance réseau ; dates anciennes non couvertes par le free tier).
 
+import { buildGeneratedProfiles } from "./profileGenerators";
+
 export const DEMO_PREFIX = "demo-";
 
-export const DEMO_PROFILES = [
+// Hand-declared profiles (realistic small portfolios + edge cases).
+const DECLARED_PROFILES = [
   // 1 — Sur-concentration tech → teste Concentration & diversification.
   {
     id: "demo-marc-tremblay",
@@ -169,3 +172,8 @@ export const DEMO_PROFILES = [
     ],
   },
 ];
+
+// Final list = hand-declared + programmatically generated (50+ positions,
+// long DCA history). Generators are deterministic (seeded), so this is stable
+// across runs. Their ids carry the `demo-` prefix → reset removes them too.
+export const DEMO_PROFILES = [...DECLARED_PROFILES, ...buildGeneratedProfiles()];

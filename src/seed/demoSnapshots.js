@@ -18,6 +18,8 @@
 // intra-period wiggle so volatility/drawdown have signal. Deterministic: seeded
 // from the profile id + symbol + day, no Date.now / Math.random.
 
+import { hashFloat } from "./seedRandom";
+
 // Fixed "as of" date so the demo is reproducible across runs (no clock read).
 export const DEMO_AS_OF = "2026-05-30";
 
@@ -36,25 +38,9 @@ function isoAddDays(iso, days) {
   return d.toISOString().slice(0, 10);
 }
 
-// FNV-1a string hash → uint32, seeded PRNG (mulberry32 step). Deterministic.
-function hash32(str) {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i += 1) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function rand01(seed) {
-  let t = (seed + 0x6d2b79f5) >>> 0;
-  t = Math.imul(t ^ (t >>> 15), t | 1);
-  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-}
-
+// Independent deterministic intra-period wiggle per (profile, symbol, day).
 function noiseAt(profileId, symbol, day) {
-  return (rand01(hash32(`${profileId}|${symbol}|${day}`)) - 0.5) * 2 * NOISE_AMPLITUDE;
+  return (hashFloat(`${profileId}|${symbol}|${day}`) - 0.5) * 2 * NOISE_AMPLITUDE;
 }
 
 function round2(value) {

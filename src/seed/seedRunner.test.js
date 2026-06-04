@@ -88,6 +88,21 @@ describe("derivePositions", () => {
     const tx = [{ type: "buy", symbol: "X", date: "2024-01-01", quantity: 10, price: 10 }];
     expect(derivePositions(tx, "fifo", { X: "n/a" })[0].price).toBe(0);
   });
+
+  it("applies sector/name from the meta map, defaulting to Démo/symbol", () => {
+    const tx = [
+      { type: "buy", symbol: "AAPL", date: "2024-01-01", quantity: 1, price: 100 },
+      { type: "buy", symbol: "ZZZ", date: "2024-01-01", quantity: 1, price: 100 },
+    ];
+    const meta = { AAPL: { sector: "Technologie — Matériel", name: "Apple Inc." } };
+    const positions = derivePositions(tx, "fifo", {}, meta);
+    const aapl = positions.find((p) => p.symbol === "AAPL");
+    const zzz = positions.find((p) => p.symbol === "ZZZ");
+    expect(aapl.sector).toBe("Technologie — Matériel");
+    expect(aapl.name).toBe("Apple Inc.");
+    expect(zzz.sector).toBe("Démo");
+    expect(zzz.name).toBe("ZZZ");
+  });
 });
 
 describe("buildSeedPlan", () => {
@@ -126,6 +141,19 @@ describe("buildSeedPlan", () => {
     expect(sophie.snapshots.every((s) => s.reconstructed === true)).toBe(true);
     const empty = plan.find((p) => p.mandate.id === "demo-edge-vide");
     expect(empty.snapshots).toEqual([]);
+  });
+
+  it("includes the generated large + long-history mandates with positions and snapshots", () => {
+    const plan = buildSeedPlan(DEMO_PROFILES);
+    const large = plan.find((p) => p.mandate.id === "demo-gen-large");
+    expect(large.positions.length).toBeGreaterThanOrEqual(50);
+    expect(new Set(large.positions.map((p) => p.sector)).size).toBeGreaterThan(5);
+    expect(large.snapshots.length).toBeGreaterThan(0);
+
+    const history = plan.find((p) => p.mandate.id === "demo-gen-history");
+    expect(history.transactions.length).toBeGreaterThan(50);
+    // long span → many reconstituted points
+    expect(history.snapshots.length).toBeGreaterThan(100);
   });
 });
 
