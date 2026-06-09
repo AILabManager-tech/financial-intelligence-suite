@@ -16,6 +16,7 @@ import { fetchSecFilings } from './server/secFilings.js'
 import { fetchPeers } from './server/peers.js'
 import { fetchFxRates } from './server/fx.js'
 import { createRateLimiter, clientIp } from './server/rateLimiter.js'
+import { toStooqSymbol } from './server/stooqSymbol.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const fallbackQuoteSource = 'stooq.com'
@@ -89,10 +90,6 @@ function readJsonBody(request) {
   })
 }
 
-function toStooqSymbol(symbol) {
-  return `${symbol.replace('.', '-').toLowerCase()}.us`
-}
-
 function normalizeStooqQuote(symbol, payload) {
   const rawQuote = payload?.symbols?.[0]
   const close = Number(rawQuote?.close)
@@ -152,7 +149,13 @@ async function fetchQuote(symbol) {
       asOf: payload.t ? new Date(payload.t * 1000).toISOString() : undefined,
     }
   } catch {
-    const fallbackResponse = await fetch(`https://stooq.com/q/l/?s=${toStooqSymbol(symbol)}&f=sd2t2ohlcvn&h&e=json`, {
+    const stooqSymbol = toStooqSymbol(symbol)
+    if (!stooqSymbol) {
+      // Non-US listing: the free fallback can't quote it. Report honestly
+      // instead of firing a fabricated ".us" request that always 404s.
+      throw new Error(`${symbol}: non couvert par la source de données gratuite`)
+    }
+    const fallbackResponse = await fetch(`https://stooq.com/q/l/?s=${stooqSymbol}&f=sd2t2ohlcvn&h&e=json`, {
       headers: { accept: 'application/json' },
     })
     if (!fallbackResponse.ok) {
