@@ -37,6 +37,7 @@ import {
 } from "./services/portfolioListStore";
 import PortfolioSelector from "./components/PortfolioSelector";
 import { fetchPortfolioSnapshots, savePortfolioSnapshot } from "./services/portfolioSnapshots";
+import { loadStoredSnapshots, appendStoredSnapshot } from "./services/snapshotStore";
 import { isDemoMandateId, loadDemoSnapshots } from "./seed/demoSnapshotStore";
 import {
   isWatchlisted,
@@ -330,17 +331,16 @@ export default function App() {
       return () => {};
     }
 
+    // localStorage holds the durable accrued series (the source of truth in
+    // prod). The dev-only SQLite mirror, when it returns data, supersedes it.
+    setPortfolioSnapshots(loadStoredSnapshots(activeId));
     fetchPortfolioSnapshots(120, activeId)
       .then((snapshots) => {
-        if (active) {
+        if (active && snapshots.length > 0) {
           setPortfolioSnapshots(snapshots);
         }
       })
-      .catch(() => {
-        if (active) {
-          setPortfolioSnapshots([]);
-        }
-      });
+      .catch(() => {});
 
     return () => {
       active = false;
@@ -388,9 +388,12 @@ export default function App() {
     if (isDemoMandateId(id)) {
       setPortfolioSnapshots(loadDemoSnapshots(id));
     } else {
+      setPortfolioSnapshots(loadStoredSnapshots(id));
       fetchPortfolioSnapshots(120, id)
-        .then(setPortfolioSnapshots)
-        .catch(() => setPortfolioSnapshots([]));
+        .then((snapshots) => {
+          if (snapshots.length > 0) setPortfolioSnapshots(snapshots);
+        })
+        .catch(() => {});
     }
   }, [persistPortfolioList]);
 
@@ -636,28 +639,24 @@ export default function App() {
         // chaque tick. Valeur RÉELLE (positions × cotations), jamais fabriquée ;
         // pas de backfill des jours passés (les quantités ont changé).
         if (snapshotDayRef.current.get(activeId) !== captureDay) {
-          savePortfolioSnapshot({
+          const snapshot = {
             capturedAt: payload.fetchedAt,
+            snapshotDate: captureDay,
             totalMarketValue: analytics.totalMarketValue,
             totalCost: analytics.totalCost,
             unrealizedPnl: analytics.unrealizedPnl,
             unrealizedPnlPct: analytics.unrealizedPnlPct,
             positionsCount: mergedAssets.length,
             liveQuotesCount: liveCount,
-          }, activeId)
-            .then((snapshot) => {
-              snapshotDayRef.current.set(activeId, captureDay);
-              setPortfolioSnapshots((current) => {
-                const day = (snapshot.capturedAt ?? "").slice(0, 10);
-                const withoutToday = current.filter(
-                  (entry) => (entry.capturedAt ?? "").slice(0, 10) !== day,
-                );
-                return [...withoutToday, snapshot].slice(-120);
-              });
-            })
-            .catch(() => {
-              // Snapshot history must never block live market display.
-            });
+          };
+          // Durable client series (localStorage = prod source of truth), then the
+          // dev-only SQLite mirror (no-op in prod). Real value (positions × live
+          // quotes), one point per calendar day, never backfilled.
+          setPortfolioSnapshots(appendStoredSnapshot(snapshot, activeId));
+          snapshotDayRef.current.set(activeId, captureDay);
+          savePortfolioSnapshot(snapshot, activeId).catch(() => {
+            // Snapshot history must never block live market display.
+          });
         }
       }
     } catch {
