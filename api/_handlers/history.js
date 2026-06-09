@@ -1,5 +1,17 @@
 const SOURCE = "twelvedata.com";
 
+// Per-instance memo cache. The dev middleware caches /api/history for 6h, but
+// the prod handler had nothing — so a portfolio-wide fan-out (e.g. the
+// correlation matrix requesting one history per held symbol) hammered Twelve
+// Data's ~8 req/min free cap on every mount, dropping symbols. A warm-instance
+// memo cache collapses repeat requests for the same series within its lifetime.
+const TTL_MS = 6 * 60 * 60 * 1000;
+const cache = new Map();
+
+function cacheKey(symbol, series) {
+  return `${symbol}|${series.interval}|${series.outputsize}`;
+}
+
 const PERIOD_MAP = {
   "1D": { interval: "1h", outputsize: 8, timeUnit: "intraday" },
   "5D": { interval: "30min", outputsize: 65, timeUnit: "intraday" },
@@ -75,6 +87,14 @@ export default async function handler(request, response) {
     return;
   }
 
+  const key = cacheKey(symbol, series);
+  const cached = cache.get(key);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) {
+    sendJson(response, 200, { ...cached.value, cache: { status: "hit", ttlMs: TTL_MS } });
+    return;
+  }
+
   const url = new URL("https://api.twelvedata.com/time_series");
   url.searchParams.set("symbol", symbol);
   url.searchParams.set("interval", series.interval);
@@ -89,7 +109,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    sendJson(response, 200, {
+    const value = {
       symbol,
       source: SOURCE,
       fetchedAt: new Date().toISOString(),
@@ -97,7 +117,9 @@ export default async function handler(request, response) {
       interval: series.interval,
       timeUnit: series.timeUnit,
       points: normalizeTimeSeries(symbol, await upstream.json(), series.timeUnit),
-    });
+    };
+    cache.set(key, { value, expiresAt: now + TTL_MS });
+    sendJson(response, 200, { ...value, cache: { status: "miss", ttlMs: TTL_MS } });
   } catch (error) {
     sendJson(response, 502, { error: error.message, source: SOURCE });
   }
