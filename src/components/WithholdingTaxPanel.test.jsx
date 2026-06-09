@@ -55,4 +55,20 @@ describe("WithholdingTaxPanel", () => {
     render(<WithholdingTaxPanel assets={[MSFT]} accountType="taxable" />);
     await waitFor(() => expect(screen.getByText(/Aucun dividende US déclaré/i)).toBeInTheDocument());
   });
+
+  it("distinguishes a provider access denial from a genuine no-dividend result", async () => {
+    fetchDividends.mockReset();
+    fetchDividends.mockResolvedValue({
+      symbol: "MSFT",
+      status: "unavailable",
+      reason: "provider_access_denied",
+      items: [],
+    });
+    render(<WithholdingTaxPanel assets={[MSFT]} accountType="taxable" />);
+    await waitFor(() =>
+      expect(screen.getByText(/accès aux données de dividendes refusé/i)).toBeInTheDocument(),
+    );
+    // It must NOT claim there are no dividends — that would be a false statement.
+    expect(screen.queryByText(/Aucun dividende US déclaré/i)).toBeNull();
+  });
 });

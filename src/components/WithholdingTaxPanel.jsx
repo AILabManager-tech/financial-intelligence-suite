@@ -46,10 +46,10 @@ export default function WithholdingTaxPanel({ assets = [], accountType = "taxabl
   // Re-key on the symbol SET + account type only (not on every quote tick).
   const stateKey = `${accountType}|${symbolsKey}`;
 
-  const [state, setState] = useState({ key: null, status: "idle", agg: null, covered: 0, total: 0 });
+  const [state, setState] = useState({ key: null, status: "idle", agg: null, covered: 0, denied: 0, total: 0 });
 
   if (symbols.length > 0 && state.key !== stateKey) {
-    setState({ key: stateKey, status: "loading", agg: null, covered: 0, total: symbols.length });
+    setState({ key: stateKey, status: "loading", agg: null, covered: 0, denied: 0, total: symbols.length });
   }
 
   useEffect(() => {
@@ -66,10 +66,19 @@ export default function WithholdingTaxPanel({ assets = [], accountType = "taxabl
       .then((settled) => {
         if (controller.signal.aborted) return;
         let covered = 0;
+        let denied = 0;
         const holdings = [];
         settled.forEach((outcome, index) => {
           const symbol = list[index];
           if (outcome.status !== "fulfilled") return;
+          // A 200 with status:"unavailable" means the data PROVIDER denied access
+          // (e.g. plan-gated endpoint) — it is NOT a genuine "no dividends" result.
+          // Counting it as covered would let the panel falsely claim the holding
+          // pays nothing. Track it separately so the empty state can be honest.
+          if (outcome.value?.status === "unavailable") {
+            denied += 1;
+            return;
+          }
           covered += 1;
           const perShare = trailingGrossPerShare(outcome.value.items, sinceIso);
           const gross = perShare * (qtyBySymbol[symbol] ?? 0);
@@ -80,6 +89,7 @@ export default function WithholdingTaxPanel({ assets = [], accountType = "taxabl
           status: "ready",
           agg: aggregateUsWithholding(holdings, accountType),
           covered,
+          denied,
           total: list.length,
         });
       })
@@ -92,7 +102,7 @@ export default function WithholdingTaxPanel({ assets = [], accountType = "taxabl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stateKey]);
 
-  const { status, agg, covered, total } = state;
+  const { status, agg, covered, denied, total } = state;
 
   return (
     <div className="animate-slide-up" role="region" aria-label="Retenue fiscale US sur dividendes">
@@ -120,11 +130,19 @@ export default function WithholdingTaxPanel({ assets = [], accountType = "taxabl
             Les montants sont masqués pour éviter d'afficher des valeurs simulées.
           </div>
         </div>
+      ) : !agg?.hasData && covered === 0 && denied > 0 ? (
+        <div className="py-4">
+          <div className="text-sm font-medium text-amber-400">Accès aux données de dividendes refusé par le fournisseur</div>
+          <div className="text-xs text-slate-500 mt-1">
+            La source de dividendes a refusé l'accès pour {denied} position{denied > 1 ? "s" : ""} US sur {total} (clé/forfait actuel). Les montants sont masqués — c'est une absence de donnée, pas une absence de dividende.
+          </div>
+        </div>
       ) : !agg?.hasData ? (
         <div className="py-2">
           <p className="text-sm text-slate-300">{agg?.treatment?.note}</p>
           <p className="text-xs text-slate-500 mt-2">
-            Aucun dividende US déclaré sur les 12 derniers mois pour les {total} position{total > 1 ? "s" : ""} US détenue{total > 1 ? "s" : ""}.
+            Aucun dividende US déclaré sur les 12 derniers mois pour les {covered} position{covered > 1 ? "s" : ""} US accessible{covered > 1 ? "s" : ""}
+            {denied > 0 ? ` (${denied} sans accès aux données fournisseur)` : ""}.
           </p>
         </div>
       ) : (
