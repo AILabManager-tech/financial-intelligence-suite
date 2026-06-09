@@ -31,6 +31,20 @@ export function buildPeersTable(peers, quotes, baseQuote) {
       };
     }
     const price = toFiniteNumber(quote.price);
+    // A quote with no finite price can't be rendered factually (a "$0.00" would
+    // be fabricated) — treat it like a missing quote so the UI shows the explicit
+    // "Cotation indisponible" gap instead of crashing on price.toFixed().
+    if (price === null) {
+      return {
+        symbol,
+        status: 'missing',
+        price: null,
+        change: null,
+        changePct: null,
+        deltaVsBasePct: null,
+        source: quote.source ?? null,
+      };
+    }
     const change = toFiniteNumber(quote.change);
     const changePct = toFiniteNumber(quote.changePct);
     const deltaVsBasePct = baseChangePct !== null && changePct !== null ? changePct - baseChangePct : null;

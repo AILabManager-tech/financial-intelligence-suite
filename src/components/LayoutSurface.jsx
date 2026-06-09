@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { getFeatureById } from "../core/featureRegistry";
 import { getVisibleFeatureIds } from "../services/layoutStore";
+import PanelErrorBoundary from "./PanelErrorBoundary";
 
 // Renders the visible features of a surface, in the layout's order (P0.2 store),
 // by resolving each feature's stable componentKey against a provided component
@@ -29,7 +30,14 @@ export default function LayoutSurface({ surface, layout, components, propsFor, w
     const Component = components[feature.componentKey];
     if (!Component) return null;
     const props = propsFor ? propsFor(feature) : {};
-    const node = <Component {...props} />;
+    // Each panel gets its own boundary so a render throw in one feature degrades
+    // to a contained fallback instead of unmounting the whole surface. resetKey
+    // tracks the asset symbol (when present) so a panel recovers on symbol switch.
+    const node = (
+      <PanelErrorBoundary resetKey={props.asset?.symbol ?? props.asset ?? null}>
+        <Component {...props} />
+      </PanelErrorBoundary>
+    );
     return <Fragment key={id}>{wrapItem ? wrapItem(feature, node) : node}</Fragment>;
   });
 }

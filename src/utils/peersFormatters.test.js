@@ -29,6 +29,16 @@ describe('buildPeersTable', () => {
     expect(rows[1].changePct).toBeNull();
   });
 
+  it('treats a quote with a non-finite price as missing (never fabricates $0)', () => {
+    const rows = buildPeersTable(
+      ['MSFT', 'NOPX'],
+      [...PEER_QUOTES, { symbol: 'NOPX', price: null, change: 1, changePct: 0.5, source: 'finnhub.io' }],
+      BASE_QUOTE,
+    );
+    expect(rows[1]).toMatchObject({ symbol: 'NOPX', status: 'missing' });
+    expect(rows[1].price).toBeNull();
+  });
+
   it('returns an empty array when peers are empty', () => {
     expect(buildPeersTable([], PEER_QUOTES, BASE_QUOTE)).toEqual([]);
   });
