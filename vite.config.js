@@ -298,7 +298,7 @@ export default defineConfig(({ mode }) => {
             next()
           })
 
-          server.middlewares.use('/api/health/market-data', async (request, response) => {
+          server.middlewares.use('/api/health', async (request, response) => {
             if (request.method !== 'GET') {
               sendJson(response, 405, { error: 'method not allowed' })
               return

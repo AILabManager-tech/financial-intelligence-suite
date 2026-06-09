@@ -43,7 +43,7 @@ Deux familles distinctes :
 | # | Panne | Cause | Action | Statut |
 |---|-------|-------|--------|--------|
 | 5 | **Macro entièrement morte** | Pas de `FRED_API_KEY` (dev **et** prod confirmés : `unavailable`). | Obtenir une clé FRED **gratuite** + l'ajouter à l'env Vercel Production (et `.env` local). Ranime les 6 séries macro. Fort levier, coût nul. | ⏳ |
-| 9 | **Panel Santé des données 404 en prod** | Route `/api/health/market-data` seulement dans le middleware dev, absente du router prod ([router.js](api/_handlers/router.js)). Prouvé : 404 NOT_FOUND en prod. | Route portée en prod : `api/_handlers/health.js` (207 si dégradé, mémo-cache 60s) + clé `health` dans le router ; garde dev-only retiré du client → le panel devient fonctionnel en prod. | ✅ fait (code ; +2 tests router). Effectif au prochain `vercel --prod`. |
+| 9 | **Panel Santé des données 404 en prod** | Route `/api/health/market-data` seulement dans le middleware dev, absente du router prod ([router.js](api/_handlers/router.js)). Prouvé : 404 NOT_FOUND en prod. | Route portée en prod : `api/_handlers/health.js` (207 si dégradé, mémo-cache 60s) + clé `health` dans le router ; garde dev-only retiré du client. **Découverte au déploiement** : le catch-all `[...path].js` ne résout qu'**un seul** segment sur cette config Vercel → endpoint déplacé sur `/api/health` (1 segment, vérifié live OK) côté client + middleware dev. | ✅ déployé & vérifié live |
 
 ## DÉCISION BUSINESS (à trancher au moment des panels concernés)
 

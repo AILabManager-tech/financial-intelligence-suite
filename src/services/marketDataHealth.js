@@ -1,7 +1,9 @@
 export async function fetchMarketDataHealth() {
-  // Served in both dev (vite middleware) and prod (api/_handlers/health.js via
-  // the catch-all router). 207 = degraded (some provider down) is a valid body.
-  const response = await fetch("/api/health/market-data", {
+  // Single-segment path: the prod catch-all (api/[...path].js) only resolves one
+  // segment after /api on this Vercel project, so /api/health/market-data 404s
+  // while /api/health works. Served in both dev (vite middleware) and prod
+  // (router → api/_handlers/health.js). 207 = degraded is a valid body.
+  const response = await fetch("/api/health", {
     headers: { accept: "application/json" },
   });
 
