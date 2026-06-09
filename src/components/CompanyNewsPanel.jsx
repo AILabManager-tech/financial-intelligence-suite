@@ -87,7 +87,7 @@ export default function CompanyNewsPanel({ asset }) {
 
       {state.status === "error" && (
         <div className="text-sm text-amber-400">
-          Actualités indisponibles — {state.error}
+          Actualités indisponibles pour le moment.
           <div className="text-xs text-slate-500 mt-1">Aucun titre n'est affiché pour éviter de présenter une donnée non vérifiée.</div>
         </div>
       )}

@@ -95,7 +95,7 @@ export default function SecFilingsPanel({ asset }) {
 
       {state.status === "error" && (
         <div className="text-sm text-amber-400">
-          Dépôts SEC indisponibles — {state.error}
+          Dépôts SEC indisponibles pour le moment.
           <div className="text-xs text-slate-500 mt-1">Aucune ligne n'est affichée pour éviter de présenter une donnée non vérifiée.</div>
         </div>
       )}

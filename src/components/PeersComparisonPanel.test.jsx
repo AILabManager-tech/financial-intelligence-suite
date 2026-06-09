@@ -43,7 +43,8 @@ describe("PeersComparisonPanel", () => {
     fetchPeers.mockRejectedValue(new Error("HTTP 503"));
     render(<PeersComparisonPanel asset={makeAsset()} />);
     await waitFor(() => expect(screen.getByText(/Comparaison sectorielle indisponible/i)).toBeInTheDocument());
-    expect(screen.getByText(/HTTP 503/)).toBeInTheDocument();
+    // The raw technical error (HTTP code) must not leak into the FR UI.
+    expect(screen.queryByText(/HTTP 503/)).toBeNull();
   });
 
   it("shows an empty-state message when no peer is returned", async () => {

@@ -169,7 +169,7 @@ export default function BuffettAnalysisPanel({ asset }) {
 
       {state.status === "error" && (
         <div className="text-sm text-amber-400">
-          Analyse Buffett indisponible — {state.error}
+          Analyse Buffett indisponible pour le moment.
           <div className="text-xs text-slate-500 mt-1">
             Aucune valeur n'est affichée pour éviter de présenter une donnée non vérifiée.
           </div>

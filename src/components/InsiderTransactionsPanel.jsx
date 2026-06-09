@@ -99,7 +99,7 @@ export default function InsiderTransactionsPanel({ asset }) {
 
       {state.status === "error" && (
         <div className="text-sm text-amber-400">
-          Transactions d'initiés indisponibles — {state.error}
+          Transactions d'initiés indisponibles pour le moment.
           <div className="text-xs text-slate-500 mt-1">Aucune transaction n'est affichée pour éviter de présenter une donnée non vérifiée.</div>
         </div>
       )}

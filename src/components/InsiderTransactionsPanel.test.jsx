@@ -44,7 +44,8 @@ describe("InsiderTransactionsPanel", () => {
     fetchInsiderTransactions.mockRejectedValue(new Error("HTTP 503"));
     render(<InsiderTransactionsPanel asset={makeAsset()} />);
     await waitFor(() => expect(screen.getByText(/Transactions d'initiés indisponibles/i)).toBeInTheDocument());
-    expect(screen.getByText(/HTTP 503/)).toBeInTheDocument();
+    // The raw technical error (HTTP code) must not leak into the FR UI.
+    expect(screen.queryByText(/HTTP 503/)).toBeNull();
   });
 
   it("shows a US-only empty-state message when no transactions are returned", async () => {

@@ -99,7 +99,7 @@ export default function AnalystRatingsPanel({ asset }) {
 
       {state.status === "error" && (
         <div className="text-sm text-amber-400">
-          Recommandations indisponibles — {state.error}
+          Recommandations indisponibles pour le moment.
         </div>
       )}
 

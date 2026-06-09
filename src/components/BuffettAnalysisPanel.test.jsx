@@ -49,7 +49,8 @@ describe("BuffettAnalysisPanel", () => {
     await waitFor(() =>
       expect(screen.getByText(/Analyse Buffett indisponible/i)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/HTTP 503/)).toBeInTheDocument();
+    // The raw technical error (HTTP code) must not leak into the FR UI.
+    expect(screen.queryByText(/HTTP 503/)).toBeNull();
   });
 
   it("shows an explicit insufficient-data message when required fields are missing", async () => {

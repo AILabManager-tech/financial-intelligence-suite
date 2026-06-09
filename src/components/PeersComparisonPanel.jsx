@@ -129,7 +129,7 @@ export default function PeersComparisonPanel({ asset }) {
 
       {state.status === "error" && (
         <div className="text-sm text-amber-400">
-          Comparaison sectorielle indisponible — {state.error}
+          Comparaison sectorielle indisponible pour le moment.
           <div className="text-xs text-slate-500 mt-1">Aucun pair n'est listé pour éviter de présenter une donnée non vérifiée.</div>
         </div>
       )}

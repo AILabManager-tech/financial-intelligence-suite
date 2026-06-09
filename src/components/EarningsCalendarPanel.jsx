@@ -107,7 +107,7 @@ export default function EarningsCalendarPanel({ asset }) {
 
       {state.status === "error" && (
         <div className="text-sm text-amber-400">
-          Calendrier indisponible — {state.error}
+          Calendrier indisponible pour le moment.
         </div>
       )}
 

@@ -58,7 +58,7 @@ export default function InsiderSentimentPanel({ asset }) {
         </div>
       )}
       {state.status === "error" && (
-        <div className="text-sm text-amber-400">Sentiment indisponible — {state.error}</div>
+        <div className="text-sm text-amber-400">Sentiment indisponible pour le moment.</div>
       )}
       {state.status === "ready" && state.items.length === 0 && (
         <div className="text-sm text-slate-400">
