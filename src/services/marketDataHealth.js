@@ -1,11 +1,6 @@
-import { devBackendAvailable } from "./devBackend";
-
 export async function fetchMarketDataHealth() {
-  if (!devBackendAvailable) {
-    // prod: the health probe is a dev-only endpoint; the panel handles this as
-    // an "indisponible" state (no fetch -> no 404 in the console).
-    throw new Error("Market data health is available in dev only");
-  }
+  // Served in both dev (vite middleware) and prod (api/_handlers/health.js via
+  // the catch-all router). 207 = degraded (some provider down) is a valid body.
   const response = await fetch("/api/health/market-data", {
     headers: { accept: "application/json" },
   });

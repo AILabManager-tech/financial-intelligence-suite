@@ -21,10 +21,15 @@ describe("api router", () => {
     for (const key of [
       "quotes", "history", "search", "fundamentals", "company-news", "earnings",
       "dividends", "analyst-ratings", "insider-transactions", "insider-sentiment",
-      "macro", "sec-filings", "peers", "fx",
+      "macro", "sec-filings", "peers", "fx", "health",
     ]) {
       expect(typeof ROUTES[key]).toBe("function");
     }
+  });
+
+  it("resolves /api/health/market-data to the 'health' endpoint", () => {
+    expect(resolveEndpoint({ query: { path: ["health", "market-data"] } })).toBe("health");
+    expect(resolveEndpoint({ url: "/api/health/market-data" })).toBe("health");
   });
 
   it("resolves the endpoint from the route param or the URL", () => {
