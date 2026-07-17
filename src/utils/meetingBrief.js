@@ -99,6 +99,10 @@ function buildSinceLastMeeting({ snapshots, transactions, since }) {
   };
 }
 
+// `topics` est INJECTÉ (P6.6) : sa sélection exige un appel réseau à un modèle,
+// or ce builder est pur. Même pattern que la comparaison au benchmark de
+// MandateReportView — la vue fetch, le builder reçoit. Omis ⇒ section absente
+// sans le déclarer comme un trou (on n'a rien demandé).
 export function buildMeetingBrief({
   mandate = {},
   assets = [],
@@ -106,6 +110,7 @@ export function buildMeetingBrief({
   transactions = [],
   asOf = null,
   since = null,
+  topics = null,
 } = {}) {
   const { summary } = buildMandateReport({ mandate, assets, snapshots, transactions, asOf });
 
@@ -125,8 +130,11 @@ export function buildMeetingBrief({
   if (!drift.hasData) {
     absences.push({ section: "drift", label: "Dérive vs cible", reason: drift.reason });
   }
+  if (topics && !topics.hasData) {
+    absences.push({ section: "topics", label: "Sujets probables", reason: topics.reason });
+  }
 
-  return { summary, sinceLastMeeting, drift, absences };
+  return { summary, sinceLastMeeting, drift, topics, absences };
 }
 
 function money(value, currency) {
@@ -148,7 +156,7 @@ const ACTION_LABEL = { buy: "Acheter", sell: "Vendre" };
 // les champs absents). Ce qui manque est dit une seule fois, dans « Données
 // absentes ».
 export function renderMeetingBriefMarkdown(brief) {
-  const { summary, sinceLastMeeting, drift, absences } = brief ?? {};
+  const { summary, sinceLastMeeting, drift, topics, absences } = brief ?? {};
   if (!summary) return "";
 
   const currency = summary.baseCurrency ?? "USD";
@@ -210,6 +218,26 @@ export function renderMeetingBriefMarkdown(brief) {
     lines.push("");
     if (Number.isFinite(drift.targetSumPct) && Math.abs(drift.targetSumPct - 100) > 0.01) {
       lines.push(`*Somme des cibles : ${drift.targetSumPct.toFixed(2)} % — l'écart à 100 % est du cash implicite.*`);
+      lines.push("");
+    }
+  }
+
+  if (topics?.hasData && topics.topics.length > 0) {
+    lines.push("## Sujets probables");
+    lines.push("");
+    lines.push(
+      `*Pistes de discussion sélectionnées par ${topics.model ?? "un modèle"} parmi l'actualité des titres détenus. Chaque sujet cite ses articles — lis la source avant d'en parler. Ce n'est ni un fait établi, ni une recommandation.*`,
+    );
+    lines.push("");
+    for (const topic of topics.topics) {
+      lines.push(`### ${topic.symbol} — ${topic.headline}`);
+      lines.push("");
+      if (topic.why) lines.push(topic.why);
+      lines.push("");
+      for (const a of topic.articles) {
+        const parts = [a.source, a.date?.slice(0, 10)].filter(Boolean).join(", ");
+        lines.push(`- [${a.headline}](${a.url})${parts ? ` — ${parts}` : ""}`);
+      }
       lines.push("");
     }
   }

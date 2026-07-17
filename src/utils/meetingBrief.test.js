@@ -103,6 +103,35 @@ describe("buildMeetingBrief", () => {
     expect(b.absences.some((a) => a.section === "drift")).toBe(true);
   });
 
+  it("carries injected discussion topics with their sources", () => {
+    const topics = {
+      hasData: true,
+      topics: [
+        {
+          symbol: "AAPL",
+          headline: "Baisse de production",
+          why: "Le client suit Apple de près.",
+          articles: [{ headline: "Apple cuts output", source: "Reuters", url: "https://r.co/1", date: "2026-06-10T00:00:00.000Z" }],
+        },
+      ],
+    };
+    const b = buildMeetingBrief({ mandate: MANDATE, assets: ASSETS, topics });
+    expect(b.topics.hasData).toBe(true);
+    expect(b.topics.topics[0].articles[0].url).toBe("https://r.co/1");
+    expect(b.absences.some((a) => a.section === "topics")).toBe(false);
+  });
+
+  it("records unconfigured topic selection as an absence", () => {
+    const topics = { hasData: false, reason: "Sélection des sujets non configurée (ANTHROPIC_API_KEY absente).", topics: [] };
+    const b = buildMeetingBrief({ mandate: MANDATE, assets: ASSETS, topics });
+    expect(b.absences.some((a) => a.section === "topics")).toBe(true);
+  });
+
+  it("does not claim a topics absence when none was requested", () => {
+    const b = buildMeetingBrief({ mandate: MANDATE, assets: ASSETS });
+    expect(b.absences.some((a) => a.section === "topics")).toBe(false);
+  });
+
   it("omits holds from the drift rows", () => {
     const assets = [
       { symbol: "AAPL", name: "Apple", price: 100, position: { quantity: 10, averageCost: 100, targetWeight: 50 } },
@@ -149,6 +178,28 @@ describe("renderMeetingBriefMarkdown", () => {
     const md = renderMeetingBriefMarkdown(buildMeetingBrief({ mandate: MANDATE, assets: ASSETS }));
     expect(md).toContain("Données absentes");
     expect(md).toMatch(/dernière rencontre/i);
+  });
+
+  it("renders each topic with its source link and the model that selected it", () => {
+    const topics = {
+      hasData: true,
+      model: "claude-opus-4-8",
+      topics: [
+        {
+          symbol: "AAPL",
+          headline: "Baisse de production",
+          why: "Le client suit Apple de près.",
+          articles: [{ headline: "Apple cuts output", source: "Reuters", url: "https://r.co/1", date: "2026-06-10T00:00:00.000Z" }],
+        },
+      ],
+    };
+    const md = renderMeetingBriefMarkdown(buildMeetingBrief({ mandate: MANDATE, assets: ASSETS, topics }));
+    expect(md).toContain("Sujets probables");
+    expect(md).toContain("Baisse de production");
+    expect(md).toContain("https://r.co/1");
+    // La provenance du tri est déclarée : sélection par modèle, pas un fait établi.
+    expect(md).toContain("sélectionnées par claude-opus-4-8");
+    expect(md).toMatch(/pistes de discussion/i);
   });
 
   it("states that the brief carries no recommendation", () => {

@@ -15,6 +15,7 @@ import { fetchMacroIndicators } from './server/macro.js'
 import { fetchSecFilings } from './server/secFilings.js'
 import { fetchPeers } from './server/peers.js'
 import { fetchFxRates } from './server/fx.js'
+import { extractMeetingTopics } from './server/meetingTopics.js'
 import { createRateLimiter, clientIp } from './server/rateLimiter.js'
 import { toStooqSymbol } from './server/stooqSymbol.js'
 
@@ -542,6 +543,62 @@ export default defineConfig(({ mode }) => {
             })
           } catch (error) {
             sendJson(response, 502, { error: error.message, source: 'finnhub.io' })
+          }
+        })
+
+        // Sujets de rencontre (P6.6) — seul endpoint qui appelle un LLM. TTL calé
+        // sur celui de company-news : les sujets citent ces articles, les garder
+        // plus longtemps que leur source afficherait des citations périmées.
+        server.middlewares.use('/api/meeting-topics', async (request, response) => {
+          const requestUrl = new URL(request.url ?? '', 'http://localhost')
+          const symbols = (requestUrl.searchParams.get('symbols') ?? '')
+            .split(',')
+            .map((s) => s.trim().toUpperCase())
+            .filter(Boolean)
+            .slice(0, 10)
+
+          if (symbols.length === 0) {
+            sendJson(response, 400, { error: 'symbols query parameter is required' })
+            return
+          }
+
+          // Capability optionnelle : sans clé la feature est absente, jamais fabriquée.
+          if (!process.env.ANTHROPIC_API_KEY) {
+            sendJson(response, 200, {
+              hasData: false,
+              reason: 'Sélection des sujets non configurée (ANTHROPIC_API_KEY absente).',
+              topics: [],
+              dropped: 0,
+            })
+            return
+          }
+
+          try {
+            const { value, cacheStatus, expiresAt } = await readThroughCache(
+              `meeting-topics:${symbols.join(',')}`,
+              cacheTtlMs.companyNews,
+              async () => {
+                const settled = await Promise.allSettled(
+                  symbols.map((symbol) =>
+                    fetchCompanyNews(symbol, { finnhubApiKey: process.env.FINNHUB_API_KEY, limit: 6 }),
+                  ),
+                )
+                const news = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value)
+                return extractMeetingTopics({ news, anthropicApiKey: process.env.ANTHROPIC_API_KEY })
+              },
+            )
+            sendJson(response, 200, {
+              ...value,
+              cache: { status: cacheStatus, ttlMs: cacheTtlMs.companyNews, expiresAt: new Date(expiresAt).toISOString() },
+            })
+          } catch {
+            // L'erreur amont peut porter la clé — on ne la propage jamais.
+            sendJson(response, 200, {
+              hasData: false,
+              reason: 'Le service de sélection des sujets est indisponible.',
+              topics: [],
+              dropped: 0,
+            })
           }
         })
 

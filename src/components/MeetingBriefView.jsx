@@ -8,15 +8,22 @@
 //
 // Lazy-loadé par App (comme GuidePage) : react-markdown est lourd et n'a rien à
 // faire dans le bundle principal.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ClipboardCheck, ClipboardCopy, NotebookPen } from "lucide-react";
 import { buildMeetingBrief, renderMeetingBriefMarkdown } from "../utils/meetingBrief";
+import { fetchMeetingTopics } from "../services/meetingTopics";
 
-// Mapping local (le brief n'utilise ni liens ni code) — volontairement distinct
-// de celui de GuidePage, dont le handler `a` est spécifique aux guides.
+// Mapping local — volontairement distinct de celui de GuidePage, dont le handler
+// `a` est spécifique aux guides. Ici `a` sort vers les articles sources cités
+// par les sujets (P6.6), donc en nouvel onglet.
 const MD = {
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-300 underline hover:text-blue-200">
+      {children}
+    </a>
+  ),
   h1: ({ children }) => <h1 className="text-2xl font-bold text-white mb-3 pb-2 border-b border-white/10">{children}</h1>,
   h2: ({ children }) => <h2 className="text-lg font-semibold text-white mt-8 mb-3 pb-1.5 border-b border-white/10">{children}</h2>,
   h3: ({ children }) => <h3 className="text-sm font-semibold text-violet-200 mt-5 mb-2">{children}</h3>,
@@ -44,10 +51,45 @@ export default function MeetingBriefView({ mandate = {}, assets = [], snapshots 
   const asOf = useMemo(() => new Date().toISOString(), []);
   const [since, setSince] = useState("");
   const [copied, setCopied] = useState(false);
+  const [topics, setTopics] = useState(null);
+
+  // Les symboles réellement détenus — clé stable pour ne pas refetch à chaque tick.
+  const heldKey = useMemo(
+    () =>
+      assets
+        .filter((a) => Number(a?.position?.quantity) > 0)
+        .map((a) => a.symbol)
+        .sort()
+        .join(","),
+    [assets],
+  );
+
+  // La sélection des sujets exige un appel réseau → elle vit dans la vue, et le
+  // résultat est injecté dans le builder (qui reste pur).
+  useEffect(() => {
+    if (!heldKey) return undefined; // rien à demander — `effectiveTopics` gère l'affichage
+    const controller = new AbortController();
+    fetchMeetingTopics(heldKey.split(","), { signal: controller.signal })
+      .then((payload) => {
+        if (!controller.signal.aborted) setTopics(payload);
+      })
+      .catch((error) => {
+        if (controller.signal.aborted || error.name === "AbortError") return;
+        setTopics({ hasData: false, reason: "Le service de sélection des sujets est indisponible.", topics: [] });
+      });
+    return () => controller.abort();
+  }, [heldKey]);
+
+  // Dérivé plutôt que remis à null dans l'effet (lint react-hooks/set-state-in-effect) :
+  // sans position détenue, il n'y a rien à sélectionner, donc pas de section.
+  const effectiveTopics = heldKey ? topics : null;
 
   const markdown = useMemo(
-    () => renderMeetingBriefMarkdown(buildMeetingBrief({ mandate, assets, snapshots, transactions, asOf, since: since || null })),
-    [mandate, assets, snapshots, transactions, asOf, since],
+    () =>
+      renderMeetingBriefMarkdown(
+        buildMeetingBrief({ mandate, assets, snapshots, transactions, asOf, since: since || null, topics: effectiveTopics }),
+      ),
+    [mandate, assets, snapshots, transactions, asOf, since, effectiveTopics],
   );
 
   const copy = () => {

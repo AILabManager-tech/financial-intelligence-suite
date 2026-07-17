@@ -21,6 +21,7 @@ import macro from "./macro.js";
 import secFilings from "./sec-filings.js";
 import peers from "./peers.js";
 import fx from "./fx.js";
+import meetingTopics from "./meeting-topics.js";
 import health from "./health.js";
 
 // Maps the first path segment of /api/<endpoint> to its handler. Keys mirror
@@ -40,6 +41,7 @@ export const ROUTES = {
   "sec-filings": secFilings,
   peers,
   fx,
+  "meeting-topics": meetingTopics,
   // /api/health/market-data → resolveEndpoint returns the first segment "health".
   health,
 };
