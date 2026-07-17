@@ -9,9 +9,15 @@ describe("ReconstructedSnapshotsBanner", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("labels the performance surface as reconstituted when active", () => {
+  it("labels the performance surface as reconstituted when active (demo variant)", () => {
     render(<ReconstructedSnapshotsBanner active />);
     expect(screen.getByText(/performance reconstituée/i)).toBeInTheDocument();
     expect(screen.getByText(/pas/i)).toBeInTheDocument();
+  });
+
+  it("uses the journal wording for a real cold-start mandate", () => {
+    render(<ReconstructedSnapshotsBanner active variant="journal" />);
+    expect(screen.getByText(/reconstruite à partir du journal/i)).toBeInTheDocument();
+    expect(screen.getByText(/clôtures historiques\s+réelles/i)).toBeInTheDocument();
   });
 });

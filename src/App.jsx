@@ -115,6 +115,7 @@ import {
 import { fetchTransactionsFromApi, saveTransactionsToApi } from "./services/transactionApi";
 import { useLayout } from "./core/layoutContext";
 import { buildDashboardPanelProps } from "./core/dashboardPanelProps";
+import { useEffectiveSnapshots } from "./hooks/useEffectiveSnapshots";
 import { applyTheme, loadTheme } from "./services/themeStore";
 
 // Maps the registry componentKeys of the "dashboard" surface to their
@@ -755,6 +756,12 @@ export default function App() {
     persistFavorites(toggleFavoriteSymbol(favoriteSymbols, symbol));
   }, [favoriteSymbols, persistFavorites]);
 
+  // Série effective pour toute la surface Performance : relevés réels si ≥ 2,
+  // sinon reconstruite du journal × clôtures réelles (démarrage à froid après un
+  // import de relevé), étiquetée `reconstructed`. Display-only — n'altère jamais
+  // l'accrual (portfolioSnapshots reste la série réelle qui s'accumule).
+  const effectiveSnapshots = useEffectiveSnapshots(assets, transactions, portfolioSnapshots);
+
   // Per-component props for the layout-driven dashboard block. Keyed by the
   // registry componentKey; LayoutSurface feeds each visible panel its slice.
   const dashboardPanelProps = buildDashboardPanelProps({
@@ -767,7 +774,7 @@ export default function App() {
     onAddAlert: handleAddAlert,
     onRemoveAlert: handleRemoveAlert,
     onToggleAlert: handleToggleAlert,
-    snapshots: portfolioSnapshots,
+    snapshots: effectiveSnapshots,
     onSavePosition: handleSavePosition,
     onRemoveAsset: handleRemoveAsset,
     onImportPositions: handleImportPositions,
@@ -915,7 +922,7 @@ export default function App() {
             <MeetingBriefView
               mandate={getActivePortfolio(portfolioList)}
               assets={assets}
-              snapshots={portfolioSnapshots}
+              snapshots={effectiveSnapshots}
               transactions={transactions}
             />
           </Suspense>
@@ -996,12 +1003,12 @@ export default function App() {
               <MarketLookup onSelect={handleSelect} />
             </section>
 
-            {/* Reconstituted-performance notice for demo mandates (dev-only). */}
+            {/* Étiquette la surface Performance quand la série affichée est
+                reconstruite : démo (prix statiques, dev-only) ou démarrage à froid
+                d'un vrai mandat (journal × clôtures réelles, visible en prod). */}
             <ReconstructedSnapshotsBanner
-              active={
-                isDemoMandateId(portfolioList.activeId) &&
-                portfolioSnapshots.some((s) => s?.reconstructed)
-              }
+              active={effectiveSnapshots.some((s) => s?.reconstructed)}
+              variant={isDemoMandateId(portfolioList.activeId) ? "demo" : "journal"}
             />
 
             {/* Composable dashboard block — order & visibility from the layout

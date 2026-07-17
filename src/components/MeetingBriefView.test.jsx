@@ -3,18 +3,14 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
 vi.mock("../services/meetingTopics", () => ({ fetchMeetingTopics: vi.fn() }));
-vi.mock("../services/priceHistory", () => ({ fetchPriceHistory: vi.fn() }));
 
 import { fetchMeetingTopics } from "../services/meetingTopics";
-import { fetchPriceHistory } from "../services/priceHistory";
 import MeetingBriefView from "./MeetingBriefView";
 
 beforeEach(() => {
   vi.clearAllMocks(); // repartir d'un compteur d'appels vierge à chaque test
   // Défaut : capability non configurée (aucune clé) — l'état le plus courant.
   fetchMeetingTopics.mockResolvedValue({ hasData: false, reason: "Sélection des sujets non configurée (ANTHROPIC_API_KEY absente).", topics: [] });
-  // Défaut : pas d'historique → aucune reconstruction (série vide), zéro réseau réel.
-  fetchPriceHistory.mockResolvedValue({ points: [] });
 });
 
 const MANDATE = { name: "Client A", client: "A inc.", accountType: "taxable", baseCurrency: "USD" };
@@ -78,28 +74,12 @@ describe("MeetingBriefView", () => {
     expect(screen.getByRole("heading", { name: "Données absentes" })).toBeInTheDocument();
   });
 
-  it("reconstructs a factual value series from the journal when no snapshots have accrued yet", async () => {
-    // Démarrage à froid : journal importé, aucun relevé accumulé (snapshots absent).
-    const transactions = [{ type: "buy", symbol: "AAPL", date: "2026-05-01", quantity: 10, price: 100 }];
-    fetchPriceHistory.mockResolvedValue({
-      points: [
-        { date: "2026-05-01", close: 100 },
-        { date: "2026-06-01", close: 120 },
-      ],
-    });
-    render(<MeetingBriefView mandate={MANDATE} assets={ASSETS} transactions={transactions} />);
-    await waitFor(() => expect(fetchPriceHistory).toHaveBeenCalledWith("AAPL", expect.anything()));
+  it("labels the period as reconstructed when the effective snapshots carry the flag", () => {
+    // App fournit une série déjà EFFECTIVE ; ici elle est reconstruite (démarrage à froid).
+    const reconstructed = SNAPSHOTS.map((s) => ({ ...s, reconstructed: true }));
+    render(<MeetingBriefView mandate={MANDATE} assets={ASSETS} snapshots={reconstructed} />);
     fireEvent.change(screen.getByLabelText(/Dernière rencontre le/i), { target: { value: "2026-05-01" } });
-    await waitFor(() => expect(screen.getByText(/Depuis la dernière rencontre \(2026-05-01/)).toBeInTheDocument());
     expect(screen.getByText(/reconstruite à partir du journal/i)).toBeInTheDocument();
-  });
-
-  it("does not reconstruct when real accrued snapshots already exist", async () => {
-    const transactions = [{ type: "buy", symbol: "AAPL", date: "2026-05-01", quantity: 10, price: 100 }];
-    render(<MeetingBriefView mandate={MANDATE} assets={ASSETS} snapshots={SNAPSHOTS} transactions={transactions} />);
-    // Les relevés réels (≥ 2) priment → aucun fetch d'historique pour reconstruire.
-    await waitFor(() => expect(fetchMeetingTopics).toHaveBeenCalled());
-    expect(fetchPriceHistory).not.toHaveBeenCalled();
   });
 
   it("copies the raw markdown to the clipboard", async () => {
