@@ -911,7 +911,7 @@ export default function App() {
           <MandateReportView
             mandate={getActivePortfolio(portfolioList)}
             assets={assets}
-            snapshots={portfolioSnapshots}
+            snapshots={effectiveSnapshots}
             transactions={transactions}
             commentary={commentary}
             onAddComment={handleAddComment}

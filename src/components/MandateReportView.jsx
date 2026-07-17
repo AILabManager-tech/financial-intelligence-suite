@@ -36,6 +36,14 @@ export default function MandateReportView({ mandate = {}, assets = [], snapshots
   const { summary, positions, twr, realized } = report;
   const ccy = summary.baseCurrency;
 
+  // La série qui alimente le rapport est-elle reconstruite (démarrage à froid,
+  // aucun relevé accumulé) plutôt qu'accumulée au jour le jour ? Seul le bloc
+  // Performance (TWR + comparaison à l'indice) en dérive — positions, coûts et
+  // gains réalisés viennent des positions/journal, jamais de la série. L'étiquette
+  // est donc SCOPÉE à ce bloc : un filigrane pleine page ferait porter le doute
+  // sur des sections qui sont bien réelles.
+  const perfReconstructed = twr.hasData && Array.isArray(snapshots) && snapshots.some((s) => s?.reconstructed);
+
   const [bench, setBench] = useState({ status: "loading", comparison: { hasData: false } });
   useEffect(() => {
     const controller = new AbortController();
@@ -118,7 +126,7 @@ export default function MandateReportView({ mandate = {}, assets = [], snapshots
         </div>
       </Section>
 
-      <Section title="Performance">
+      <Section title={perfReconstructed ? "Performance — série reconstruite" : "Performance"}>
         {twr.hasData ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
@@ -150,6 +158,14 @@ export default function MandateReportView({ mandate = {}, assets = [], snapshots
         <p className="text-[11px] text-slate-500 mt-3">
           Rendement pondéré-temps, flux de capital neutralisés. Comparaison au {BENCHMARK.label} sur la même fenêtre (rendement de prix, hors dividendes réinvestis), masquée si la série ne couvre pas la période.
         </p>
+        {perfReconstructed && (
+          <p className="text-[11px] text-amber-300/90 mt-2">
+            Le rendement (TWR) et la comparaison à l'indice ci-dessus sont calculés sur une série de valeurs{" "}
+            <span className="font-semibold">reconstruite</span> à partir du journal de transactions et des clôtures
+            historiques réelles — aucun relevé de valeur n'avait encore été accumulé pour ce mandat. Mesure factuelle
+            mais rétrospective, à distinguer d'un suivi de valeur établi au jour le jour.
+          </p>
+        )}
       </Section>
 
       <Section title="Positions détenues">

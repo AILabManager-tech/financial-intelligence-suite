@@ -35,6 +35,29 @@ describe("MandateReportView", () => {
     printSpy.mockRestore();
   });
 
+  it("marks the performance block and shows the identification note when the series is reconstructed", () => {
+    fetchPriceHistory.mockResolvedValue({ points: [] });
+    const reconstructed = [
+      { snapshotDate: "2026-05-01", totalMarketValue: 1000, reconstructed: true },
+      { snapshotDate: "2026-06-01", totalMarketValue: 1100, reconstructed: true },
+    ];
+    render(<MandateReportView mandate={MANDATE} assets={ASSETS} snapshots={reconstructed} />);
+    expect(screen.getByText(/Performance — série reconstruite/)).toBeInTheDocument();
+    expect(screen.getByText(/à partir du journal de transactions et des clôtures/i)).toBeInTheDocument();
+  });
+
+  it("does not mark the performance block for a real accrued series", () => {
+    fetchPriceHistory.mockResolvedValue({ points: [] });
+    const real = [
+      { snapshotDate: "2026-05-01", totalMarketValue: 1000 },
+      { snapshotDate: "2026-06-01", totalMarketValue: 1100 },
+    ];
+    render(<MandateReportView mandate={MANDATE} assets={ASSETS} snapshots={real} />);
+    expect(screen.getByText("Performance")).toBeInTheDocument();
+    expect(screen.queryByText(/série reconstruite/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/aucun relevé de valeur n'avait encore été accumulé/i)).not.toBeInTheDocument();
+  });
+
   it("renders PM commentary entries and adds a new dated note", () => {
     fetchPriceHistory.mockResolvedValue({ points: [] });
     const onAddComment = vi.fn();
