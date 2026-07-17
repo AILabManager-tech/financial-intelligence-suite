@@ -150,7 +150,7 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 | P6.2 Snapshots fiscaux annuels | Export T5008 (CA) / 1099-B (US) : gains/pertes par lot par année fiscale. | M | P3.3 |
 | P6.3 Commentaire PM par période | Champ markdown daté, attaché au snapshot, intégré au PDF. | S | P6.1 |
 | P6.4 Portail client lecture-seule | URL signée temporaire par mandat, vue read-only positions + perf + dernier PDF. | M | P6.1, P7.1 |
-| P6.5 Brief de préparation de rencontre ✅ | Note pré-rencontre (≠ P6.1 qui est rétrospectif) : ce qui a changé depuis la dernière rencontre + dérive vs cible + trous de données. **Livré 2026-07-16** : `src/utils/meetingBrief.js` pur — `buildMeetingBrief({mandate,assets,snapshots,transactions,asOf,since})` compose `buildMandateReport`/`computeRebalance`/`computeTimeWeightedReturn`, + `renderMeetingBriefMarkdown` (1re sortie **machine** du reporting — jusqu'ici seulement du JSX à imprimer). Zéro dépendance, zéro fichier serveur, zéro composant. | S | P6.1, P5.3 |
+| P6.5 Brief de préparation de rencontre ✅ | Note pré-rencontre (≠ P6.1 qui est rétrospectif) : ce qui a changé depuis la dernière rencontre + dérive vs cible + trous de données. **Livré 2026-07-16** : `src/utils/meetingBrief.js` pur — `buildMeetingBrief({mandate,assets,snapshots,transactions,asOf,since})` compose `buildMandateReport`/`computeRebalance`/`computeTimeWeightedReturn`, + `renderMeetingBriefMarkdown` (1re sortie **machine** du reporting — jusqu'ici seulement du JSX à imprimer). Vue `MeetingBriefView` (route `/brief`, lazy) : sélecteur de date de dernière rencontre + « Copier le brief ». Zéro dépendance neuve, zéro fichier serveur. | S | P6.1, P5.3 |
 
 ---
 

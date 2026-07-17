@@ -156,6 +156,7 @@ applyTheme(loadTheme());
 
 const IntelligenceCard = lazy(() => import("./components/IntelligenceCard"));
 const GuidePage = lazy(() => import("./components/GuidePage"));
+const MeetingBriefView = lazy(() => import("./components/MeetingBriefView"));
 
 function CardSkeleton() {
   return (
@@ -273,10 +274,11 @@ export default function App() {
   const isDemoRoute = currentPath === "/demo";
   const isTransactionsRoute = currentPath === "/transactions";
   const isReportRoute = currentPath === "/report";
+  const isBriefRoute = currentPath === "/brief";
   const isLegalRoute = currentPath === "/legal";
   const isLoginRoute = currentPath === "/login";
   const isGuideRoute = currentPath === "/guide";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isLegalRoute && !isLoginRoute && !isGuideRoute;
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isBriefRoute && !isLegalRoute && !isLoginRoute && !isGuideRoute;
   const [consentOpen, setConsentOpen] = useState(() => !hasValidConsent());
   const layout = useLayout();
   const { authEnabled, user: authUser } = useAuth();
@@ -835,6 +837,13 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => navigateTo("/brief")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isBriefRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                >
+                  Brief
+                </button>
+                <button
+                  type="button"
                   onClick={() => navigateTo("/settings")}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isSettingsRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
                 >
@@ -894,6 +903,15 @@ export default function App() {
             onAddComment={handleAddComment}
             onRemoveComment={handleRemoveComment}
           />
+        ) : isBriefRoute ? (
+          <Suspense fallback={<CardSkeleton />}>
+            <MeetingBriefView
+              mandate={getActivePortfolio(portfolioList)}
+              assets={assets}
+              snapshots={portfolioSnapshots}
+              transactions={transactions}
+            />
+          </Suspense>
         ) : isDemoRoute ? (
           <DemoPortfolioPanel />
         ) : isTransactionsRoute ? (
