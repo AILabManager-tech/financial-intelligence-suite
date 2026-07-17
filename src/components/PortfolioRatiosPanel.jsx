@@ -1,6 +1,7 @@
 import { Gauge } from "lucide-react";
 import { computePortfolioRatios } from "../utils/portfolioRatios";
 import { formatRatio, formatPct } from "../utils/returnsFormatters";
+import SeriesProvenanceNote from "./SeriesProvenanceNote";
 
 function ratioTone(value) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "text-slate-500";
@@ -56,6 +57,7 @@ export default function PortfolioRatiosPanel({ snapshots = [], transactions = []
           <div className="mt-3 text-[11px] text-slate-500">
             Sur {ratios.observations} rendements ({ratios.days} j), apports/retraits neutralisés, taux sans risque supposé {ratios.riskFreePct} % (hypothèse). Estimation annualisée sur la série accumulée — pas un conseil.
           </div>
+          <SeriesProvenanceNote snapshots={snapshots} />
         </>
       )}
     </div>

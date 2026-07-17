@@ -1,6 +1,7 @@
 import { Coins } from "lucide-react";
 import { computeMoneyWeightedReturn } from "../utils/moneyWeightedReturn";
 import { formatPct, returnTone } from "../utils/returnsFormatters";
+import SeriesProvenanceNote from "./SeriesProvenanceNote";
 
 export default function PortfolioMwrPanel({ snapshots = [], transactions = [] }) {
   const mwr = computeMoneyWeightedReturn(snapshots, transactions);
@@ -46,6 +47,7 @@ export default function PortfolioMwrPanel({ snapshots = [], transactions = [] })
           <div className="mt-3 text-[11px] text-slate-500">
             Pondéré par l'argent : capture l'effet du <span className="text-slate-300">timing des apports/retraits</span> ({mwr.flowsCount} flux sur {mwr.days} j), à comparer au TWR (effet du gérant, flux neutralisés). Rendement passé sur données réelles — pas un conseil.
           </div>
+          <SeriesProvenanceNote snapshots={snapshots} />
         </>
       )}
     </div>

@@ -3,6 +3,7 @@ import { GitCompareArrows, RefreshCw } from "lucide-react";
 import { fetchPriceHistory } from "../services/priceHistory";
 import { computeBenchmarkStats } from "../utils/benchmarkStats";
 import { formatRatio } from "../utils/returnsFormatters";
+import SeriesProvenanceNote from "./SeriesProvenanceNote";
 
 const HISTORY_DAYS = 1825;
 const BENCHMARKS = [
@@ -91,6 +92,7 @@ export default function BetaCorrelationPanel({ snapshots = [], transactions = []
           <div className="mt-3 text-[11px] text-slate-500">
             Régression OLS du portefeuille (TWR) sur {label} — {stats.pairs} périodes communes ({stats.days} j). Estimation sur la série accumulée, pas un conseil.
           </div>
+          <SeriesProvenanceNote snapshots={snapshots} />
         </>
       )}
     </div>

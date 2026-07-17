@@ -3,6 +3,7 @@ import { Scale, RefreshCw } from "lucide-react";
 import { fetchPriceHistory } from "../services/priceHistory";
 import { computeBenchmarkComparison } from "../utils/benchmarkComparison";
 import { formatPct, returnTone } from "../utils/returnsFormatters";
+import SeriesProvenanceNote from "./SeriesProvenanceNote";
 
 const HISTORY_DAYS = 1825;
 
@@ -111,6 +112,7 @@ export default function BenchmarkPanel({ snapshots = [], transactions = [] }) {
           <div className="mt-3 text-[11px] text-slate-500">
             Portefeuille (TWR, flux neutralisés) vs prix du {label} sur la même fenêtre ({comparison.days} j). Rendement de prix, hors dividendes réinvestis — pas un conseil.
           </div>
+          <SeriesProvenanceNote snapshots={snapshots} />
         </>
       )}
     </div>

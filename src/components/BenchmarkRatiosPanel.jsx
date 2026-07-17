@@ -3,6 +3,7 @@ import { Trophy, RefreshCw } from "lucide-react";
 import { fetchPriceHistory } from "../services/priceHistory";
 import { computeBenchmarkStats } from "../utils/benchmarkStats";
 import { formatRatio, formatPct } from "../utils/returnsFormatters";
+import SeriesProvenanceNote from "./SeriesProvenanceNote";
 
 const HISTORY_DAYS = 1825;
 const BENCHMARKS = [
@@ -95,6 +96,7 @@ export default function BenchmarkRatiosPanel({ snapshots = [], transactions = []
           <div className="mt-3 text-[11px] text-slate-500">
             Vs {label} sur {stats.pairs} périodes communes ({stats.days} j), taux sans risque supposé {stats.riskFreePct} % (hypothèse). Estimation annualisée — pas un conseil.
           </div>
+          <SeriesProvenanceNote snapshots={snapshots} />
         </>
       )}
     </div>

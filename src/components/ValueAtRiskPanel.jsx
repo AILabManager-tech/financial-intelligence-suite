@@ -1,6 +1,7 @@
 import { ShieldAlert } from "lucide-react";
 import { computeValueAtRisk } from "../utils/valueAtRisk";
 import { formatPct } from "../utils/returnsFormatters";
+import SeriesProvenanceNote from "./SeriesProvenanceNote";
 
 function lossPct(value) {
   // VaR/CVaR sont des pertes : affichées en négatif (perte) ou tiret si null.
@@ -53,6 +54,7 @@ export default function ValueAtRiskPanel({ snapshots = [], transactions = [] }) 
             {!var_.historicalAvailable && " VaR historique masquée (< 10 observations)."}
             {" "}Paramétrique = μ − z·σ (gaussienne). Estimation sur la série accumulée, pas un conseil.
           </div>
+          <SeriesProvenanceNote snapshots={snapshots} />
         </>
       )}
     </div>

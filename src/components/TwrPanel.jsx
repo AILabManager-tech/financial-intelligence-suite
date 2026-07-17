@@ -1,6 +1,7 @@
 import { LineChart as LineChartIcon } from "lucide-react";
 import { computeTimeWeightedReturn } from "../utils/timeWeightedReturn";
 import { formatPct, returnTone } from "../utils/returnsFormatters";
+import SeriesProvenanceNote from "./SeriesProvenanceNote";
 
 function formatDay(day) {
   if (typeof day !== "string" || day.length < 10) return null;
@@ -62,6 +63,7 @@ export default function TwrPanel({ snapshots = [], transactions = [] }) {
           <div className="mt-3 text-[11px] text-slate-500">
             Performance de marché : les apports/retraits de capital (achats/ventes) sont neutralisés (flux supposé en début de sous-période). Rendement passé sur données réelles, hors dividendes en espèces — pas un conseil.
           </div>
+          <SeriesProvenanceNote snapshots={snapshots} />
         </>
       )}
     </div>
