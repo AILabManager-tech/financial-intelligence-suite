@@ -254,6 +254,12 @@ export default defineConfig(({ mode }) => {
   if (env.FRED_API_KEY) {
     process.env.FRED_API_KEY = env.FRED_API_KEY
   }
+  // Sans cette ligne, /api/meeting-topics (P6.6) répond toujours « non
+  // configurée » en dev, quoi qu'il y ait dans .env : loadEnv ne peuple pas
+  // process.env tout seul, chaque clé serveur doit être recopiée ici.
+  if (env.ANTHROPIC_API_KEY) {
+    process.env.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY
+  }
 
   return {
     build: {
@@ -573,9 +579,10 @@ export default defineConfig(({ mode }) => {
             return
           }
 
+          const cacheKey = `meeting-topics:${symbols.join(',')}`
           try {
             const { value, cacheStatus, expiresAt } = await readThroughCache(
-              `meeting-topics:${symbols.join(',')}`,
+              cacheKey,
               cacheTtlMs.companyNews,
               async () => {
                 const settled = await Promise.allSettled(
@@ -587,6 +594,10 @@ export default defineConfig(({ mode }) => {
                 return extractMeetingTopics({ news, anthropicApiKey: process.env.ANTHROPIC_API_KEY })
               },
             )
+            // readThroughCache met en cache SANS condition : un échec passager
+            // (actualité vide, modèle indisponible) resterait figé 30 min. On
+            // l'évince — même garde que le handler prod (`if (value.hasData)`).
+            if (!value.hasData) marketCache.delete(cacheKey)
             sendJson(response, 200, {
               ...value,
               cache: { status: cacheStatus, ttlMs: cacheTtlMs.companyNews, expiresAt: new Date(expiresAt).toISOString() },
