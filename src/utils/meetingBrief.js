@@ -35,6 +35,7 @@ function snapshotPoints(snapshots) {
     .map((s) => ({
       day: dayKey(s?.snapshotDate) ?? dayKey(s?.capturedAt),
       value: Number(s?.totalMarketValue),
+      reconstructed: Boolean(s?.reconstructed),
     }))
     .filter((p) => p.day && Number.isFinite(p.value))
     .sort((a, b) => a.day.localeCompare(b.day));
@@ -94,6 +95,9 @@ function buildSinceLastMeeting({ snapshots, transactions, since }) {
     valueChange,
     valueChangePct: anchor.value > 0 ? (valueChange / anchor.value) * 100 : null,
     netFlow,
+    // Provenance : la période s'appuie-t-elle sur une série reconstruite (journal
+    // × clôtures réelles) plutôt que sur des relevés accumulés jour par jour ?
+    reconstructed: points.slice(anchorIndex).some((p) => p.reconstructed),
     twr: computeTimeWeightedReturn(periodSnapshots, transactions),
     transactions: periodTransactions,
   };
@@ -183,6 +187,12 @@ export function renderMeetingBriefMarkdown(brief) {
   if (sinceLastMeeting?.hasData) {
     lines.push(`## Depuis la dernière rencontre (${sinceLastMeeting.from} → ${sinceLastMeeting.to})`);
     lines.push("");
+    if (sinceLastMeeting.reconstructed) {
+      lines.push(
+        "> Série de valeurs reconstruite à partir du journal de transactions et des clôtures historiques réelles — pas encore des relevés accumulés jour par jour.",
+      );
+      lines.push("");
+    }
     const changePct = pct(sinceLastMeeting.valueChangePct);
     lines.push(`- **Variation de valeur** : ${signedMoney(sinceLastMeeting.valueChange, currency)}${changePct ? ` (${changePct})` : ""}`);
     lines.push(`- **Apport net de capital** : ${signedMoney(sinceLastMeeting.netFlow, currency)}`);

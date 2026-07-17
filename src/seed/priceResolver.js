@@ -11,24 +11,10 @@
 // expandTransactions drops that buy/sell (a 0-cost position would be a
 // fabrication). Fill where the data exists, drop where it doesn't, never guess.
 
-function toTime(date) {
-  return new Date(`${date}T00:00:00.000Z`).getTime();
-}
-
-// Real close on or before `targetDate` from a {date, close} series, or null.
-export function closeOnOrBefore(points, targetDate) {
-  const target = toTime(targetDate);
-  if (!Number.isFinite(target)) return null;
-  const series = (Array.isArray(points) ? points : [])
-    .filter((p) => p && p.date && Number.isFinite(p.close) && p.close > 0)
-    .sort((a, b) => toTime(a.date) - toTime(b.date));
-  let found = null;
-  for (const p of series) {
-    if (toTime(p.date) <= target) found = p;
-    else break;
-  }
-  return found ? found.close : null;
-}
+// closeOnOrBefore now lives in utils/ (shared with production reconstructSnapshots);
+// re-exported here so existing seed callers/tests keep their import path.
+import { closeOnOrBefore } from "../utils/priceSeries";
+export { closeOnOrBefore };
 
 function needsResolution(t) {
   return (t?.type === "buy" || t?.type === "sell") && !Number.isFinite(t?.price) && Boolean(t?.symbol);

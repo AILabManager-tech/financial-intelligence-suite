@@ -206,4 +206,31 @@ describe("renderMeetingBriefMarkdown", () => {
     const md = renderMeetingBriefMarkdown(buildMeetingBrief({ mandate: MANDATE, assets: ASSETS, asOf: "2026-06-01" }));
     expect(md).toMatch(/aucune recommandation/i);
   });
+
+  it("flags the period as reconstructed when the snapshots carry the flag", () => {
+    const reconstructed = SNAPSHOTS.map((s) => ({ ...s, reconstructed: true }));
+    const b = buildMeetingBrief({
+      mandate: MANDATE,
+      assets: ASSETS,
+      snapshots: reconstructed,
+      transactions: TRANSACTIONS,
+      since: "2026-05-01",
+    });
+    expect(b.sinceLastMeeting.reconstructed).toBe(true);
+    const md = renderMeetingBriefMarkdown(b);
+    expect(md).toMatch(/reconstruite à partir du journal/i);
+  });
+
+  it("does not flag reconstruction for real accrued snapshots", () => {
+    const b = buildMeetingBrief({
+      mandate: MANDATE,
+      assets: ASSETS,
+      snapshots: SNAPSHOTS,
+      transactions: TRANSACTIONS,
+      since: "2026-05-01",
+    });
+    expect(b.sinceLastMeeting.reconstructed).toBe(false);
+    const md = renderMeetingBriefMarkdown(b);
+    expect(md).not.toMatch(/reconstruite à partir du journal/i);
+  });
 });

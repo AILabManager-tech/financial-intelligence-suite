@@ -13,7 +13,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ClipboardCheck, ClipboardCopy, NotebookPen } from "lucide-react";
 import { buildMeetingBrief, renderMeetingBriefMarkdown } from "../utils/meetingBrief";
+import { reconstructSnapshots } from "../utils/reconstructSnapshots";
 import { fetchMeetingTopics } from "../services/meetingTopics";
+import { fetchPriceHistory } from "../services/priceHistory";
+
+const HISTORY_DAYS = 1825; // ~5 ans demandés ; free tier en rend ~18 mois
 
 // Mapping local — volontairement distinct de celui de GuidePage, dont le handler
 // `a` est spécifique aux guides. Ici `a` sort vers les articles sources cités
@@ -52,6 +56,7 @@ export default function MeetingBriefView({ mandate = {}, assets = [], snapshots 
   const [since, setSince] = useState("");
   const [copied, setCopied] = useState(false);
   const [topics, setTopics] = useState(null);
+  const [reconstructed, setReconstructed] = useState(null);
 
   // Les symboles réellement détenus — clé stable pour ne pas refetch à chaque tick.
   const heldKey = useMemo(
@@ -84,12 +89,45 @@ export default function MeetingBriefView({ mandate = {}, assets = [], snapshots 
   // sans position détenue, il n'y a rien à sélectionner, donc pas de section.
   const effectiveTopics = heldKey ? topics : null;
 
+  // Démarrage à froid : après un import de journal (P3.4), aucun relevé de valeur
+  // n'a encore été accumulé → la section « depuis la dernière rencontre » et le
+  // TWR resteraient vides pendant des semaines. On reconstruit alors une série
+  // FACTUELLE (quantités du journal × clôtures historiques réelles) pour les
+  // allumer le jour 1. Les vrais relevés accumulés priment dès qu'il y en a ≥ 2 ;
+  // la reconstruction n'est qu'un socle d'amorçage, étiqueté comme tel.
+  const hasRealSeries = useMemo(
+    () => (Array.isArray(snapshots) ? snapshots.filter((s) => Number.isFinite(Number(s?.totalMarketValue))).length : 0) >= 2,
+    [snapshots],
+  );
+
+  useEffect(() => {
+    if (hasRealSeries || !heldKey) return undefined; // relevés réels suffisants, ou rien à valoriser
+    const controller = new AbortController();
+    const list = heldKey.split(",");
+    Promise.allSettled(list.map((symbol) => fetchPriceHistory(symbol, { days: HISTORY_DAYS })))
+      .then((settled) => {
+        if (controller.signal.aborted) return;
+        const historyBySymbol = {};
+        settled.forEach((outcome, index) => {
+          if (outcome.status === "fulfilled") historyBySymbol[list[index]] = outcome.value.points;
+        });
+        setReconstructed(reconstructSnapshots({ transactions, historyBySymbol, asOf }));
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setReconstructed(null);
+      });
+    return () => controller.abort();
+  }, [heldKey, transactions, hasRealSeries, asOf]);
+
+  const effectiveSnapshots = hasRealSeries ? snapshots : reconstructed ?? snapshots;
+
   const markdown = useMemo(
     () =>
       renderMeetingBriefMarkdown(
-        buildMeetingBrief({ mandate, assets, snapshots, transactions, asOf, since: since || null, topics: effectiveTopics }),
+        buildMeetingBrief({ mandate, assets, snapshots: effectiveSnapshots, transactions, asOf, since: since || null, topics: effectiveTopics }),
       ),
-    [mandate, assets, snapshots, transactions, asOf, since, effectiveTopics],
+    [mandate, assets, effectiveSnapshots, transactions, asOf, since, effectiveTopics],
   );
 
   const copy = () => {
