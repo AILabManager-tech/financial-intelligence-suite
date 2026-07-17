@@ -50,18 +50,63 @@
 }
 
 :root[data-theme="light"] {
-  --color-surface-950: #f8fafc;
-  --color-surface-900: #f1f5f9;
-  --color-surface-800: #e2e8f0;
-  --color-surface-700: #cbd5e1;
-  --color-surface-600: #94a3b8;
+  /* Surfaces : page gris clair, cartes BLANCHES qui ressortent (vraie élévation,
+     au lieu de gris-sur-gris plat). */
+  --color-surface-950: #e9edf3; /* fond de page */
+  --color-surface-900: #f6f8fb; /* panneaux/inputs secondaires, subtilement en creux */
+  --color-surface-800: #ffffff; /* cartes */
+  --color-surface-700: #eef1f6; /* zones en creux / hover */
+  --color-surface-600: #dde4ee; /* puces / creux plus marqué */
+  /* Accents assombris pour un contraste AA fort sur fond clair. */
   --color-accent-emerald: #047857;
   --color-accent-amber: #b45309;
-  --color-accent-rose: #b91c1c;
+  --color-accent-rose: #be123c;
   --color-accent-blue: #1d4ed8;
   --color-accent-violet: #6d28d9;
   --color-gold: #92400e;
   --color-body-text: #0f172a;
+}
+
+/* ── Thème clair : neutralisation des utilities Tailwind pensées pour le fond
+   sombre (roadmap P9.4). Ces règles ne sont PAS dans un @layer → elles priment
+   sur les utilities de Tailwind (non-layered > layered), sans !important. Elles
+   ne s'appliquent QU'À data-theme="light" ; la palette FIS sombre reste gelée. ── */
+
+/* Texte slate/white → foncé-sur-clair, HIÉRARCHIE conservée (100=plus fort → 500=atténué),
+   contrastes poussés (demande : « augmente tous les contrastes »). */
+:root[data-theme="light"] .text-white,
+:root[data-theme="light"] .text-slate-100 { color: #0f172a; }
+:root[data-theme="light"] .text-slate-200 { color: #172033; }
+:root[data-theme="light"] .text-slate-300 { color: #26334a; }
+:root[data-theme="light"] .text-slate-400 { color: #3a4a60; }
+:root[data-theme="light"] .text-slate-500 { color: #48586e; }
+:root[data-theme="light"] .text-slate-600 { color: #334155; }
+:root[data-theme="light"] .text-slate-700 { color: #1e293b; }
+:root[data-theme="light"] .hover\:text-white:hover,
+:root[data-theme="light"] .hover\:text-slate-300:hover,
+:root[data-theme="light"] .hover\:text-slate-400:hover { color: #0f172a; }
+
+/* Séparateurs & fonds translucides BLANCS (invisibles sur clair) → translucides
+   FONCÉS : bordures nettes, cartes bien délimitées. */
+:root[data-theme="light"] .border-white\/5 { border-color: rgba(15, 23, 42, 0.12); }
+:root[data-theme="light"] .border-white\/10 { border-color: rgba(15, 23, 42, 0.18); }
+:root[data-theme="light"] .bg-white\/5 { background-color: rgba(15, 23, 42, 0.035); }
+:root[data-theme="light"] .bg-white\/10 { background-color: rgba(15, 23, 42, 0.06); }
+:root[data-theme="light"] .divide-white\/5 > * { border-color: rgba(15, 23, 42, 0.12); }
+
+/* Accents : toutes les nuances (2/3/400 + suffixes d'opacité + variantes hover)
+   ramenées à la teinte foncée AA, via sélecteur de sous-chaîne (robuste). */
+:root[data-theme="light"] [class*="text-emerald-"] { color: #047857; }
+:root[data-theme="light"] [class*="text-amber-"] { color: #b45309; }
+:root[data-theme="light"] [class*="text-rose-"] { color: #be123c; }
+:root[data-theme="light"] [class*="text-blue-"] { color: #1d4ed8; }
+:root[data-theme="light"] [class*="text-violet-"] { color: #6d28d9; }
+
+/* Cartes blanches : ombre douce = élévation nette (beau, pas plat). Ciblée sur
+   les cartes arrondies, pas sur les puces/en-têtes de table en bg-surface-800. */
+:root[data-theme="light"] .rounded-xl.bg-surface-800,
+:root[data-theme="light"] .rounded-2xl.bg-surface-800 {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 
 body {
@@ -160,4 +205,17 @@ select {
 select option {
   background: #151d35;
   color: #e2e8f0;
+}
+
+/* Thème clair : scrollbar & menus déroulants (les valeurs par défaut ci-dessus
+   sont pensées pour le fond sombre). */
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.22);
+}
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.38);
+}
+:root[data-theme="light"] select option {
+  background: #ffffff;
+  color: #0f172a;
 }

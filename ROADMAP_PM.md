@@ -191,7 +191,7 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 | P9.1 Candlesticks OHLC + indicateurs (RSI, MACD, Bollinger) | lightweight-charts. | L | Attention à ne pas devenir un outil de day-trader |
 | P9.2 i18n FR / EN | `react-intl` ou `lingui`. | M | Indispensable hors-Québec |
 | P9.3 Densité + raccourcis clavier | Mode compact, `j`/`k`/`/`. | M | Recoupe les préférences P0 |
-| P9.4 Finition thème clair (optionnel) | Neutraliser les utilities Tailwind hardcodées **uniquement** pour le thème optionnel `light`. **Ne touche PAS la palette FIS par défaut** (gelée, cf. contrainte transversale). | M | Cosmétique pure, opt-in |
+| P9.4 Finition thème clair ✅ | **Livré 2026-07-17.** Neutralisation des utilities Tailwind hardcodées (texte slate/white, bordures/fonds blancs translucides, accents 2/3/400 + variantes d'opacité, scrollbar, `select option`) **uniquement** sous `:root[data-theme="light"]` dans `src/index.css` (règles non-layered → priment sur Tailwind, sans `!important`). Surfaces redéfinies pour une vraie élévation (page gris clair + cartes blanches à ombre douce). Palette FIS sombre **intacte** (vérifié live : `text-white`→blanc, fond `#0a0e1a`). Dogfood navigateur : titres/nav lisibles, contrastes AA, rien de « moche ». | M | Cosmétique pure, opt-in |
 
 ---
 
