@@ -11,7 +11,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "agent": "node --env-file=.env scripts/brief-agent.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.1",
