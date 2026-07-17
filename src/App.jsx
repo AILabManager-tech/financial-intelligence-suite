@@ -760,7 +760,7 @@ export default function App() {
   // sinon reconstruite du journal × clôtures réelles (démarrage à froid après un
   // import de relevé), étiquetée `reconstructed`. Display-only — n'altère jamais
   // l'accrual (portfolioSnapshots reste la série réelle qui s'accumule).
-  const effectiveSnapshots = useEffectiveSnapshots(assets, transactions, portfolioSnapshots);
+  const effectiveSnapshots = useEffectiveSnapshots(transactions, portfolioSnapshots);
 
   // Per-component props for the layout-driven dashboard block. Keyed by the
   // registry componentKey; LayoutSurface feeds each visible panel its slice.

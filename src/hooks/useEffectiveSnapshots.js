@@ -18,20 +18,27 @@ import { fetchPriceHistory } from "../services/priceHistory";
 
 const HISTORY_DAYS = 1825; // ~5 ans demandés ; free tier en rend ~18 mois
 
-export function useEffectiveSnapshots(assets = [], transactions = [], snapshots = []) {
+export function useEffectiveSnapshots(transactions = [], snapshots = []) {
   const [reconstructed, setReconstructed] = useState(null);
   // asOf ancré une seule fois (init paresseux) → stable, pas de refetch au render.
   const [asOf] = useState(() => new Date().toISOString());
 
-  // Symboles réellement détenus — clé stable pour ne pas refetch à chaque tick.
-  const heldKey = useMemo(
+  // Symboles présents dans le journal (buy/sell) — la reconstruction est pilotée
+  // par le journal, pas par les positions courantes : un import de relevé (P3.4)
+  // crée des transactions sans positions, et un titre revendu doit quand même
+  // être valorisé les jours où il était détenu. Clé stable → pas de refetch au tick.
+  const symbolsKey = useMemo(
     () =>
-      assets
-        .filter((a) => Number(a?.position?.quantity) > 0)
-        .map((a) => a.symbol)
+      [
+        ...new Set(
+          (Array.isArray(transactions) ? transactions : [])
+            .filter((t) => (t?.type === "buy" || t?.type === "sell") && t?.symbol)
+            .map((t) => String(t.symbol).trim().toUpperCase()),
+        ),
+      ]
         .sort()
         .join(","),
-    [assets],
+    [transactions],
   );
 
   const hasRealSeries = useMemo(
@@ -40,9 +47,9 @@ export function useEffectiveSnapshots(assets = [], transactions = [], snapshots 
   );
 
   useEffect(() => {
-    if (hasRealSeries || !heldKey) return undefined; // relevés réels suffisants, ou rien à valoriser
+    if (hasRealSeries || !symbolsKey) return undefined; // relevés réels suffisants, ou rien à valoriser
     const controller = new AbortController();
-    const list = heldKey.split(",");
+    const list = symbolsKey.split(",");
     Promise.allSettled(list.map((symbol) => fetchPriceHistory(symbol, { days: HISTORY_DAYS })))
       .then((settled) => {
         if (controller.signal.aborted) return;
@@ -57,7 +64,7 @@ export function useEffectiveSnapshots(assets = [], transactions = [], snapshots 
         setReconstructed(null);
       });
     return () => controller.abort();
-  }, [heldKey, transactions, hasRealSeries, asOf]);
+  }, [symbolsKey, transactions, hasRealSeries, asOf]);
 
   return hasRealSeries ? snapshots : reconstructed ?? snapshots;
 }
