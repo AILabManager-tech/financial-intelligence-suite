@@ -450,6 +450,13 @@ export default function App() {
     persistTransactions(removeTransaction(transactions, id));
   }, [persistTransactions, transactions]);
 
+  // Import d'un relevé de courtier (P3.4). On replie `addTransaction` pour que
+  // chaque ligne reçoive un id et passe la même normalisation qu'une saisie
+  // manuelle — un import ne doit pas être un chemin d'écriture privilégié.
+  const handleImportTransactions = useCallback((drafts) => {
+    persistTransactions((drafts ?? []).reduce((acc, draft) => addTransaction(acc, draft), transactions));
+  }, [persistTransactions, transactions]);
+
   const persistWatchlist = useCallback((nextAssets) => {
     saveWatchlistAssets(nextAssets, activeWatchlistId);
     setWatchlistAssets(nextAssets);
@@ -919,6 +926,7 @@ export default function App() {
             transactions={transactions}
             onAdd={handleAddTransaction}
             onRemove={handleRemoveTransaction}
+            onImport={handleImportTransactions}
           />
         ) : isWatchlistRoute ? (
           <>

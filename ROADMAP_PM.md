@@ -142,6 +142,8 @@ L'app est aujourd'hui un excellent **terminal d'analyse par titre** : 10 panels 
 
 ---
 
+> **P3.4 Import du journal de transactions ✅ (2026-07-17)** — hors table, ajouté après coup : répond à « pourquoi utiliser cette appli alors que iA/Croesus existe et est sécurisé ? ». Réponse : FIS ne doit pas être une app de portefeuille (il perd contre le système d'enregistrement), mais une **couche par-dessus un export**. `src/services/transactionCsvImporter.js` : import bilingue FR/EN d'un relevé de courtier → journal de transactions, branché dans `/transactions` avec aperçu avant écriture. Débloque le moteur de lots, les gains réalisés et le rapport fiscal **dès le jour 1** au lieu de la saisie manuelle. **Suite critique** : reconstruction de la série de valeurs (quantités du journal × clôtures réelles) pour allumer aussi le TWR et le brief — voir `REPRISE_CHECKPOINT.md`.
+
 ## Phase 6 — Exploitation client
 
 | Module | Périmètre | Effort | Dépend de |

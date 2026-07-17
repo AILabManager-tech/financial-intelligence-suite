@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Receipt, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Receipt, Plus, Trash2, AlertTriangle, Upload } from "lucide-react";
 import { applyTransactions, summarize } from "../utils/lotEngine";
 import { formatCurrency } from "../utils/scoreTranslator";
+import { parseTransactionCsv } from "../services/transactionCsvImporter";
 
 // Transaction journal (P3.3b). Full-page route: capture buy/sell/dividend/fee
 // entries, list them chronologically, and derive — per symbol — the realized P&L
@@ -20,10 +21,31 @@ function emptyForm() {
   return { type: "buy", symbol: "", date: today(), quantity: "", price: "", fee: "", amount: "" };
 }
 
-export default function TransactionJournalPanel({ transactions, onAdd, onRemove }) {
+export default function TransactionJournalPanel({ transactions, onAdd, onRemove, onImport }) {
   const [form, setForm] = useState(emptyForm);
   const [method, setMethod] = useState("fifo");
   const [error, setError] = useState(null);
+  const [preview, setPreview] = useState(null);
+
+  // Import d'un relevé de courtier. On montre TOUJOURS l'aperçu avant d'écrire :
+  // un relevé à moitié importé sans le dire fausserait les gains réalisés, qui
+  // se calculent sur le journal complet.
+  const handleFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      setPreview({ ...parseTransactionCsv(await file.text()), fileName: file.name });
+      setError(null);
+    } catch (readError) {
+      setError(`Lecture impossible : ${readError.message}`);
+    }
+  };
+
+  const confirmImport = () => {
+    onImport?.(preview.transactions);
+    setPreview(null);
+  };
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
   const isQty = QTY_TYPES.has(form.type);
@@ -75,9 +97,70 @@ export default function TransactionJournalPanel({ transactions, onAdd, onRemove 
         <h2 className="text-xl font-bold text-white">Journal des transactions</h2>
       </div>
       <p className="text-sm text-slate-400">
-        Saisis tes achats, ventes, dividendes et frais. Le P&amp;L réalisé et les lots ouverts sont calculés par
-        appariement de lots (FIFO/LIFO) à partir des transactions saisies.
+        Importe un relevé de courtier, ou saisis tes achats, ventes, dividendes et frais. Le P&amp;L réalisé et les
+        lots ouverts sont calculés par appariement de lots (FIFO/LIFO) à partir des transactions du journal.
       </p>
+
+      {/* Import d'un relevé — évite de retaper ce que la plateforme du courtier a déjà */}
+      <div className="p-4 rounded-2xl bg-surface-900 border border-white/5 space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 text-violet-300 hover:bg-violet-500/15 text-xs font-semibold cursor-pointer">
+            <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+            Importer un relevé CSV
+            <input type="file" accept=".csv,text/csv" onChange={handleFile} className="sr-only" aria-label="Importer un relevé de transactions CSV" />
+          </label>
+          <span className="text-[11px] text-slate-500">
+            En-têtes FR ou EN reconnus (date, opération, symbole, quantité, prix, frais). Exporte en ISO (AAAA-MM-JJ) si tes dates sont ambiguës.
+          </span>
+        </div>
+
+        {preview && (
+          <div className="rounded-lg bg-surface-800 border border-white/5 p-3 space-y-2">
+            <div className="text-sm text-white font-semibold">{preview.fileName}</div>
+            <div className="text-sm text-slate-300">
+              <span className="text-emerald-400 font-semibold">{preview.transactions.length}</span> transaction(s) lisibles
+              {preview.errors.length > 0 && (
+                <>
+                  {" · "}
+                  <span className="text-rose-400 font-semibold">{preview.errors.length}</span> ligne(s) rejetée(s)
+                </>
+              )}
+            </div>
+            {preview.errors.length > 0 && (
+              <ul className="text-[11px] text-slate-400 space-y-0.5 max-h-32 overflow-y-auto list-disc list-inside">
+                {preview.errors.slice(0, 20).map((e, i) => (
+                  <li key={`${e.line}-${i}`}>
+                    Ligne {e.line} — {e.reason}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {preview.errors.length > 0 && preview.transactions.length > 0 && (
+              <p className="text-[11px] text-amber-300">
+                Un journal incomplet fausse les gains réalisés — ils se calculent sur l&apos;historique complet. Corrige les lignes
+                rejetées et réimporte plutôt que d&apos;importer partiellement.
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={confirmImport}
+                disabled={preview.transactions.length === 0}
+                className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold cursor-pointer"
+              >
+                Ajouter au journal
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreview(null)}
+                className="px-3 py-1.5 rounded-lg bg-white/5 text-slate-300 hover:bg-white/10 text-xs font-semibold cursor-pointer"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Saisie */}
       <div className="p-4 rounded-2xl bg-surface-900 border border-white/5 space-y-3">

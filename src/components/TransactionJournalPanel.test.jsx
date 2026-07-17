@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import TransactionJournalPanel from "./TransactionJournalPanel";
 import { formatCurrency } from "../utils/scoreTranslator";
@@ -70,5 +70,54 @@ describe("TransactionJournalPanel", () => {
     render(<TransactionJournalPanel transactions={fifoLifo} onAdd={() => {}} onRemove={onRemove} />);
     fireEvent.click(screen.getByRole("button", { name: /Supprimer la transaction AAPL du 2021-01-01/ }));
     expect(onRemove).toHaveBeenCalledWith("t3");
+  });
+});
+
+describe("TransactionJournalPanel — import d'un relevé", () => {
+  const csv = [
+    "Date de transaction,Opération,Symbole,Quantité,Prix unitaire,Frais",
+    "2026-03-06,Achat,VOO,2,517.84,9.95",
+    "2026-03-07,Transfert entrant,VOO,5,",
+  ].join("\n");
+
+  function fileOf(text, name = "releve.csv") {
+    const file = new File([text], name, { type: "text/csv" });
+    // jsdom n'implémente pas File.text(), qui est standard et disponible dans
+    // tous les navigateurs (PortfolioManager l'utilise déjà en prod). On comble
+    // la lacune de l'environnement, pas un défaut du composant.
+    file.text = async () => text;
+    return file;
+  }
+
+  it("montre un aperçu avant d'écrire, avec les lignes rejetées et leur numéro", async () => {
+    render(<TransactionJournalPanel transactions={[]} onAdd={vi.fn()} onRemove={vi.fn()} onImport={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/Importer un relevé de transactions CSV/i), {
+      target: { files: [fileOf(csv)] },
+    });
+    await waitFor(() => expect(screen.getByText("releve.csv")).toBeInTheDocument());
+    expect(screen.getByText(/transaction\(s\) lisibles/)).toBeInTheDocument();
+    expect(screen.getByText(/ligne\(s\) rejetée\(s\)/)).toBeInTheDocument();
+    // La ligne fautive est nommée par son numéro et sa raison, pas juste comptée.
+    expect(screen.getByText(/Ligne 3 —.*Transfert entrant/)).toBeInTheDocument();
+  });
+
+  it("n'écrit rien tant que l'import n'est pas confirmé", async () => {
+    const onImport = vi.fn();
+    render(<TransactionJournalPanel transactions={[]} onAdd={vi.fn()} onRemove={vi.fn()} onImport={onImport} />);
+    fireEvent.change(screen.getByLabelText(/Importer un relevé de transactions CSV/i), {
+      target: { files: [fileOf(csv)] },
+    });
+    await waitFor(() => expect(screen.getByText("releve.csv")).toBeInTheDocument());
+    expect(onImport).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Ajouter au journal"));
+    expect(onImport).toHaveBeenCalledWith([expect.objectContaining({ symbol: "VOO", type: "buy", quantity: 2 })]);
+  });
+
+  it("avertit qu'un journal incomplet fausse les gains réalisés", async () => {
+    render(<TransactionJournalPanel transactions={[]} onAdd={vi.fn()} onRemove={vi.fn()} onImport={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText(/Importer un relevé de transactions CSV/i), {
+      target: { files: [fileOf(csv)] },
+    });
+    await waitFor(() => expect(screen.getByText(/fausse les gains réalisés/i)).toBeInTheDocument());
   });
 });
