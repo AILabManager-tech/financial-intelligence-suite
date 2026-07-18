@@ -28,6 +28,7 @@
 //   pas de dépendance réseau ; dates anciennes non couvertes par le free tier).
 
 import { buildGeneratedProfiles } from "./profileGenerators";
+import { GEAR_CODE_TRANSACTIONS, GEAR_CODE_REF_PRICES, GEAR_CODE_END_DATE } from "./gearCodeSimulation";
 
 export const DEMO_PREFIX = "demo-";
 
@@ -186,6 +187,25 @@ const DECLARED_PROFILES = [
       { type: "buy", symbol: "AAPL", date: "2025-09-15", quantity: 25 }, // price omis → résolu
       { type: "buy", symbol: "MSFT", date: "2025-10-01", quantity: 12 }, // price omis → résolu
     ],
+  },
+
+  // 10 — GEAR CODE : simulation RÉALISTE 2015-2022 (8 ans civils, ~100k CAD d'apports,
+  //   prix synthétiques calibrés à l'époque — NON des clôtures officielles, cf.
+  //   méthodologie du jeu de données). Base USD (prix par action USD, cohérent avec
+  //   les cotations live US). `asOf` = fin 2022 → la série reconstituée couvre les 8
+  //   ans et alimente TOUTE la surface performance (TWR/risque/ratios/gains réalisés)
+  //   sur un historique long, clairement étiquetée « reconstituée » (bannière démo).
+  //   Données générées dans gearCodeSimulation.js depuis simulation/gear-code/.
+  {
+    id: "demo-gear-code",
+    name: "Gear Code — Tech 2015-2022 (simulé)",
+    client: "Gear Code",
+    accountType: "taxable",
+    baseCurrency: "USD",
+    dateDebut: "2015-02-02",
+    asOf: GEAR_CODE_END_DATE,
+    prixCourant: GEAR_CODE_REF_PRICES,
+    transactions: GEAR_CODE_TRANSACTIONS,
   },
 ];
 

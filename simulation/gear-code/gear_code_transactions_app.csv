@@ -1,0 +1,93 @@
+﻿id,date,type,symbol,quantity,price,currency,fx_rate_to_cad,fees_cad,cash_amount_cad,note,split_adjusted
+GC-0001,2015-01-15,deposit,CASH,0,0,CAD,1.0,0.0,20000.0,Apport annuel de Gear Code,True
+GC-0002,2015-02-02,buy,AAPL,100.0,28.0,USD,1.25,9.95,0,Position initiale : écosystème Apple et croissance mobile,True
+GC-0003,2015-02-10,buy,MSFT,70.0,45.0,USD,1.25,9.95,0,Virage cloud Azure jugé prometteur,True
+GC-0004,2015-03-05,buy,GOOGL,100.0,27.0,USD,1.25,9.95,0,Publicité numérique et moteur de recherche,True
+GC-0005,2015-04-01,buy,AMZN,120.0,19.0,USD,1.25,9.95,0,AWS et commerce électronique,True
+GC-0006,2015-05-15,buy,NVDA,200.0,5.5,USD,1.25,9.95,0,"Pari GPU, jeux et calcul accéléré",True
+GC-0007,2015-07-10,buy,META,30.0,78.0,USD,1.25,9.95,0,Croissance des réseaux sociaux,True
+GC-0008,2015-09-01,buy,TSLA,60.0,15.0,USD,1.25,9.95,0,Petite position spéculative en mobilité électrique,True
+GC-0009,2015-12-15,dividend,MSFT,0,0,CAD,1.0,0.0,70.0,"Dividendes annuels agrégés, montant synthétique",True
+GC-0010,2015-12-18,dividend,AAPL,0,0,CAD,1.0,0.0,45.0,"Dividendes annuels agrégés, montant synthétique",True
+GC-0011,2016-01-15,deposit,CASH,0,0,CAD,1.0,0.0,10000.0,Apport annuel de Gear Code,True
+GC-0012,2016-02-12,sell,TSLA,30.0,14.0,USD,1.38,9.95,0,Réduction après volatilité; décision prudente mais prématurée,True
+GC-0013,2016-03-18,buy,MSFT,50.0,52.0,USD,1.32,9.95,0,Renforcement du cloud,True
+GC-0014,2016-05-20,buy,NFLX,40.0,95.0,USD,1.31,9.95,0,Croissance mondiale du streaming,True
+GC-0015,2016-08-12,buy,AMD,100.0,5.5,USD,1.3,9.95,0,Pari de redressement face à Intel et NVIDIA,True
+GC-0016,2016-11-18,buy,META,10.0,120.0,USD,1.34,9.95,0,Renforcement après monétisation mobile,True
+GC-0017,2016-12-15,dividend,MSFT,0,0,CAD,1.0,0.0,130.0,Dividendes annuels agrégés,True
+GC-0018,2016-12-19,dividend,AAPL,0,0,CAD,1.0,0.0,55.0,Dividendes annuels agrégés,True
+GC-0019,2017-01-16,deposit,CASH,0,0,CAD,1.0,0.0,10000.0,Apport annuel de Gear Code,True
+GC-0020,2017-01-20,sell,NFLX,20.0,160.0,USD,1.31,9.95,0,Prise de profit partielle après forte hausse,True
+GC-0021,2017-02-10,buy,SHOP,150.0,9.0,USD,1.31,9.95,0,Exposition canadienne au commerce infonuagique,True
+GC-0022,2017-04-21,buy,AMD,200.0,12.0,USD,1.35,9.95,0,Renforcement avant le cycle Ryzen,True
+GC-0023,2017-06-16,buy,SQ,50.0,40.0,USD,1.32,9.95,0,Paiements numériques pour PME,True
+GC-0024,2017-08-18,buy,NVDA,60.0,50.0,USD,1.26,9.95,0,GPU et premiers signes de demande en intelligence artificielle,True
+GC-0025,2017-11-10,sell,AAPL,20.0,43.0,USD,1.27,9.95,0,Prise de profit partielle et rééquilibrage,True
+GC-0026,2017-12-15,dividend,MSFT,0,0,CAD,1.0,0.0,180.0,Dividendes annuels agrégés,True
+GC-0027,2017-12-18,dividend,AAPL,0,0,CAD,1.0,0.0,60.0,Dividendes annuels agrégés,True
+GC-0028,2018-01-15,deposit,CASH,0,0,CAD,1.0,0.0,15000.0,Apport annuel de Gear Code,True
+GC-0029,2018-02-09,buy,MSFT,40.0,90.0,USD,1.26,9.95,0,Achat sur correction de marché,True
+GC-0030,2018-03-23,buy,SNAP,150.0,18.0,USD,1.29,9.95,0,Pari spéculatif sur la publicité sociale,True
+GC-0031,2018-05-18,buy,TWTR,100.0,32.0,USD,1.28,9.95,0,Pari sur le redressement de l'engagement,True
+GC-0032,2018-07-27,sell,GOOGL,20.0,62.0,USD,1.3,9.95,0,Prise de profit partielle,True
+GC-0033,2018-08-17,buy,NVDA,40.0,63.0,USD,1.31,9.95,0,Renforcement avant le ralentissement des GPU liés aux cryptomonnaies,True
+GC-0034,2018-10-12,sell,TSLA,30.0,22.0,USD,1.3,9.95,0,Sortie complète après incertitudes de gouvernance,True
+GC-0035,2018-12-14,dividend,MSFT,0,0,CAD,1.0,0.0,240.0,Dividendes annuels agrégés,True
+GC-0036,2018-12-18,dividend,AAPL,0,0,CAD,1.0,0.0,65.0,Dividendes annuels agrégés,True
+GC-0037,2018-12-21,buy,AMD,100.0,19.0,USD,1.36,9.95,0,Achat pendant la correction de fin d'année,True
+GC-0038,2019-01-15,deposit,CASH,0,0,CAD,1.0,0.0,10000.0,Apport annuel de Gear Code,True
+GC-0039,2019-02-15,sell,SNAP,150.0,11.0,USD,1.33,6.95,0,Coupe une position perdante,True
+GC-0040,2019-03-15,sell,TWTR,50.0,39.0,USD,1.33,6.95,0,Prise de profit partielle,True
+GC-0041,2019-05-17,sell,NFLX,20.0,290.0,USD,1.34,6.95,0,Sortie complète avec gain important,True
+GC-0042,2019-06-14,sell,SQ,25.0,70.0,USD,1.34,6.95,0,Prise de profit partielle,True
+GC-0043,2019-07-19,buy,MSFT,60.0,140.0,USD,1.31,6.95,0,Renforcement de la meilleure conviction cloud,True
+GC-0044,2019-08-16,buy,SHOP,100.0,32.0,USD,1.33,6.95,0,Renforcement du commerce logiciel,True
+GC-0045,2019-09-20,buy,UBER,80.0,42.0,USD,1.33,6.95,0,Pari plus risqué sur une plateforme mondiale,True
+GC-0046,2019-11-15,buy,AMZN,30.0,90.0,USD,1.32,6.95,0,Renforcement AWS après consolidation,True
+GC-0047,2019-12-13,dividend,MSFT,0,0,CAD,1.0,0.0,330.0,Dividendes annuels agrégés,True
+GC-0048,2019-12-18,dividend,AAPL,0,0,CAD,1.0,0.0,70.0,Dividendes annuels agrégés,True
+GC-0049,2020-01-15,deposit,CASH,0,0,CAD,1.0,0.0,15000.0,Apport annuel de Gear Code,True
+GC-0050,2020-02-21,sell,TWTR,50.0,38.0,USD,1.32,6.95,0,Sortie avant le choc pandémique,True
+GC-0051,2020-03-13,sell,UBER,80.0,28.0,USD,1.4,6.95,0,Vente à perte pour réduire le risque,True
+GC-0052,2020-03-20,sell,META,20.0,200.0,USD,1.43,6.95,0,Libère du capital pendant le krach,True
+GC-0053,2020-03-23,buy,AAPL,50.0,60.0,USD,1.43,6.95,0,Achat pendant le krach,True
+GC-0054,2020-03-24,buy,MSFT,40.0,150.0,USD,1.43,6.95,0,Achat pendant le krach,True
+GC-0055,2020-03-25,buy,AMD,100.0,45.0,USD,1.42,6.95,0,Renforcement dans les semi-conducteurs,True
+GC-0056,2020-03-27,buy,TSLA,100.0,30.0,USD,1.41,6.95,0,Rachat spéculatif pendant le krach,True
+GC-0057,2020-04-03,buy,ZM,30.0,110.0,USD,1.41,6.95,0,Télétravail et vidéoconférence,True
+GC-0058,2020-05-15,buy,NET,55.0,35.0,USD,1.4,6.95,0,Infrastructure web et sécurité,True
+GC-0059,2020-06-19,buy,CRWD,10.0,95.0,USD,1.36,6.95,0,Cybersécurité infonuagique,True
+GC-0060,2020-07-17,buy,DOCU,5.0,90.0,USD,1.35,6.95,0,Signature électronique accélérée,True
+GC-0061,2020-09-04,sell,ZM,20.0,400.0,USD,1.31,6.95,0,"Prise de profit majeure, probablement trop tôt",True
+GC-0062,2020-10-16,sell,AAPL,30.0,120.0,USD,1.32,6.95,0,Rééquilibrage après forte hausse,True
+GC-0063,2020-12-15,dividend,MSFT,0,0,CAD,1.0,0.0,440.0,Dividendes annuels agrégés,True
+GC-0064,2020-12-18,dividend,AAPL,0,0,CAD,1.0,0.0,90.0,Dividendes annuels agrégés,True
+GC-0065,2021-01-08,sell,TSLA,60.0,300.0,USD,1.27,4.95,0,Prise de profit après envolée exceptionnelle,True
+GC-0066,2021-01-15,deposit,CASH,0,0,CAD,1.0,0.0,10000.0,Apport annuel de Gear Code,True
+GC-0067,2021-02-12,sell,SHOP,100.0,140.0,USD,1.27,4.95,0,Prise de profit partielle,True
+GC-0068,2021-02-19,buy,PLTR,300.0,25.0,USD,1.27,4.95,0,Pari spéculatif sur les logiciels de données,True
+GC-0069,2021-03-19,sell,ZM,10.0,300.0,USD,1.25,4.95,0,Sortie complète de la position pandémie,True
+GC-0070,2021-04-16,buy,COIN,25.0,300.0,USD,1.25,4.95,0,Exposition spéculative à l'écosystème crypto,True
+GC-0071,2021-05-14,buy,ROKU,20.0,350.0,USD,1.21,4.95,0,Pari streaming et publicité connectée,True
+GC-0072,2021-06-18,buy,ARKK,80.0,120.0,USD,1.23,4.95,0,Panier d'innovation acheté près d'un sommet,True
+GC-0073,2021-08-20,buy,NVDA,20.0,200.0,USD,1.28,4.95,0,Renforcement IA et centres de données,True
+GC-0074,2021-10-15,buy,MSFT,30.0,300.0,USD,1.24,4.95,0,Renforcement qualité malgré une valorisation élevée,True
+GC-0075,2021-11-19,buy,NET,25.0,180.0,USD,1.26,4.95,0,Renforcement trop agressif près du sommet,True
+GC-0076,2021-12-15,dividend,MSFT,0,0,CAD,1.0,0.0,560.0,Dividendes annuels agrégés,True
+GC-0077,2021-12-17,dividend,AAPL,0,0,CAD,1.0,0.0,105.0,Dividendes annuels agrégés,True
+GC-0078,2022-01-14,deposit,CASH,0,0,CAD,1.0,0.0,10000.0,Apport annuel de Gear Code,True
+GC-0079,2022-01-14,sell,TSLA,30.0,250.0,USD,1.25,4.95,0,Réduction du risque avant la correction,True
+GC-0080,2022-02-18,sell,COIN,25.0,190.0,USD,1.27,4.95,0,Coupe une position spéculative avec perte,True
+GC-0081,2022-03-18,sell,ROKU,20.0,125.0,USD,1.26,4.95,0,Vente à perte,True
+GC-0082,2022-04-15,sell,ARKK,80.0,60.0,USD,1.26,4.95,0,Sortie du panier spéculatif,True
+GC-0083,2022-05-20,sell,PLTR,200.0,8.0,USD,1.29,4.95,0,Réduction d'une position perdante,True
+GC-0084,2022-06-17,sell,NET,50.0,45.0,USD,1.3,4.95,0,Prise de perte et réduction des multiples élevés,True
+GC-0085,2022-06-24,buy,GOOGL,50.0,115.0,USD,1.29,4.95,0,Renforcement d'une entreprise rentable pendant le marché baissier,True
+GC-0086,2022-07-15,buy,AMZN,60.0,115.0,USD,1.3,4.95,0,Renforcement AWS après repli,True
+GC-0087,2022-09-16,buy,MSFT,20.0,245.0,USD,1.32,4.95,0,Renforcement qualité pendant la baisse,True
+GC-0088,2022-10-14,buy,NVDA,30.0,120.0,USD,1.38,4.95,0,Achat contrariant dans les semi-conducteurs,True
+GC-0089,2022-11-18,buy,AAPL,30.0,150.0,USD,1.34,4.95,0,Renforcement d'une position de qualité,True
+GC-0090,2022-12-15,dividend,MSFT,0,0,CAD,1.0,0.0,650.0,Dividendes annuels agrégés,True
+GC-0091,2022-12-16,sell,META,20.0,120.0,USD,1.36,4.95,0,Allège après dégradation de la thèse et dépenses liées au métavers,True
+GC-0092,2022-12-19,dividend,AAPL,0,0,CAD,1.0,0.0,120.0,Dividendes annuels agrégés,True

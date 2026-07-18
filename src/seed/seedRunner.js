@@ -100,7 +100,9 @@ export function buildSeedPlan(profiles = DEMO_PROFILES, { method = "fifo" } = {}
       mandate: buildDemoMandate(profile),
       transactions,
       positions: derivePositions(transactions, method, profile.prixCourant, profile.meta),
-      snapshots: buildDemoSnapshots(profile, transactions),
+      // asOf par profil : ancre la série reconstituée (défaut DEMO_AS_OF si absent).
+      // Gear Code (2015-2022) le fixe à fin 2022 pour couvrir ses 8 ans.
+      snapshots: buildDemoSnapshots(profile, transactions, { asOf: profile.asOf }),
     };
   });
 }
