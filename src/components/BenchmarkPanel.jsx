@@ -4,6 +4,7 @@ import { fetchPriceHistory } from "../services/priceHistory";
 import { computeBenchmarkComparison } from "../utils/benchmarkComparison";
 import { formatPct, returnTone } from "../utils/returnsFormatters";
 import SeriesProvenanceNote from "./SeriesProvenanceNote";
+import BenchmarkSourceNote from "./BenchmarkSourceNote";
 
 const HISTORY_DAYS = 1825;
 
@@ -27,7 +28,7 @@ export default function BenchmarkPanel({ snapshots = [], transactions = [] }) {
     fetchPriceHistory(symbol, { days: HISTORY_DAYS })
       .then((payload) => {
         if (controller.signal.aborted) return;
-        setState({ symbol, status: "ready", points: payload.points, error: null });
+        setState({ symbol, status: "ready", points: payload.points, source: payload.source, fetchedAt: payload.fetchedAt, error: null });
       })
       .catch((error) => {
         if (controller.signal.aborted || error.name === "AbortError") return;
@@ -113,6 +114,7 @@ export default function BenchmarkPanel({ snapshots = [], transactions = [] }) {
             Portefeuille (TWR, flux neutralisés) vs prix du {label} sur la même fenêtre ({comparison.days} j). Rendement de prix, hors dividendes réinvestis — pas un conseil.
           </div>
           <SeriesProvenanceNote snapshots={snapshots} />
+          <BenchmarkSourceNote label={label} source={state.source} points={state.points} fetchedAt={state.fetchedAt} />
         </>
       )}
     </div>

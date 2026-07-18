@@ -31,6 +31,22 @@ describe("BenchmarkPanel", () => {
     expect(screen.getByText("+1.50 %")).toBeInTheDocument(); // excès
   });
 
+  it("attribue la source du prix benchmark quand elle est fournie", async () => {
+    fetchPriceHistory.mockReset();
+    fetchPriceHistory.mockResolvedValue({
+      symbol: "SPY",
+      source: "twelvedata.com",
+      fetchedAt: "2026-07-17T12:00:00Z",
+      points: [
+        { date: "2026-05-01", close: 100 },
+        { date: "2026-05-03", close: 103 },
+      ],
+    });
+    render(<BenchmarkPanel snapshots={SNAPS} transactions={[]} />);
+    await waitFor(() => expect(screen.getByText("twelvedata.com")).toBeInTheDocument());
+    expect(screen.getByText(/Prix S&P 500/)).toBeInTheDocument();
+  });
+
   it("montre une erreur si le benchmark ne se charge pas", async () => {
     fetchPriceHistory.mockReset();
     fetchPriceHistory.mockImplementation(() => Promise.reject(new Error("HTTP 502")));

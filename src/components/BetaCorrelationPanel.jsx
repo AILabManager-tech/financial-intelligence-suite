@@ -4,6 +4,7 @@ import { fetchPriceHistory } from "../services/priceHistory";
 import { computeBenchmarkStats } from "../utils/benchmarkStats";
 import { formatRatio } from "../utils/returnsFormatters";
 import SeriesProvenanceNote from "./SeriesProvenanceNote";
+import BenchmarkSourceNote from "./BenchmarkSourceNote";
 
 const HISTORY_DAYS = 1825;
 const BENCHMARKS = [
@@ -25,7 +26,7 @@ export default function BetaCorrelationPanel({ snapshots = [], transactions = []
     fetchPriceHistory(symbol, { days: HISTORY_DAYS })
       .then((payload) => {
         if (controller.signal.aborted) return;
-        setState({ symbol, status: "ready", points: payload.points, error: null });
+        setState({ symbol, status: "ready", points: payload.points, source: payload.source, fetchedAt: payload.fetchedAt, error: null });
       })
       .catch((error) => {
         if (controller.signal.aborted || error.name === "AbortError") return;
@@ -93,6 +94,7 @@ export default function BetaCorrelationPanel({ snapshots = [], transactions = []
             Régression OLS du portefeuille (TWR) sur {label} — {stats.pairs} périodes communes ({stats.days} j). Estimation sur la série accumulée, pas un conseil.
           </div>
           <SeriesProvenanceNote snapshots={snapshots} />
+          <BenchmarkSourceNote label={label} source={state.source} points={state.points} fetchedAt={state.fetchedAt} />
         </>
       )}
     </div>

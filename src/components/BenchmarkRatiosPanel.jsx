@@ -4,6 +4,7 @@ import { fetchPriceHistory } from "../services/priceHistory";
 import { computeBenchmarkStats } from "../utils/benchmarkStats";
 import { formatRatio, formatPct } from "../utils/returnsFormatters";
 import SeriesProvenanceNote from "./SeriesProvenanceNote";
+import BenchmarkSourceNote from "./BenchmarkSourceNote";
 
 const HISTORY_DAYS = 1825;
 const BENCHMARKS = [
@@ -25,7 +26,7 @@ export default function BenchmarkRatiosPanel({ snapshots = [], transactions = []
     fetchPriceHistory(symbol, { days: HISTORY_DAYS })
       .then((payload) => {
         if (controller.signal.aborted) return;
-        setState({ symbol, status: "ready", points: payload.points, error: null });
+        setState({ symbol, status: "ready", points: payload.points, source: payload.source, fetchedAt: payload.fetchedAt, error: null });
       })
       .catch((error) => {
         if (controller.signal.aborted || error.name === "AbortError") return;
@@ -97,6 +98,7 @@ export default function BenchmarkRatiosPanel({ snapshots = [], transactions = []
             Vs {label} sur {stats.pairs} périodes communes ({stats.days} j), taux sans risque supposé {stats.riskFreePct} % (hypothèse). Estimation annualisée — pas un conseil.
           </div>
           <SeriesProvenanceNote snapshots={snapshots} />
+          <BenchmarkSourceNote label={label} source={state.source} points={state.points} fetchedAt={state.fetchedAt} />
         </>
       )}
     </div>
