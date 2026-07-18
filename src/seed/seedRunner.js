@@ -13,10 +13,11 @@ import {
   loadPortfolioList,
   savePortfolioList,
   normalizeState,
+  setActivePortfolio,
 } from "../services/portfolioListStore";
 import { saveTransactions, STORAGE_KEY as TX_KEY } from "../services/transactionStore";
 import { savePortfolioAssets, STORAGE_KEY as POS_KEY } from "../services/portfolioStore";
-import { DEMO_PREFIX, DEMO_PROFILES } from "./profils.seed";
+import { DEMO_PREFIX, DEMO_PROFILES, DEMO_GEAR_CODE_ID } from "./profils.seed";
 import { buildDemoSnapshots } from "./demoSnapshots";
 import { saveDemoSnapshots, removeDemoSnapshots } from "./demoSnapshotStore";
 import { resolveDemoProfiles } from "./priceResolver";
@@ -127,6 +128,20 @@ export function applyDemoSeed(profiles = DEMO_PROFILES, { method = "fifo" } = {}
     saveDemoSnapshots(snapshots, mandate.id);
   }
   return demoMandates.map((m) => m.id);
+}
+
+// Prospect-facing loader: seed ONLY the Gear Code sample mandate and make it
+// active, so a visitor with no positions can load a labelled example in one
+// click (empty-state button, visible in prod). Network-free — the profile's
+// prices are explicit, unlike the dev `Charger profils démo` path which resolves
+// `demo-resolver` over the network. Does NOT expose the dev demo set / reset.
+// Returns the seeded mandate id, or null if the profile is missing.
+export function applyDemoGearCode() {
+  const profile = DEMO_PROFILES.find((p) => p.id === DEMO_GEAR_CODE_ID);
+  if (!profile) return null;
+  applyDemoSeed([profile]);
+  savePortfolioList(setActivePortfolio(loadPortfolioList(), DEMO_GEAR_CODE_ID));
+  return DEMO_GEAR_CODE_ID;
 }
 
 // Async variant: resolve any profiles that omit a transaction `price` from real

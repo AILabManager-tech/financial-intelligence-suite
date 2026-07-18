@@ -3,6 +3,7 @@ import { AlertTriangle, Brain, RefreshCw, Wifi } from "lucide-react";
 import TopPerformers from "./components/TopPerformers";
 import SafetyBadge from "./components/SafetyBadge";
 import AssetTable from "./components/AssetTable";
+import SamplefolioEmptyState from "./components/SamplefolioEmptyState";
 import RiskCommandCenter from "./components/RiskCommandCenter";
 import SearchFilter from "./components/SearchFilter";
 import MarketLookup from "./components/MarketLookup";
@@ -39,6 +40,7 @@ import PortfolioSelector from "./components/PortfolioSelector";
 import { fetchPortfolioSnapshots, savePortfolioSnapshot } from "./services/portfolioSnapshots";
 import { loadStoredSnapshots, appendStoredSnapshot } from "./services/snapshotStore";
 import { isDemoMandateId, loadDemoSnapshots } from "./seed/demoSnapshotStore";
+import { applyDemoGearCode } from "./seed/seedRunner";
 import {
   isWatchlisted,
   loadWatchlistAssets,
@@ -404,6 +406,15 @@ export default function App() {
     if (id === portfolioList.activeId) return;
     activateMandate(setActivePortfolio(portfolioList, id));
   }, [portfolioList, activateMandate]);
+
+  // Prospect-facing: from the empty-state button, seed the labelled sample
+  // mandate (network-free) and activate it via the same switch path. Read the
+  // freshly-seeded list back — `portfolioList` state predates the seed.
+  const handleLoadSamplefolio = useCallback(() => {
+    const id = applyDemoGearCode();
+    if (!id) return;
+    activateMandate(setActivePortfolio(loadPortfolioList(), id));
+  }, [activateMandate]);
 
   const handleCreatePortfolio = useCallback((draft) => {
     const next = createPortfolio(portfolioList, draft);
@@ -1032,7 +1043,13 @@ export default function App() {
             <section aria-label="Liste des actifs">
               {filtered.length > 0 ? (
                 <AssetTable assets={filtered} buffettSummaries={buffettSummaries} onSelect={handleSelect} />
+              ) : assets.length === 0 ? (
+                // Aucune position du tout (prospect) → loader d'exemple.
+                // (Un mandat réel en cours de valorisation passe par MarketBootScreen
+                // avant d'atteindre ici, donc assets vide ⇒ portefeuille vraiment vide.)
+                <SamplefolioEmptyState onLoad={handleLoadSamplefolio} />
               ) : (
+                // Des actifs existent mais les filtres masquent tout.
                 <EmptyState />
               )}
             </section>

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { vi } from "vitest";
 import {
+  applyDemoGearCode,
   applyDemoSeed,
   applyDemoSeedResolved,
   buildSeedPlan,
@@ -9,7 +10,7 @@ import {
   isDemoMandate,
   resetDemoSeed,
 } from "./seedRunner";
-import { DEMO_PROFILES } from "./profils.seed";
+import { DEMO_PROFILES, DEMO_GEAR_CODE_ID } from "./profils.seed";
 import { loadPortfolioList } from "../services/portfolioListStore";
 import { loadTransactions } from "../services/transactionStore";
 import { loadPortfolioAssets } from "../services/portfolioStore";
@@ -223,6 +224,38 @@ describe("applyDemoSeed / resetDemoSeed", () => {
     // namespaced demo keys are gone
     expect(localStorage.getItem("fis:transactions:v1::demo-julien-roy")).toBeNull();
     expect(loadDemoSnapshots("demo-sophie-belanger")).toEqual([]);
+  });
+});
+
+describe("applyDemoGearCode (loader prospect 1-profil)", () => {
+  it("seeds only the Gear Code sample mandate, activates it, network-free", () => {
+    const id = applyDemoGearCode();
+    expect(id).toBe(DEMO_GEAR_CODE_ID);
+
+    const list = loadPortfolioList();
+    const demoIds = list.portfolios.filter(isDemoMandate).map((p) => p.id);
+    // exactly the one sample profile — never the whole dev demo set
+    expect(demoIds).toEqual([DEMO_GEAR_CODE_ID]);
+    // active, so a visitor with no positions lands on it
+    expect(list.activeId).toBe(DEMO_GEAR_CODE_ID);
+    // positions + reconstituted snapshots present without any network fetch
+    expect(loadPortfolioAssets([], DEMO_GEAR_CODE_ID).length).toBeGreaterThan(0);
+    expect(loadDemoSnapshots(DEMO_GEAR_CODE_ID).length).toBeGreaterThan(0);
+  });
+
+  it("preserves a real mandate already present", () => {
+    savePortfolioListWithReal();
+    applyDemoGearCode();
+    const after = loadPortfolioList();
+    expect(after.portfolios.some((p) => p.id === "mon-reel")).toBe(true);
+    expect(after.portfolios.some((p) => p.id === DEMO_GEAR_CODE_ID)).toBe(true);
+  });
+
+  it("is idempotent — twice keeps a single sample mandate", () => {
+    applyDemoGearCode();
+    applyDemoGearCode();
+    const demoIds = loadPortfolioList().portfolios.filter(isDemoMandate).map((p) => p.id);
+    expect(demoIds).toEqual([DEMO_GEAR_CODE_ID]);
   });
 });
 

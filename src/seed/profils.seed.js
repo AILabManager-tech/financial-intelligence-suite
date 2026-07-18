@@ -32,6 +32,10 @@ import { GEAR_CODE_TRANSACTIONS, GEAR_CODE_REF_PRICES, GEAR_CODE_END_DATE } from
 
 export const DEMO_PREFIX = "demo-";
 
+// Id du seul profil de démo exposé aux prospects (loader 1-clic de l'état vide,
+// visible en prod). Les autres profils restent dev-only (SettingsPage).
+export const DEMO_GEAR_CODE_ID = "demo-gear-code";
+
 // Hand-declared profiles (realistic small portfolios + edge cases).
 const DECLARED_PROFILES = [
   // 1 — Sur-concentration tech → teste Concentration & diversification.
@@ -197,7 +201,7 @@ const DECLARED_PROFILES = [
   //   sur un historique long, clairement étiquetée « reconstituée » (bannière démo).
   //   Données générées dans gearCodeSimulation.js depuis simulation/gear-code/.
   {
-    id: "demo-gear-code",
+    id: DEMO_GEAR_CODE_ID,
     name: "Gear Code — Tech 2015-2022 (simulé)",
     client: "Gear Code",
     accountType: "taxable",
