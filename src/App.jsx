@@ -159,6 +159,7 @@ applyTheme(loadTheme());
 
 const IntelligenceCard = lazy(() => import("./components/IntelligenceCard"));
 const GuidePage = lazy(() => import("./components/GuidePage"));
+const HelpPage = lazy(() => import("./components/HelpPage"));
 const MeetingBriefView = lazy(() => import("./components/MeetingBriefView"));
 
 function CardSkeleton() {
@@ -281,7 +282,8 @@ export default function App() {
   const isLegalRoute = currentPath === "/legal";
   const isLoginRoute = currentPath === "/login";
   const isGuideRoute = currentPath === "/guide";
-  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isBriefRoute && !isLegalRoute && !isLoginRoute && !isGuideRoute;
+  const isHelpRoute = currentPath === "/aide";
+  const isDashboardRoute = !isWatchlistRoute && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isReportRoute && !isBriefRoute && !isLegalRoute && !isLoginRoute && !isGuideRoute && !isHelpRoute;
   const [consentOpen, setConsentOpen] = useState(() => !hasValidConsent());
   const layout = useLayout();
   const { authEnabled, user: authUser } = useAuth();
@@ -797,7 +799,7 @@ export default function App() {
 
   // Settings and the demo simulator don't depend on live quotes — keep them
   // reachable while prices load.
-  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isGuideRoute) {
+  if (!assets.length && portfolioAssets.length > 0 && !isSettingsRoute && !isDemoRoute && !isTransactionsRoute && !isGuideRoute && !isHelpRoute) {
     return <MarketBootScreen status={marketStatus} />;
   }
 
@@ -881,6 +883,13 @@ export default function App() {
                 >
                   Guide
                 </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo("/aide")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isHelpRoute ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+                >
+                  Aide
+                </button>
               </div>
               <PortfolioSelector
                 state={portfolioList}
@@ -917,6 +926,10 @@ export default function App() {
         ) : isGuideRoute ? (
           <Suspense fallback={<CardSkeleton />}>
             <GuidePage />
+          </Suspense>
+        ) : isHelpRoute ? (
+          <Suspense fallback={<CardSkeleton />}>
+            <HelpPage />
           </Suspense>
         ) : isReportRoute ? (
           <MandateReportView
