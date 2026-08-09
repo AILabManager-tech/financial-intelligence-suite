@@ -24,11 +24,19 @@ describe("ValueAtRiskPanel", () => {
     expect(screen.getByText(/insuffisante/i)).toBeInTheDocument();
   });
 
-  it("affiche la table VaR et signale la VaR historique masquée sous 10 obs", () => {
+  it("affiche la table VaR et signale la VaR historique masquée", () => {
     render(<ValueAtRiskPanel snapshots={snapsFromReturns([0.05, -0.03, 0.02])} transactions={[]} />);
     expect(screen.getByText("VaR paramétrique")).toBeInTheDocument();
     expect(screen.getByText(/VaR historique masquée/i)).toBeInTheDocument();
     expect(screen.getByText(/pas un conseil/i)).toBeInTheDocument();
+  });
+
+  it("dit COMBIEN d'observations manquent au lieu d'un « n/d » muet", () => {
+    // 3 obs : les deux niveaux sont hors d'atteinte (40 et 200 requises).
+    render(<ValueAtRiskPanel snapshots={snapsFromReturns([0.05, -0.03, 0.02])} transactions={[]} />);
+    expect(screen.getAllByText(/40 obs requises/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/200 obs requises/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText("n/d")).not.toBeInTheDocument();
   });
 
   it("affiche les niveaux 95 % et 99 %", () => {

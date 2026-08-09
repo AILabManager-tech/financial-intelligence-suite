@@ -38,20 +38,30 @@ export default function ValueAtRiskPanel({ snapshots = [], transactions = [] }) 
                 </tr>
               </thead>
               <tbody>
-                {var_.levels.map((lvl) => (
-                  <tr key={lvl.confidence} className="border-t border-white/5">
-                    <td className="py-1.5 text-slate-300">{Math.round(lvl.confidence * 100)} %</td>
-                    <td className="py-1.5 font-semibold text-rose-300">{lossPct(lvl.varParametricPct) ?? "n/d"}</td>
-                    <td className="py-1.5 font-semibold text-rose-300">{lossPct(lvl.varHistoricalPct) ?? "n/d"}</td>
-                    <td className="py-1.5 font-semibold text-rose-300">{lossPct(lvl.cvarHistoricalPct) ?? "n/d"}</td>
-                  </tr>
-                ))}
+                {var_.levels.map((lvl) => {
+                  // Un niveau non estimable dit ce qui lui manque plutôt qu'un
+                  // « n/d » muet : la queue d'un quantile à 1 % réclame 200 obs.
+                  const missing = (
+                    <span className="text-slate-500 font-normal">
+                      {lvl.minObservations} obs requises
+                    </span>
+                  );
+                  return (
+                    <tr key={lvl.confidence} className="border-t border-white/5">
+                      <td className="py-1.5 text-slate-300">{Math.round(lvl.confidence * 100)} %</td>
+                      <td className="py-1.5 font-semibold text-rose-300">{lossPct(lvl.varParametricPct)}</td>
+                      <td className="py-1.5 font-semibold text-rose-300">{lossPct(lvl.varHistoricalPct) ?? missing}</td>
+                      <td className="py-1.5 font-semibold text-rose-300">{lossPct(lvl.cvarHistoricalPct) ?? missing}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
           <div className="mt-3 text-[11px] text-slate-500">
             Perte attendue dépassée avec probabilité 1−niveau, par période de la série ({var_.observations} obs).
-            {!var_.historicalAvailable && " VaR historique masquée (< 10 observations)."}
+            {!var_.historicalAvailable
+              && " VaR historique masquée : un quantile ne s'estime pas sur une queue d'un seul point."}
             {" "}Paramétrique = μ − z·σ (gaussienne). Estimation sur la série accumulée, pas un conseil.
           </div>
           <SeriesProvenanceNote snapshots={snapshots} />
