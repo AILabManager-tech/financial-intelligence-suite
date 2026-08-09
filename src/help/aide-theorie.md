@@ -83,16 +83,16 @@ Dispersion des rendements autour de leur moyenne ; proxy usuel du risque.
 
 ```
 σ_période = √( Σ(rᵢ − μ)² / (n − 1) )
-σ_annualisée = σ_période × √(252 / durée_moyenne_jours)
+σ_annualisée = σ_période × √(365 / durée_moyenne_jours)
 ```
 
 ### Méthodes alternatives
 - **Échantillon (n−1)** vs **population (n)** — l'échantillon est non biaisé pour un historique fini.
-- **Annualisation** : `×√252` (jours de bourse), `×√12` (mensuel), `×√52` (hebdo).
+- **Annualisation** : `×√(365 / espacement moyen en jours calendaires)`, c'est-à-dire √(nombre de sous-périodes réellement observées par an). Les deux termes partagent la même unité — mettre 252 (jours de bourse) au numérateur d'un espacement calendaire sous-estimait toute volatilité annualisée d'environ 15 %. La formule reste juste dans les deux régimes : une série de jours de bourse rend ~261 périodes/an (la convention √252 aux fériés près), une série calendaire 7 j/7 rend 365, ce qui compense exactement les week-ends à rendement nul.
 - **EWMA / GARCH** — volatilité conditionnelle qui pondère davantage le passé récent (non utilisé ici).
 
 ### Comment FIS le calcule
-`computePortfolioRisk` : écart-type **d'échantillon** des rendements de sous-période flux-neutralisés, annualisé par `×√(252 / jours moyens)` pour tenir compte de l'espacement réel des points. Fenêtre = origine tant que la série est jeune.
+`computePortfolioRisk` : écart-type **d'échantillon** des rendements de sous-période flux-neutralisés, annualisé par `×√(365 / jours moyens)` pour tenir compte de l'espacement réel des points. Fenêtre = origine tant que la série est jeune.
 
 ---
 

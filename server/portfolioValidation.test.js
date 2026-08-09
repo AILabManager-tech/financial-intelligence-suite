@@ -59,4 +59,21 @@ describe('portfolioValidation', () => {
     expect(() => validatePortfolioSnapshot({ capturedAt: 'bad-date' })).toThrow('valid date');
     expect(() => validatePortfolioSnapshot({ totalMarketValue: -1 })).toThrow('totalMarketValue');
   });
+
+  it('rejette les quantités et coûts démesurés (garde anti-débordement)', () => {
+    // quantity x averageCost alimente la valeur de marché. Sans borne haute,
+    // 1e308 x 1e308 vaut Infinity et contamine tous les totaux du portefeuille.
+    // Le mécanisme existait déjà (parseFiniteNumber accepte `max`, utilisé pour
+    // targetWeight) — il n'avait simplement pas été appliqué ici.
+    expect(() => validatePortfolioAssets([
+      { symbol: 'AAPL', position: { quantity: 1e308, averageCost: 10, targetWeight: 10 } },
+    ])).toThrow('quantity');
+    expect(() => validatePortfolioAssets([
+      { symbol: 'AAPL', position: { quantity: 1, averageCost: 1e308, targetWeight: 10 } },
+    ])).toThrow('averageCost');
+    // Les bornes restent très au-delà de tout portefeuille réel.
+    expect(() => validatePortfolioAssets([
+      { symbol: 'AAPL', position: { quantity: 1_000_000, averageCost: 750_000, targetWeight: 10 } },
+    ])).not.toThrow();
+  });
 });

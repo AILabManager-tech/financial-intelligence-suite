@@ -10,6 +10,24 @@ Dix-neuf points restent ouverts.
 
 ---
 
+## Errata — contre-vérification du 9 août 2026
+
+Une seconde passe a confronté chaque point à une mesure indépendante. **35 des 39 tiennent.
+Quatre étaient faux ou mal cadrés, une correction était incomplète.** Les numéros n'ont pas
+changé, pour que des annotations déjà prises restent valides.
+
+| Point | Ce qui a changé |
+|---|---|
+| **A2** | Était **incomplet** : le code était corrigé, mais la légende à l'écran et l'onglet Aide annonçaient toujours l'ancienne formule. Corrigé le 9 août, avec un test qui l'interdit désormais. |
+| **A5** | Deux résidus (un commentaire, une donnée de test) nettoyés. |
+| **B1** | **Mal cadré.** 9 avis, pas 20, et tous sur des outils de développement. Note ramenée de 8/10 à 4/10. |
+| **B5** | **Formulation fausse.** 13 des 17 fichiers concernés n'ont pas de test. Le vrai point propre à `search` est ailleurs. |
+| **B7** | **Faux.** La clé est présente. Point retiré des décisions ouvertes. |
+| **B10** | **Faux.** La chaîne d'intégration vérifie déjà Node 20 à chaque envoi. Note 4/10 → 2/10. |
+| **B13** | **Corrigé le 9 août.** Le mécanisme de borne existait déjà, il n'était pas appliqué. |
+
+---
+
 ## Barème de notation
 
 | Note | Signification |
@@ -40,7 +58,8 @@ Ces vingt points sont faits, testés et en ligne. Rien à décider : à valider 
 
 **Constat** Huit indicateurs de risque étaient systématiquement trop optimistes.  
 **Cause** Le calcul mélangeait « jours de bourse » et « jours de calendrier ».  
-**Note 9/10** — Biais permanent, invisible, sur tous les indicateurs de risque à la fois.
+**Note 9/10** — Biais permanent, invisible, sur tous les indicateurs de risque à la fois.  
+**Suite (9 août)** Le code seul avait été corrigé. La légende du panneau et l'onglet Aide — visibles en production — annonçaient toujours l'ancienne formule. Corrigé, avec un test qui échoue si la légende et le calcul divergent à nouveau.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -234,9 +253,9 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 ## B1. 20 failles dans les librairies
 
-**Constat** GitHub signale 20 vulnérabilités : 1 critique, 7 hautes, 8 moyennes, 4 basses.  
-**Enjeu** Site public en ligne. Rien à voir avec le code du projet : ce sont les paquets installés.  
-**Note 8/10** — Le plus urgent. Risque de sécurité réel, correction souvent mécanique.
+**Constat** 9 avis : 1 critique, 6 hautes, 2 basses. Aucune moyenne. Le chiffre de 20 était faux.  
+**Enjeu** Les 9 portent sur des outils de développement (compilateur, tests, linter). **Aucune des 9 librairies servies au navigateur n'est touchée.** Rien de vulnérable n'atteint tes visiteurs.  
+**Note 4/10** — Hygiène, pas sécurité. La vraie action : la mise à jour automatique échoue depuis le 4 août, ce qui laisse les alertes ouvertes.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -256,7 +275,8 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 **Constat** Deux hypothèses fixes pour toutes les entreprises réduisent le calcul à un simple ratio.  
 **Enjeu** Les chiffres sont exacts et l'hypothèse est affichée. C'est le nom qui promet trop.  
-**Note 7/10** — Décision produit : personnaliser le calcul, ou renommer l'indicateur. Pas un bug.
+**Note 7/10** — Décision produit : personnaliser le calcul, ou renommer l'indicateur. Pas un bug.  
+**Précision (9 août)** Les hypothèses figées ne concernent que le **score du tableau**. Le panneau de détail expose déjà les deux réglages en curseurs avec présets. Le problème de nom est donc confiné au résumé.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -274,9 +294,9 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 ## B5. Un fichier serveur sans aucun test
 
-**Constat** `search.js` tourne en production sans test, contrairement à tous les autres.  
-**Enjeu** La recherche de titres est la porte d'entrée de l'app.  
-**Note 5/10** — Fonctionne aujourd'hui. Aucun filet si on y touche.
+**Constat** 13 des 17 fichiers de ce dossier n'ont pas de test. `search` n'est pas l'exception.  
+**Enjeu** Ce qui lui est propre : c'est la **seule feature sans couche `server/`**, donc la seule qui échappe à la couche testée qu'impose ta convention. Les autres sont couverts indirectement.  
+**Note 5/10** — Note inchangée, mais pour la bonne raison cette fois.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -292,11 +312,11 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-## B7. Assistant IA jamais testé en vrai
+## B7. Assistant IA jamais testé en vrai — RETIRÉ, CONSTAT FAUX
 
-**Constat** La clé Anthropic est vide. Cette partie n'a jamais été exécutée.  
-**Enjeu** La conception est saine : l'IA cite ses sources ou se tait. Mais rien n'est démontré.  
-**Note 5/10** — Non vérifié, pas défectueux. À tester avant de le montrer à un client.
+**Constat** J'avais écrit que la clé était absente. **Elle est présente et valide.**  
+**Enjeu** Il n'y a aucune décision à prendre : c'est un essai de dix minutes, pas un point ouvert.  
+**Note —** Erreur de lecture de ma part sur mon propre résultat de vérification.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -324,9 +344,9 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 ## B10. Version de Node incohérente
 
-**Constat** Le projet dit « Node 20 ». Tout tourne sur Node 24.  
-**Enjeu** Les tests n'ont jamais été vérifiés sur la version annoncée.  
-**Note 4/10** — Fonctionne. Piège pour quiconque installe le projet.
+**Constat** Faux. La chaîne d'intégration épingle Node 20 et passe au vert à chaque envoi.  
+**Enjeu** Seul ton poste tourne en 24. La version annoncée **est** vérifiée automatiquement.  
+**Note 2/10** — Je n'avais pas regardé la configuration d'intégration avant d'affirmer le contraire.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -354,9 +374,9 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 ## B13. Quantité démesurée acceptée
 
-**Constat** On peut enregistrer 1e308 actions sans que rien ne bloque.  
-**Enjeu** Aucune borne maximale sur les quantités.  
-**Note 3/10** — Peu probable. Ferait déborder les totaux si ça arrivait.
+**Constat** On pouvait enregistrer 1e308 actions. Le produit quantité × prix valait alors l'infini.  
+**Enjeu** Le mécanisme de borne existait déjà dans le code, il n'avait pas été appliqué à ces deux champs.  
+**Note 5/10, corrigé le 9 août** — Sous-noté au départ : le prix aussi était sans borne, et le correctif tenait en deux lignes.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -426,7 +446,13 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 # Où reprendre
 
-**Priorité suggérée** B1 (failles librairies, 8/10) → B2 (titres canadiens, 7/10) → B3 (nom du calcul Buffett, 7/10).
+**Priorité corrigée après contre-vérification** (B1 étant limité aux outils de développement, il descend) :
+
+1. ~~Légende de la volatilité~~ et ~~bornes de saisie~~ — **faits le 9 août**
+2. **B11** fuseau horaire de la source de secours + **B4** échec de stockage silencieux
+3. **B2** titres canadiens — vrai trou produit, demande une source payante
+4. **B3** renommer ou personnaliser le calcul Buffett
+5. **B1** en hygiène, et réparer la mise à jour automatique des librairies
 
 **État du dépôt** branche `main`, dernier commit poussé et déployé. Aucun travail en cours.
 

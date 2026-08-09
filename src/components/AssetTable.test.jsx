@@ -27,7 +27,7 @@ describe("AssetTable", () => {
           AAPL: {
             status: "ready",
             score: 4,
-            criteriaTotal: 6,
+            criteriaTotal: 5,
             signal: "SELL",
             label: "Signal défavorable",
           },
@@ -37,7 +37,7 @@ describe("AssetTable", () => {
     );
 
     expect(screen.getByText("Buffett")).toBeInTheDocument();
-    expect(screen.getByText("4/6")).toBeInTheDocument();
+    expect(screen.getByText("4/5")).toBeInTheDocument();
     expect(screen.getByText("Signal défavorable")).toBeInTheDocument();
   });
 

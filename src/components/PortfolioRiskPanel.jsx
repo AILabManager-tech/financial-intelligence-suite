@@ -67,7 +67,7 @@ export default function PortfolioRiskPanel({ snapshots = [], transactions = [] }
           </div>
 
           <div className="mt-3 text-[11px] text-slate-500">
-            Sur {risk.observations} rendements ({risk.days} j accumulés), apports/retraits neutralisés. σ rééchelonnée sur la fréquence réelle des points (×√(252/jours moyens)) — estimation sur la série accumulée, pas un conseil.
+            Sur {risk.observations} rendements ({risk.days} j accumulés), apports/retraits neutralisés. σ rééchelonnée sur la fréquence réelle des points (×√(365/jours moyens)) — estimation sur la série accumulée, pas un conseil.
           </div>
           <SeriesProvenanceNote snapshots={snapshots} />
         </>

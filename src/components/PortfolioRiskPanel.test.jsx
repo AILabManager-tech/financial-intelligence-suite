@@ -45,4 +45,23 @@ describe("PortfolioRiskPanel", () => {
     );
     expect(screen.getByText("Au sommet")).toBeInTheDocument();
   });
+
+  it("la légende décrit la formule réellement appliquée (365, pas 252)", () => {
+    // Le code annualise par √(365 / jours moyens) depuis la correction du biais
+    // de −15 %. Une légende qui annonce √(252 / …) affirme une méthode que le
+    // calcul n'utilise plus — un faux fait montré à l'utilisateur.
+    render(
+      <PortfolioRiskPanel
+        snapshots={[
+          snap("2026-05-01", 100),
+          snap("2026-05-02", 110),
+          snap("2026-05-03", 99),
+          snap("2026-05-04", 108.9),
+        ]}
+        transactions={[]}
+      />,
+    );
+    expect(screen.getByText(/365/)).toBeInTheDocument();
+    expect(screen.queryByText(/252/)).not.toBeInTheDocument();
+  });
 });

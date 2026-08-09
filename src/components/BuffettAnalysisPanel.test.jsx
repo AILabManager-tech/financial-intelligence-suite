@@ -83,7 +83,7 @@ describe("BuffettAnalysisPanel", () => {
     );
     // Hero MoS visible (also appears in math breakdown section III, hence getAllByText)
     expect(screen.getAllByText(/Marge de sécurité/i).length).toBeGreaterThan(0);
-    // 6 Buffett gates listed
+    // 5 Buffett gates listed
     expect(screen.getByText(/ROE > 15%/i)).toBeInTheDocument();
     expect(screen.getByText(/Debt\/Equity < 0\.5/i)).toBeInTheDocument();
     // « FCF > 0 » retiré du score : inatteignable via le pipeline réel.

@@ -18,7 +18,35 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ---
 
-## ⏸️ EN ATTENTE DE L'UTILISATEUR — DÉMARRER ICI (2026-08-08)
+## ⏸️ EN ATTENTE DE L'UTILISATEUR — DÉMARRER ICI (2026-08-09)
+
+**Contre-vérification de l'audit : 35 points sur 39 tiennent. 4 étaient faux ou mal cadrés, 1 correction était incomplète.** Les deux corrections qui en découlent sont livrées (1168 tests verts).
+
+### Corrigé le 2026-08-09
+
+- **A2 rouvert puis refermé** — la correction de l'annualisation n'avait touché que le code. `PortfolioRiskPanel.jsx` (légende), `src/help/aide-theorie.md` (**onglet Aide, visible en production**) et `ROADMAP_PM.md` annonçaient toujours `×√(252/jours moyens)`. C'est le défaut A13 (« commentaire qui ment »), mais **affiché à l'utilisateur**. Corrigé aux 4 endroits + test qui échoue si légende et calcul divergent. Résidus A5 nettoyés (`// 6 Buffett gates`, fixture `criteriaTotal: 6`, attente `4/6`).
+- **B13** — `quantity` et `averageCost` sans borne haute ⇒ `Infinity` dans les totaux. `parseFiniteNumber` acceptait déjà `max` (utilisé pour `targetWeight`) : il suffisait de l'appliquer. Bornes 1e9 / 1e6. Vérifié en exécution : 400 sur 1e308, 200 sur 1 M de titres à 750 k$.
+
+### Constats de l'audit invalidés — ne pas les retravailler
+
+- **B7 FAUX** — `ANTHROPIC_API_KEY` fait 108 caractères. Mon `grep -c "^ANTHROPIC_API_KEY=$"` renvoyait `0` (zéro ligne *vide*) et je l'ai lu comme « zéro clé ». Ce n'est pas une décision ouverte : c'est un essai de 10 min.
+- **B10 FAUX** — `.github/workflows/ci.yml:27` épingle `node-version: '20'`, runs verts. Node 20 **est** vérifié à chaque push. Note 4/10 → 2/10.
+- **B1 MAL CADRÉ** — `npm audit` : **9** avis (1 critique, 6 hautes, 2 basses, 0 moyenne), pas 20. Tous sur `@babel/core, brace-expansion, esbuild, js-yaml, nanoid, postcss, undici, vite, vitest` — **des devDependencies**. Aucune des 9 dépendances de production n'est touchée : rien de vulnérable n'atteint le navigateur ni les fonctions Vercel. Note 8/10 → **4/10**. Vraie action : le workflow Dependabot échoue depuis le 2026-08-04 (4 runs, sur `undici`).
+- **B5 MAL FORMULÉ** — 13 des 17 `api/_handlers/*.js` n'ont pas de test ; `search` n'est pas l'exception. Ce qui lui est propre : **seule feature sans couche `server/<feature>.js`**, donc seule à échapper à la couche testée qu'impose la convention.
+- **B3 À NUANCER** — les hypothèses figées ne valent que pour le score du tableau (`buffettReadiness.js`). `BuffettAnalysisPanel` expose déjà r et g en curseurs (`type="range"`) avec présets. Le problème de nom est confiné au chemin résumé.
+
+### ➡️ ORDRE DE REPRISE CORRIGÉ
+
+1. **B11** fuseau horaire Stooq + **B4** échec de stockage silencieux (`portfolioStore.js:51`)
+2. **B2** titres canadiens — vrai trou produit, demande une source payante
+3. **B3** renommer ou personnaliser le calcul Buffett
+4. **B1** en hygiène + réparer le workflow Dependabot
+
+Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (17 pages, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
+
+---
+
+## ⏸️ ÉTAT PRÉCÉDENT (2026-08-08)
 
 **Le bloc « corrections de justesse » est CLOS, poussé et déployé.** Rien n'est en cours.
 
