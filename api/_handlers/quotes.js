@@ -1,38 +1,14 @@
 import { toStooqSymbol } from "../../server/stooqSymbol.js";
+import { normalizeStooqQuote, STOOQ_SOURCE } from "../../server/stooqQuote.js";
 
 const PRIMARY_SOURCE = "finnhub.io";
-const FALLBACK_SOURCE = "stooq.com";
+const FALLBACK_SOURCE = STOOQ_SOURCE;
 
 function sendJson(response, statusCode, payload) {
   response.statusCode = statusCode;
   response.setHeader("Content-Type", "application/json");
   response.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
   response.end(JSON.stringify(payload));
-}
-
-function normalizeStooqQuote(symbol, payload) {
-  const rawQuote = payload?.symbols?.[0];
-  const close = Number(rawQuote?.close);
-  const open = Number(rawQuote?.open);
-  // Sans cours d'ouverture, la variation est INCONNUE. Renvoyer 0 affirmerait
-  // « stable aujourd'hui » — un fait fabriqué (factualité stricte : masqué).
-  const change = Number.isFinite(open) ? close - open : null;
-
-  if (!Number.isFinite(close)) {
-    throw new Error(`${symbol}: invalid stooq payload`);
-  }
-
-  return {
-    symbol,
-    name: rawQuote.name,
-    price: close,
-    change,
-    changePct: Number.isFinite(open) && open > 0 ? (change / open) * 100 : null,
-    volume: rawQuote.volume,
-    source: FALLBACK_SOURCE,
-    fetchedAt: new Date().toISOString(),
-    asOf: `${rawQuote.date}T${rawQuote.time}`,
-  };
 }
 
 async function fetchQuote(symbol) {
@@ -81,6 +57,9 @@ async function fetchQuote(symbol) {
       source: PRIMARY_SOURCE,
       fetchedAt: new Date().toISOString(),
       asOf: payload.t ? new Date(payload.t * 1000).toISOString() : undefined,
+      // Finnhub donne un horodatage epoch réel : précision à l'instant,
+      // contrairement au repli stooq dont seul le jour est fiable.
+      asOfPrecision: payload.t ? "instant" : undefined,
     };
   } catch {
     const stooqSymbol = toStooqSymbol(symbol);

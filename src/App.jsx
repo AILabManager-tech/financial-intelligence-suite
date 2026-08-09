@@ -39,6 +39,7 @@ import {
 import PortfolioSelector from "./components/PortfolioSelector";
 import { fetchPortfolioSnapshots, savePortfolioSnapshot } from "./services/portfolioSnapshots";
 import { loadStoredSnapshots, appendStoredSnapshot } from "./services/snapshotStore";
+import { describeStorageFailures, getStorageFailures } from "./services/storageDiagnostics";
 import { isDemoMandateId, loadDemoSnapshots } from "./seed/demoSnapshotStore";
 import { applyDemoGearCode } from "./seed/seedRunner";
 import {
@@ -273,6 +274,11 @@ export default function App() {
   const [portfolioSnapshots, setPortfolioSnapshots] = useState(() =>
     isDemoMandateId(activeId) ? loadDemoSnapshots(activeId) : loadStoredSnapshots(activeId),
   );
+  // Déclaré APRÈS les chargements ci-dessus : ce sont leurs initialiseurs qui
+  // consignent une éventuelle panne de lecture (B4).
+  const [storageFailureMessage, setStorageFailureMessage] = useState(() =>
+    describeStorageFailures(getStorageFailures()),
+  );
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname || "/");
   const [marketStatus, setMarketStatus] = useState({
     mode: "booting",
@@ -403,6 +409,9 @@ export default function App() {
         })
         .catch(() => {});
     }
+    // Un mandat activé relit le stockage : une panne sur SES clés doit remonter
+    // aussi, pas seulement celles vues au montage (B4).
+    setStorageFailureMessage(describeStorageFailures(getStorageFailures()));
   }, [persistPortfolioList]);
 
   const handleSwitchPortfolio = useCallback((id) => {
@@ -825,6 +834,18 @@ export default function App() {
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-violet-600 focus:text-white focus:rounded-lg">
         Aller au contenu principal
       </a>
+
+      {/* B4 — une lecture ratée du stockage local retombait sur les valeurs par
+          défaut sans un mot : l'utilisateur croyait avoir tout perdu. Le repli
+          reste, le silence part. */}
+      {storageFailureMessage && (
+        <div role="alert" className="border-b border-amber-500/20 bg-amber-500/10 print:hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="text-xs text-amber-200">{storageFailureMessage}</p>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="border-b border-white/5 bg-surface-950/80 backdrop-blur-xl sticky top-0 z-50 print:hidden" role="banner">

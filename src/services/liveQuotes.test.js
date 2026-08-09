@@ -72,6 +72,36 @@ describe('getQuoteFreshness', () => {
     ).isStale).toBe(true);
   });
 
+  it("n'annonce pas un âge en heures quand la source n'a qu'une précision au jour", () => {
+    // Stooq ne documente pas son fuseau : on ne retient que la date. Afficher
+    // « 14,25 h » à partir de minuit UTC affirmerait une précision que la
+    // source ne permet pas d'établir. L'âge en heures est masqué, l'âge en
+    // jours — le seul qu'on connaisse — est exposé.
+    const day = getQuoteFreshness(
+      '2026-05-08T00:00:00.000Z',
+      new Date('2026-05-09T16:00:00.000Z'),
+      'day',
+    );
+    expect(day.ageHours).toBeNull();
+    expect(day.ageDays).toBe(1);
+    expect(day.isStale).toBe(false);
+  });
+
+  it("garde l'âge en heures quand la source donne un instant réel", () => {
+    const instant = getQuoteFreshness(
+      '2026-05-08T20:00:00.000Z',
+      new Date('2026-05-09T16:00:00.000Z'),
+      'instant',
+    );
+    expect(instant.ageHours).toBe(20);
+    expect(instant.ageDays).toBeNull();
+  });
+
+  it('transporte la précision de la source jusquau client', () => {
+    const quote = normalizeQuote({ symbol: 'AAA', price: 100, asOf: '2026-05-08T00:00:00.000Z', asOfPrecision: 'day' });
+    expect(quote.asOfPrecision).toBe('day');
+  });
+
   it("propage une variation absente en null plutôt qu'en 0 fabriqué", () => {
     // Le serveur masque désormais une variation indéterminable ; la normaliser
     // en 0 ici rétablirait l'affirmation « stable aujourd'hui » qu'on vient

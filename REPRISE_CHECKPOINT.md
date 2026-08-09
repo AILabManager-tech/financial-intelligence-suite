@@ -20,7 +20,7 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## ⏸️ EN ATTENTE DE L'UTILISATEUR — DÉMARRER ICI (2026-08-09)
 
-**Contre-vérification de l'audit : 35 points sur 39 tiennent. 4 étaient faux ou mal cadrés, 1 correction était incomplète.** Les deux corrections qui en découlent sont livrées (1174 tests verts).
+**Contre-vérification de l'audit : 35 points sur 39 tiennent. 4 étaient faux ou mal cadrés, 1 correction était incomplète.** Les corrections qui en découlent sont livrées (1191 tests verts, vérifiés sur Node 20).
 
 ### Corrigé le 2026-08-09
 
@@ -33,6 +33,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
   - `refs` — **désactivé à un seul endroit, après vérification, pas par confort.** `src/core/dashboardPanelProps.js` ne contient aucun `.current` : aucune ref n'est lue pendant le rendu. La règle ne peut pas prouver, à travers la frontière de fonction, que les callbacks passés (qui lisent `alertsRef.current`) ne sont pas appelés au rendu — ce sont des gestionnaires d'événements. Les refs gardent ces callbacks stables ; les retirer relancerait la mémoïsation de tout le tableau de bord. **Ce n'est pas un bug utilisateur démontré**, c'est une limite d'analyse inter-procédurale.
 - **B10 remonté de 2/10 à 4/10, et corrigé.** Node 20 n'était pas installé sur le poste — d'où le fait qu'**aucune vérification locale n'a jamais reproduit l'environnement de l'intégration**. Installé via nvm ; `npm ci` + lint + 1174 tests + build passent sur Node 20 avec le lockfile exact. Je l'avais descendu à 2/10 en disant « seul le poste est en 24 » : exact, et trop indulgent.
 - **Dependabot ramené en sécurité seule.** `.github/dependabot.yml` supprimé (retirer le seul bloc `updates:` laisserait un fichier invalide — la clé est obligatoire en v2). Les mises à jour de sécurité restent actives via les réglages du dépôt, sans ce fichier. Le fichier avait activé en plus un flux **hebdomadaire de mises à jour de version** que le dépôt n'avait pas : le log du 4 août porte `"command":"security"`. PRs #8 à #12 fermées — #12 (jsdom 30) est incompatible par construction, elle exige Node `^22.22.2 || ^24.15.0 || >=26.0.0` alors que le projet est sur 20 ; sous elle, les 167 fichiers de test échouent à démarrer.
+
+- **B11 — horodatage de la source de secours.** Stooq renvoie date et heure sans décalage ; `new Date("2026-08-08T21:45:00")` est lu en heure LOCALE par ECMAScript, donc le même envoi donnait un instant différent selon le navigateur. **Aucun fuseau inventé** — la source n'en documente aucun, en choisir un serait de la provenance fabriquée. Seule la date est retenue (`…T00:00:00.000Z`) et étiquetée `asOfPrecision: "day"` ; minuit UTC place l'instant AVANT l'heure réelle, donc la cote paraît au plus vieille d'un jour, jamais plus fraîche qu'on ne sait. `getQuoteFreshness` masque l'âge en heures pour cette précision et expose `ageDays` ; finnhub garde `"instant"`. Normaliseur extrait en `server/stooqQuote.js` (pur, 7 tests) — il était **dupliqué** entre `api/_handlers/quotes.js` et `vite.config.js`.
+- **B4 — échec de stockage silencieux.** `src/services/storageDiagnostics.js` : trace en console (diagnostic à distance) + bandeau `role="alert"` nommant ce qui n'a pas pu être relu, avec « rien n'a été effacé automatiquement ». Branché sur `portfolioStore` et `snapshotStore`. Le repli inchangé — mieux vaut démarrer qu'un écran blanc. Ni la trace ni le bandeau ne recopient la donnée corrompue ; une même clé n'est signalée qu'une fois.
+  - **Réserve** : le bandeau lui-même n'a **pas** de test — il n'existe aucun harnais pour `App.jsx`. La logique dessous est testée (message rendu, panne consignée, pas de doublon), le branchement de six lignes de JSX ne l'est pas.
 
 ### ⚠️ Règle de vérification — adoptée le 2026-08-09
 
@@ -68,10 +72,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ### ➡️ ORDRE DE REPRISE CORRIGÉ
 
-1. **B11** fuseau horaire Stooq + **B4** échec de stockage silencieux (`portfolioStore.js:51`)
-2. **B2** titres canadiens — vrai trou produit, demande une source payante
-3. **B3** renommer ou personnaliser le calcul Buffett
-4. ~~**B1** en hygiène + réparer le workflow Dependabot~~ — **fait le 2026-08-09**
+1. **B2** titres canadiens — vrai trou produit pour un outil québécois, demande une source payante. **Décision utilisateur** (choisir et payer un fournisseur), pas une tâche technique.
+2. **B3** renommer ou personnaliser le calcul Buffett — le défaut par défaut vaut exactement « P/FCF < 15,75 »
+3. **B5** couche de domaine absente pour `search` (seule feature sans `server/<feature>.js`) + **B6** sonde d'écart entre les deux sources de prix
+4. ~~**B1** en hygiène + réparer le workflow Dependabot~~ · ~~**B11** fuseau Stooq~~ · ~~**B4** échec de stockage silencieux~~ — **faits le 2026-08-09**
 
 Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (17 pages, couverture + sommaire, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
 

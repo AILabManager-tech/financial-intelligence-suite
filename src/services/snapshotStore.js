@@ -13,6 +13,8 @@
 // mandates keep their own reconstituted series (demoSnapshotStore) and never
 // touch this key.
 
+import { recordStorageFailure } from "./storageDiagnostics";
+
 export const SNAPSHOT_STORAGE_KEY = "fis:snapshots:v1";
 const DEFAULT_PORTFOLIO_ID = "default";
 const DEFAULT_LIMIT = 120;
@@ -54,7 +56,9 @@ function readRaw(portfolioId) {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed.map(normalizeSnapshot).filter(Boolean);
-  } catch {
+  } catch (error) {
+    // Même règle que le portefeuille : le repli reste, le silence part (B4).
+    recordStorageFailure("historique de performance", storageKeyFor(portfolioId), error);
     return [];
   }
 }

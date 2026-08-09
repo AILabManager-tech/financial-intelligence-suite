@@ -18,9 +18,9 @@ import { fetchFxRates } from './server/fx.js'
 import { extractMeetingTopics } from './server/meetingTopics.js'
 import { createRateLimiter, clientIp } from './server/rateLimiter.js'
 import { toStooqSymbol } from './server/stooqSymbol.js'
+import { normalizeStooqQuote } from './server/stooqQuote.js'
 
 const primaryQuoteSource = 'finnhub.io'
-const fallbackQuoteSource = 'stooq.com'
 const marketCache = new Map()
 const cacheTtlMs = {
   quotes: 20 * 1000,
@@ -91,32 +91,6 @@ function readJsonBody(request) {
   })
 }
 
-function normalizeStooqQuote(symbol, payload) {
-  const rawQuote = payload?.symbols?.[0]
-  const close = Number(rawQuote?.close)
-  const open = Number(rawQuote?.open)
-  // Sans cours d'ouverture, la variation est INCONNUE — masquée, pas ramenée
-  // à 0 (« stable aujourd'hui » serait un fait fabriqué). Parité avec le
-  // handler prod api/_handlers/quotes.js.
-  const change = Number.isFinite(open) ? close - open : null
-
-  if (!Number.isFinite(close)) {
-    throw new Error(`${symbol}: invalid stooq payload`)
-  }
-
-  return {
-    symbol,
-    name: rawQuote.name,
-    price: close,
-    change,
-    changePct: Number.isFinite(open) && open > 0 ? (change / open) * 100 : null,
-    volume: rawQuote.volume,
-    source: fallbackQuoteSource,
-    fetchedAt: new Date().toISOString(),
-    asOf: `${rawQuote.date}T${rawQuote.time}`,
-  }
-}
-
 async function fetchQuote(symbol) {
   const token = process.env.FINNHUB_API_KEY
 
@@ -159,6 +133,9 @@ async function fetchQuote(symbol) {
       source: primaryQuoteSource,
       fetchedAt: new Date().toISOString(),
       asOf: payload.t ? new Date(payload.t * 1000).toISOString() : undefined,
+      // Finnhub donne un horodatage epoch réel : précision à l'instant,
+      // contrairement au repli stooq dont seul le jour est fiable.
+      asOfPrecision: payload.t ? 'instant' : undefined,
     }
   } catch {
     const stooqSymbol = toStooqSymbol(symbol)

@@ -4,9 +4,9 @@
 
 Audit complet de la chaîne entrée → calcul → affichage. Chaque sortie chiffrée a été confrontée
 à un calcul indépendant fait en dehors du système. Six défauts démontrés, corrigés et déployés.
-Dix-neuf points restent ouverts.
+Après contre-vérification et corrections, onze points restent ouverts.
 
-**État** 1166 tests verts · lint 0 · build OK · en production sur devlabai.tech
+**État** 1191 tests verts · lint 0 · build OK · vérifié sur Node 20 · en production sur devlabai.tech
 
 ---
 
@@ -24,6 +24,8 @@ changé, pour que des annotations déjà prises restent valides.
 | **B5** | **Formulation fausse.** 13 des 17 fichiers concernés n'ont pas de test. Le vrai point propre à `search` est ailleurs. |
 | **B7** | **Faux.** La clé est présente. Point retiré des décisions ouvertes. |
 | **B10** | Le constat d'origine était mal formulé — l'intégration vérifie bien Node 20 — mais l'écart avec le poste local **était** le vrai problème : aucune vérification locale ne reproduisait la version de l'intégration. Ramené à 2/10 par erreur, **remonté à 4/10**, corrigé le 9 août. |
+| **B11** | **Corrigé le 9 août.** Aucun fuseau inventé : seule la date, fiable, est retenue et étiquetée. |
+| **B4** | **Corrigé le 9 août.** Le repli reste, le silence part : bandeau + trace en console. |
 | **B13** | **Corrigé le 9 août**, en deux passes. La première ne protégeait que le serveur de développement — en ligne, rien ne l'était. Les deux couches sont bornées depuis. |
 
 ---
@@ -286,7 +288,14 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 **Constat** Si les données du navigateur sont corrompues, l'app repart à vide.  
 **Enjeu** Aucun message, aucune trace. L'utilisateur croit avoir tout perdu sans savoir pourquoi.  
-**Note 6/10** — Silencieux, donc impossible à diagnostiquer à distance.
+**Note 6/10, corrigé le 9 août** — Le repli reste : mieux vaut une application qui démarre qu'un écran
+blanc. Ce qui change, c'est le silence. Un bandeau nomme ce qui n'a pas pu être relu — le portefeuille,
+l'historique — et précise que rien n'a été effacé automatiquement. Une trace part en console pour
+permettre le diagnostic à distance. Ni le bandeau ni la trace ne recopient la donnée corrompue.
+
+**Réserve honnête** : le bandeau lui-même n'est pas couvert par un test. Il n'existe aucun harnais de
+test pour l'orchestrateur `App.jsx`. La logique dessous l'est (message rendu, panne consignée, pas de
+doublon), le branchement de six lignes ne l'est pas.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -359,8 +368,13 @@ Exact, et trop indulgent : cet écart était la condition qui rendait toute vér
 ## B11. Heure de la source de secours ambiguë
 
 **Constat** Stooq renvoie une heure sans fuseau horaire.  
-**Enjeu** Peut être lue avec plusieurs heures d'écart selon le navigateur.  
-**Note 4/10** — Affecte l'étiquette « prix périmé », pas le prix lui-même.
+**Enjeu** Le même envoi était lu comme un instant différent selon le navigateur, ce qui déplaçait
+l'étiquette « prix périmé ».  
+**Note 4/10, corrigé le 9 août** — Je n'ai pas inventé de fuseau : la source n'en documente aucun, et
+en choisir un aurait été de la provenance fabriquée. Seule la date, qui est fiable, est retenue, et
+elle est étiquetée comme telle. Une cote de secours peut donc paraître vieille d'un jour de plus,
+jamais plus fraîche qu'on ne le sait — c'est le sens prudent. L'âge en heures n'est plus annoncé pour
+cette source ; il l'est toujours pour la source principale, qui donne un vrai horodatage.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -457,10 +471,11 @@ refuse la saisie hors limite.
 
 **Priorité corrigée après contre-vérification** (B1 étant limité aux outils de développement, il descend) :
 
-1. ~~Légende de la volatilité~~, ~~bornes de saisie~~, ~~failles des librairies~~, ~~écart de version de Node~~ — **faits le 9 août**
-2. **B11** fuseau horaire de la source de secours + **B4** échec de stockage silencieux
-3. **B2** titres canadiens — vrai trou produit, demande une source payante
-4. **B3** renommer ou personnaliser le calcul Buffett
+1. ~~Légende de la volatilité~~, ~~bornes de saisie~~, ~~failles des librairies~~, ~~écart de version de Node~~,
+   ~~fuseau de la source de secours~~, ~~échec de stockage silencieux~~ — **faits le 9 août**
+2. **B2** titres canadiens — vrai trou produit, demande une source payante
+3. **B3** renommer ou personnaliser le calcul Buffett
+4. **B5** couche de domaine absente pour la recherche · **B6** sonde d'écart entre les deux sources de prix
 
 **Règle de vérification adoptée le 9 août** — *une vérification ne compte que si elle reproduit
 la branche exacte, avec son fichier de verrouillage exact, sur la version de Node de l'intégration.*

@@ -1,6 +1,7 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { normalizePortfolioAsset, removePortfolioAsset, upsertPortfolioAsset, loadPortfolioAssets, savePortfolioAssets } from './portfolioStore';
 import { calculatePortfolioAnalytics } from '../utils/portfolioAnalytics';
+import { clearStorageFailures, getStorageFailures } from './storageDiagnostics';
 
 describe('normalizePortfolioAsset', () => {
   it('normalizes position fields', () => {
@@ -100,3 +101,29 @@ describe('positions scopées par mandat (P3.2)', () => {
   });
 });
 
+
+describe('B4 — un stockage illisible ne disparaît plus en silence', () => {
+  beforeEach(() => { localStorage.clear(); clearStorageFailures(); });
+  afterEach(() => { localStorage.clear(); clearStorageFailures(); });
+
+  it('signale la panne au lieu de repartir à vide sans un mot', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.setItem('financial-intelligence-suite.portfolio.v1', '{ ceci nest pas du JSON');
+
+    // Le repli reste le bon comportement : mieux vaut démarrer que planter.
+    expect(loadPortfolioAssets([], 'default')).toEqual([]);
+
+    // Mais il laisse désormais une trace ET un motif exploitable.
+    const failures = getStorageFailures();
+    expect(failures).toHaveLength(1);
+    expect(failures[0].label).toMatch(/portefeuille/i);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('ne signale rien quand la lecture se passe bien', () => {
+    savePortfolioAssets([{ symbol: 'AAPL', name: 'Apple', price: 200, position: { quantity: 1, averageCost: 100, targetWeight: 0 } }], 'default');
+    loadPortfolioAssets([], 'default');
+    expect(getStorageFailures()).toHaveLength(0);
+  });
+});

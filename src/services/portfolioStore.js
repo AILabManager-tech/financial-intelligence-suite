@@ -1,4 +1,5 @@
 import { MAX_QUANTITY, MAX_UNIT_PRICE } from "../utils/positionLimits";
+import { recordStorageFailure } from "./storageDiagnostics";
 
 export const STORAGE_KEY = "financial-intelligence-suite.portfolio.v1";
 const DEFAULT_PORTFOLIO_ID = "default";
@@ -62,7 +63,11 @@ export function loadPortfolioAssets(defaultAssets, portfolioId = DEFAULT_PORTFOL
     }
 
     return parsed.map(normalizePortfolioAsset).filter((asset) => asset.symbol);
-  } catch {
+  } catch (error) {
+    // Le repli reste le bon comportement — mieux vaut démarrer que planter —
+    // mais il ne doit plus être MUET : sans trace, l'utilisateur croit avoir
+    // tout perdu et rien n'est diagnosticable à distance (B4).
+    recordStorageFailure("portefeuille", storageKeyFor(portfolioId), error);
     return defaultAssets.map(normalizePortfolioAsset);
   }
 }

@@ -1,5 +1,6 @@
 const QUOTE_ENDPOINT = "/api/quotes";
-const staleQuoteThresholdMs = 4 * 24 * 60 * 60 * 1000;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const staleQuoteThresholdMs = 4 * MS_PER_DAY;
 
 function toNumber(value) {
   const parsed = Number(value);
@@ -27,26 +28,36 @@ export function normalizeQuote(rawQuote) {
     source: rawQuote?.source ?? null,
     fetchedAt: rawQuote?.fetchedAt ?? new Date().toISOString(),
     asOf: rawQuote?.asOf,
+    // Ce que la source permet d'affirmer : "instant" (horodatage réel) ou
+    // "day" (date seule — stooq, dont le fuseau est inconnu).
+    asOfPrecision: rawQuote?.asOfPrecision,
   };
 }
 
-export function getQuoteFreshness(asOf, now = new Date()) {
+// `precision` décrit ce que la SOURCE permet d'affirmer, pas ce qu'on aimerait
+// afficher. Stooq ne documente pas son fuseau : seule la date est fiable
+// (`"day"`), donc annoncer un âge en heures affirmerait une précision qu'on n'a
+// pas. Finnhub donne un vrai instant (`"instant"`), l'âge en heures est légitime.
+export function getQuoteFreshness(asOf, now = new Date(), precision = "instant") {
+  const unknown = { isStale: false, ageHours: null, ageDays: null };
   if (!asOf) {
-    return { isStale: false, ageHours: null };
+    return unknown;
   }
 
   const asOfTime = new Date(asOf).getTime();
   const nowTime = now.getTime();
 
   if (!Number.isFinite(asOfTime) || !Number.isFinite(nowTime)) {
-    return { isStale: false, ageHours: null };
+    return unknown;
   }
 
   const ageMs = Math.max(0, nowTime - asOfTime);
+  const byDay = precision === "day";
 
   return {
     isStale: ageMs > staleQuoteThresholdMs,
-    ageHours: Math.round(ageMs / 36_000) / 100,
+    ageHours: byDay ? null : Math.round(ageMs / 36_000) / 100,
+    ageDays: byDay ? Math.floor(ageMs / MS_PER_DAY) : null,
   };
 }
 
@@ -72,7 +83,7 @@ export function mergeQuotesIntoAssets(assets, quotes) {
       };
     }
 
-    const freshness = getQuoteFreshness(quote.asOf);
+    const freshness = getQuoteFreshness(quote.asOf, new Date(), quote.asOfPrecision);
 
     return {
       ...asset,
@@ -86,7 +97,9 @@ export function mergeQuotesIntoAssets(assets, quotes) {
         source: quote.source,
         fetchedAt: quote.fetchedAt,
         asOf: quote.asOf,
+        asOfPrecision: quote.asOfPrecision,
         ageHours: freshness.ageHours,
+        ageDays: freshness.ageDays,
         previousClose: quote.previousClose,
         message: freshness.isStale
           ? "Prix récupéré, mais horodatage de marché trop ancien."
