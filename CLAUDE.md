@@ -18,7 +18,7 @@
 - **Registre de features (à partir de la livraison de P0.1)** : toute feature montable (panel fiche actif, section dashboard, widget) doit s'enregistrer dans `src/core/featureRegistry.js` (id + catégorie + surface + défaut visible). Un panel non enregistré n'est pas montable — le registre est la porte d'entrée unique. Le rendu est piloté par `featureRegistry` + `layoutStore`, pas par un empilage en dur.
 - **Sécurité** : `.env` jamais affiché, jamais committé. Tokens jamais leakés dans les messages d'erreur (vérifié par test `expect(JSON.stringify(result)).not.toContain('secret-token')`). Validation des inputs côté API (symbol uppercase + trim, limits clampés).
 - **Efficacité** : cache TTL côté serveur ajusté à la volatilité (quotes 20s, news 30 min, fundamentals 6h, earnings 6h, dividendes 24h, history 6h, search 10 min, health 60s). `AbortController` côté client pour annuler les fetches obsolètes au changement de symbole.
-- **Optimisation** : un panel = un fetch par changement de symbole, pas de refetch redondant. Tests rapides (cible : full suite < 2s).
+- **Optimisation** : un panel = un fetch par changement de symbole, pas de refetch redondant. Tests rapides (cible : full suite < 30 s ; ~8 s pour 1165 tests aujourd'hui).
 
 ## Convention de fichiers (RESPECTER à chaque nouvelle source)
 
@@ -34,6 +34,8 @@
 | Tests formateurs | `src/utils/<feature>Formatters.test.js` | |
 | UI | `src/components/<Feature>Panel.jsx` | empilé dans `IntelligenceCard.jsx` |
 | Healthcheck | extension `server/marketDataHealth.js` | une probe par capability distincte |
+
+> **Exception param `quotes`** : `/api/quotes` est le seul endpoint **batch** — il attend `?symbols=AAPL,MSFT` (pluriel, séparés par virgule), pas `?symbol=`. Les 9 autres endpoints (`fundamentals`, `dividends`, `earnings`, `peers`, `sec-filings`, `analyst-ratings`, `company-news`, `insider-sentiment`, `insider-transactions`) prennent `?symbol=X` (singulier). Taper `symbol` sur `quotes` renvoie `400 "symbols query parameter is required"`.
 
 ## Workflow obligatoire
 
