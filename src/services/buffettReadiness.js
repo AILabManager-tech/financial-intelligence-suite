@@ -10,6 +10,9 @@ import { fetchFundamentals } from "./fundamentals";
 const STANDARD_R = 0.10;
 const STANDARD_G = 0.05;
 const REQUIRED_FIELDS = ["roeTtm", "epsGrowth5y", "debtEquityAnnual", "pfcfShareTtm"];
+// Dérivé de la liste réelle : un total codé en dur se désynchronise dès qu'un
+// critère est ajouté ou retiré (c'était le cas avec « FCF > 0 »).
+const CRITERIA_TOTAL = evaluateCriteria({}, 0).length;
 
 function missingFields(fields) {
   return REQUIRED_FIELDS.filter((key) => !Number.isFinite(fields?.[key]?.value));
@@ -28,7 +31,7 @@ export function buildBuffettSummary(asset, fields) {
       status: "incomplete",
       missing: missingFields(fields),
       score: null,
-      criteriaTotal: 6,
+      criteriaTotal: CRITERIA_TOTAL,
       signal: null,
       label: "Incomplet",
     };
@@ -52,6 +55,7 @@ export function buildBuffettSummary(asset, fields) {
     symbol: inputs.ticker,
     status: "ready",
     score,
+    criteria, // traçabilité : quel critère a échoué, sans le recalculer
     criteriaTotal: criteria.length,
     signal,
     label: formatActionLabel(signal),
@@ -78,7 +82,7 @@ export async function fetchBuffettSummaries(assets, { signal } = {}) {
           symbol: asset.symbol,
           status: "unavailable",
           score: null,
-          criteriaTotal: 6,
+          criteriaTotal: CRITERIA_TOTAL,
           signal: null,
           label: "Indisponible",
           error: error.message,

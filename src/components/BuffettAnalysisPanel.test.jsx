@@ -86,12 +86,13 @@ describe("BuffettAnalysisPanel", () => {
     // 6 Buffett gates listed
     expect(screen.getByText(/ROE > 15%/i)).toBeInTheDocument();
     expect(screen.getByText(/Debt\/Equity < 0\.5/i)).toBeInTheDocument();
-    expect(screen.getByText(/FCF > 0/i)).toBeInTheDocument();
+    // « FCF > 0 » retiré du score : inatteignable via le pipeline réel.
+    expect(screen.queryByText(/FCF > 0/i)).not.toBeInTheDocument();
     expect(screen.getByText(/EPS growth 5y > 5%/i)).toBeInTheDocument();
     expect(screen.getByText(/Economic moat/i)).toBeInTheDocument();
     expect(screen.getByText(/Margin of Safety > 25%/i)).toBeInTheDocument();
     expect(screen.getByText(/Critères Buffett validés/i)).toBeInTheDocument();
-    expect(screen.getByText(/4\/6/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\/5/i)).toBeInTheDocument();
     expect(screen.getByText(/Complet/i)).toBeInTheDocument();
     expect(screen.getByText(/FCF\/action estimé/i)).toBeInTheDocument();
   });

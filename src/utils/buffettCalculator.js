@@ -39,11 +39,24 @@ export function resolveMoat(ticker, m) {
   return inferMoat(m);
 }
 
+// Critères comptés dans le score affiché. Chacun doit pouvoir ÉCHOUER pour les
+// entrées que le pipeline accepte réellement — sinon il offre un point gratuit
+// à tout titre analysé et le score affirme mesurer plus qu'il ne mesure.
+//
+// « FCF > 0 » a été retiré pour cette raison : `extractBuffettInputs` refuse
+// pfcf <= 0, donc fcf = prix / pfcf est strictement positif dès qu'une analyse
+// s'affiche. Le critère ne pouvait pas échouer et gonflait chaque score de 1.
+// Un flux de trésorerie non positif reste traité — en amont, où il rend
+// l'analyse impossible plutôt que d'être noté zéro sur un critère.
+//
+// Note sur les deux seuils d'endettement : ce critère exige D/E < 0.5 (prudence
+// bilancielle), alors que `inferMoat` tolère jusqu'à 1.5 (une rente peut porter
+// plus de dette sans perdre son avantage). Ce sont deux questions distinctes,
+// pas une incohérence — d'où les seuils différents, assumés.
 export function evaluateCriteria(stock, mos) {
   return [
     { label: 'ROE > 15%',              status: stock.roe > 0.15 ? 'PASS' : 'FAIL' },
     { label: 'Debt/Equity < 0.5',      status: stock.debtEquity < 0.5 ? 'PASS' : 'FAIL' },
-    { label: 'FCF > 0',                status: stock.fcf > 0 ? 'PASS' : 'FAIL' },
     { label: 'EPS growth 5y > 5%',     status: stock.earningsGrowth5y > 0.05 ? 'PASS' : 'FAIL' },
     { label: 'Economic moat',          status: stock.hasMoat ? 'PASS' : 'FAIL' },
     { label: 'Margin of Safety > 25%', status: mos > 0.25 ? 'PASS' : 'FAIL' },

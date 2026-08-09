@@ -72,10 +72,10 @@ describe('calcIntrinsicValue — DCF formula', () => {
   });
 });
 
-describe('evaluateCriteria — Buffett 6-gate checklist', () => {
-  it('all 6 PASS for the canonical fortress stock', () => {
+describe('evaluateCriteria — Buffett 5-gate checklist', () => {
+  it('all 5 PASS for the canonical fortress stock', () => {
     const c = evaluateCriteria(baseStock, 0.30);
-    expect(c).toHaveLength(6);
+    expect(c).toHaveLength(5);
     expect(c.every((x) => x.status === 'PASS')).toBe(true);
   });
 
@@ -89,9 +89,13 @@ describe('evaluateCriteria — Buffett 6-gate checklist', () => {
     expect(c.find((x) => x.label === 'Debt/Equity < 0.5')?.status).toBe('FAIL');
   });
 
-  it('FAILS FCF when ≤ 0', () => {
+  // « FCF > 0 » ne fait plus partie du score : le pipeline refuse pfcf <= 0 en
+  // amont, donc le critère ne pouvait jamais échouer pour un titre analysé.
+  // L'ancien test passait uniquement parce qu'il appelait cette fonction pure
+  // avec fcf: 0 — une entrée que la production ne produit jamais.
+  it('ne compte plus « FCF > 0 » (critère inatteignable via le pipeline réel)', () => {
     const c = evaluateCriteria({ ...baseStock, fcf: 0 }, 0.30);
-    expect(c.find((x) => x.label === 'FCF > 0')?.status).toBe('FAIL');
+    expect(c.find((x) => x.label === 'FCF > 0')).toBeUndefined();
   });
 
   it('FAILS earnings growth when ≤ 5%', () => {
@@ -114,7 +118,6 @@ describe('evaluateCriteria — Buffett 6-gate checklist', () => {
     expect(c.map((x) => x.label)).toEqual([
       'ROE > 15%',
       'Debt/Equity < 0.5',
-      'FCF > 0',
       'EPS growth 5y > 5%',
       'Economic moat',
       'Margin of Safety > 25%',
