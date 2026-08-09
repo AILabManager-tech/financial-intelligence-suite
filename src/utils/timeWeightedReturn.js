@@ -4,7 +4,9 @@
 // apports/retraits de capital : une hausse de valeur due à un achat financé de
 // l'extérieur n'est PAS de la performance. On chaîne les rendements de chaque
 // sous-période entre deux snapshots, en soustrayant le flux de capital net de la
-// sous-période (convention : flux supposé en début de sous-période).
+// sous-période. Convention : flux rattaché à la FIN de la sous-période —
+// (1 + r) = (V_fin − flux) / V_début, l'apport ne « travaille » pas sur la
+// période où il arrive. (Le rattacher au début donnerait V_fin / (V_début + flux).)
 //
 // Entrées :
 //  - snapshots : [{ snapshotDate|capturedAt, totalMarketValue }] (série de valeur

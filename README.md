@@ -52,7 +52,7 @@ npm test
 npm run build
 ```
 
-Suite de tests : ~370 cas, ~1.4 s. Coverage par couche (domain server, handlers, services client, formatters, composants UI).
+Suite de tests : 1165 cas, ~8 s. Coverage par couche (domain server, handlers, services client, formatters, composants UI).
 
 Les trois commandes tournent aussi en CI à chaque pull request et à chaque push sur `main` via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (Node 20 LTS, cache npm, concurrency groupée). Le badge en haut du README reflète le dernier run sur `main`.
 

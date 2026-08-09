@@ -2,7 +2,11 @@
 // Simulation synthétique 2015-2022 : prix calibrés à l'époque, NON garantis comme
 // clôtures officielles (méthodologie du jeu de données). Base USD (prix par action en
 // USD, cohérent avec les cotations live US). Dépôts de trésorerie omis (le moteur de
-// lots ne les modélise pas ; les apports se reflètent dans les achats). dev-only.
+// lots ne les modélise pas ; les apports se reflètent dans les achats).
+// Chargeable EN PRODUCTION via l'état vide du portefeuille (SamplefolioEmptyState) :
+// le libellé y dit explicitement « simulé », « pas des données de marché réelles,
+// ni un conseil ». Seul ce profil est exposé — le jeu de démos complet + reset
+// reste dev-only (SettingsPage).
 
 export const GEAR_CODE_END_DATE = "2022-12-19"; // dernier événement → asOf du profil
 
