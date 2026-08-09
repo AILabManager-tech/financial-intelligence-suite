@@ -5,8 +5,10 @@ import { getSectorFamily } from "../utils/portfolioAnalytics";
 function buildReviewFilters(buffettSummaries) {
   return [
     { label: "Tous les statuts", test: () => true },
-    { label: "Variation négative", test: (asset) => asset.changePct < 0 },
-    { label: "Variation positive", test: (asset) => asset.changePct >= 0 },
+    // `null >= 0` vaut true : sans le garde, une variation INCONNUE serait
+    // classée « positive ». Un filtre de variation ne retient que le connu.
+    { label: "Variation négative", test: (asset) => Number.isFinite(asset.changePct) && asset.changePct < 0 },
+    { label: "Variation positive", test: (asset) => Number.isFinite(asset.changePct) && asset.changePct >= 0 },
     { label: "Source Finnhub", test: (asset) => asset.marketData?.source === "finnhub.io" },
     { label: "Source fallback", test: (asset) => asset.marketData?.source && asset.marketData.source !== "finnhub.io" },
     { label: "Buffett complet", test: (asset) => buffettSummaries[asset.symbol]?.status === "ready" },

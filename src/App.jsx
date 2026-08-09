@@ -730,8 +730,10 @@ export default function App() {
         name: position.symbol,
         sector: "Portefeuille — Importé",
         price: position.averageCost,
-        change: 0,
-        changePct: 0,
+        // Position importée : aucune cote encore reçue ⇒ variation inconnue,
+        // pas « stable ». Le premier tick de quotes la renseignera.
+        change: null,
+        changePct: null,
         volume: 0,
       };
       nextPortfolio = upsertPortfolioAsset(nextPortfolio, baseAsset, {

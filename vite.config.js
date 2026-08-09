@@ -95,7 +95,10 @@ function normalizeStooqQuote(symbol, payload) {
   const rawQuote = payload?.symbols?.[0]
   const close = Number(rawQuote?.close)
   const open = Number(rawQuote?.open)
-  const change = Number.isFinite(open) ? close - open : 0
+  // Sans cours d'ouverture, la variation est INCONNUE — masquée, pas ramenée
+  // à 0 (« stable aujourd'hui » serait un fait fabriqué). Parité avec le
+  // handler prod api/_handlers/quotes.js.
+  const change = Number.isFinite(open) ? close - open : null
 
   if (!Number.isFinite(close)) {
     throw new Error(`${symbol}: invalid stooq payload`)
@@ -106,7 +109,7 @@ function normalizeStooqQuote(symbol, payload) {
     name: rawQuote.name,
     price: close,
     change,
-    changePct: Number.isFinite(open) && open > 0 ? (change / open) * 100 : 0,
+    changePct: Number.isFinite(open) && open > 0 ? (change / open) * 100 : null,
     volume: rawQuote.volume,
     source: fallbackQuoteSource,
     fetchedAt: new Date().toISOString(),
@@ -142,8 +145,16 @@ async function fetchQuote(symbol) {
     return {
       symbol,
       price,
-      change: Number.isFinite(change) ? change : price - previousClose,
-      changePct: Number.isFinite(changePct) ? changePct : 0,
+      change: Number.isFinite(change)
+        ? change
+        : Number.isFinite(previousClose)
+          ? price - previousClose
+          : null,
+      changePct: Number.isFinite(changePct)
+        ? changePct
+        : Number.isFinite(previousClose) && previousClose > 0
+          ? ((price - previousClose) / previousClose) * 100
+          : null,
       previousClose: Number.isFinite(previousClose) ? previousClose : null,
       source: primaryQuoteSource,
       fetchedAt: new Date().toISOString(),
@@ -366,7 +377,7 @@ export default defineConfig(({ mode }) => {
                   .map((result) => result.reason.message)
 
                 return {
-                  source: quotes.some((quote) => quote.source === primaryQuoteSource) ? primaryQuoteSource : fallbackQuoteSource,
+                  sources: [...new Set(quotes.map((quote) => quote.source))],
                   fetchedAt: new Date().toISOString(),
                   quotes,
                   errors,

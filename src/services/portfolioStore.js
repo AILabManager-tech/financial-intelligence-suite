@@ -24,8 +24,8 @@ export function normalizePortfolioAsset(asset) {
     name: asset.name || asset.symbol,
     sector: asset.sector || "Portefeuille — Non classé",
     price: cleanNumber(asset.price, 0),
-    change: cleanNumber(asset.change, 0),
-    changePct: cleanNumber(asset.changePct, 0),
+    change: cleanNumber(asset.change, null),
+    changePct: cleanNumber(asset.changePct, null),
     volume: cleanNumber(asset.volume, 0),
     position: {
       quantity: cleanNumber(position.quantity, 0),

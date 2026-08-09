@@ -71,4 +71,53 @@ describe("quotes handler — graceful degradation", () => {
     await handler({ query: { symbols: "" } }, response);
     expect(response.statusCode).toBe(400);
   });
+
+  it("masks an undeterminable change instead of reporting a fabricated 0", async () => {
+    // Finnhub answers with a price but no `d` / `dp` and no usable previous
+    // close: the variation is UNKNOWN. Reporting 0 would state "flat today",
+    // which is a fabricated fact (strict-factuality rule: absent => masked).
+    process.env.FINNHUB_API_KEY = "test-key";
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ c: 100, t: 1 }) })));
+
+    const response = mockResponse();
+    await handler({ query: { symbols: "NOCHG" } }, response);
+
+    const quote = response.json.quotes[0];
+    expect(quote.price).toBe(100);
+    expect(quote.change).toBeNull();
+    expect(quote.changePct).toBeNull();
+  });
+
+  it("lists every source actually used instead of claiming a single global one", async () => {
+    // One symbol served by Finnhub, one by the Stooq fallback. Announcing
+    // `source: "finnhub.io"` for the whole payload — as it did when a single
+    // quote came from Finnhub — misattributes the other one.
+    process.env.FINNHUB_API_KEY = "test-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) => {
+        const u = String(url);
+        if (u.includes("finnhub.io") && u.includes("symbol=AAA&")) {
+          return { ok: true, json: async () => ({ c: 10, pc: 9, d: 1, dp: 11.1, t: 1 }) };
+        }
+        if (u.includes("stooq.com")) {
+          return {
+            ok: true,
+            json: async () => ({
+              symbols: [{ name: "BBB", open: 4, close: 5, volume: 1, date: "2026-08-07", time: "20:00:00" }],
+            }),
+          };
+        }
+        return { ok: false, status: 500, json: async () => ({}) };
+      }),
+    );
+
+    const response = mockResponse();
+    await handler({ query: { symbols: "AAA,BBB" } }, response);
+
+    expect(response.json.quotes).toHaveLength(2);
+    expect(response.json.sources.sort()).toEqual(["finnhub.io", "stooq.com"]);
+    // Every quote still carries its own provenance (per-field rule).
+    expect(response.json.quotes.map((q) => q.source).sort()).toEqual(["finnhub.io", "stooq.com"]);
+  });
 });

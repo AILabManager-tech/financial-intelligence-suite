@@ -18,11 +18,13 @@ export function normalizeQuote(rawQuote) {
     symbol,
     name: rawQuote?.name ?? rawQuote?.Name,
     price,
-    change: change ?? 0,
-    changePct: changePct ?? 0,
+    // `null` = variation inconnue (le serveur la masque quand elle l'est).
+    // La ramener à 0 ici réintroduirait l'affirmation « stable aujourd'hui ».
+    change,
+    changePct,
     volume: toNumber(rawQuote?.volume ?? rawQuote?.Volume),
     previousClose: toNumber(rawQuote?.previousClose),
-    source: rawQuote?.source ?? "stockprices.dev",
+    source: rawQuote?.source ?? null,
     fetchedAt: rawQuote?.fetchedAt ?? new Date().toISOString(),
     asOf: rawQuote?.asOf,
   };
@@ -106,7 +108,7 @@ export async function fetchLiveQuotes(symbols, { signal } = {}) {
   return {
     quotes: Array.isArray(payload.quotes) ? payload.quotes : [],
     errors: Array.isArray(payload.errors) ? payload.errors : [],
-    source: payload.source ?? "stockprices.dev",
+    sources: Array.isArray(payload.sources) ? payload.sources : [],
     fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
     primaryConfigured: Boolean(payload.primaryConfigured),
     cacheStatus: payload.cache?.status,

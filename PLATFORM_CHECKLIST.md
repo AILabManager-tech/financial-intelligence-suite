@@ -268,7 +268,7 @@ Légende:
 - [x] Tests live quotes normalization
 - [x] Tests validation serveur portefeuille
 - [x] `npm run lint` vert
-- [x] `npm test` vert (714 tests)
+- [x] `npm test` vert (1165 tests au 2026-08-08)
 - [x] `npm run build` vert
 - [x] CI GitHub Actions (lint + test + build sur PR et push main, badge README)
 - [~] Tests composants UI
@@ -313,7 +313,7 @@ Audit complet : chaque sortie critique confrontée à un oracle **indépendant**
 - [x] **F-04 Moteur de lots** — résultat dépendant de l'ordre d'entrée à date égale (P&L 1 000 $ ou 0 $). Corrigé par tri secondaire `buy` avant `sell` puis index d'entrée.
 - [x] **F-02 Annualisation** — `252 / meanPeriodDays` mélangeait jours de bourse et jours calendaires → biais systématique −15,4 % sur vol, Sharpe, Sortino, Calmar, tracking error, information ratio, alpha, Treynor. Corrigé en `365 / meanPeriodDays` (même unité des deux côtés) dans `portfolioRisk`, `portfolioRatios`, `benchmarkStats`. Écart à l'oracle : −15,41 % → −0,00 %.
 - [x] **F-03 VaR/CVaR** — `MIN_HISTORICAL = 10` rendait VaR 95 % = VaR 99 % = CVaR (même point de données présenté comme deux quantiles). Corrigé : seuil d'estimabilité PAR niveau (`n ≥ 2/(1−c)` → 40 obs à 95 %, 200 à 99 %), quantile interpolé type 7, `minObservations` exposé et affiché par le panneau au lieu d'un « n/d » muet.
-- [ ] **F-06 / F-07 Factualité quotes** — `changePct: 0` et `change: 0` fabriqués quand la donnée manque ; champ `source` global du payload annonçant `finnhub.io` dès qu'une seule cote sur 30 en vient.
+- [x] **F-06 / F-07 Factualité quotes** — `changePct: 0` et `change: 0` fabriqués quand la donnée manque, sur **toute la chaîne** (handler prod, middleware dev, `liveQuotes`, `portfolioStore`, `watchlistStore`, `peersFormatters`, import de positions, `AssetTable`, `SearchFilter`) ; champ `source` global annonçant `finnhub.io` dès qu'une seule cote sur 30 en venait. Corrigé : variation inconnue ⇒ `null` masqué en « — » dans le tableau, et `sources` liste les provenances réellement utilisées.
 - [ ] **F-05 Analyse Buffett** — `r` et `g` constants réduisent le DCF à un seuil sur le P/FCF (multiple K = 21) ; critère « FCF > 0 » tautologique ; seuils D/E contradictoires (0,5 vs 1,5).
 
 ## Synthèse état actuel

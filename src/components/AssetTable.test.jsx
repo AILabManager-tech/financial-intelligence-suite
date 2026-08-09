@@ -40,4 +40,15 @@ describe("AssetTable", () => {
     expect(screen.getByText("4/6")).toBeInTheDocument();
     expect(screen.getByText("Signal défavorable")).toBeInTheDocument();
   });
+
+  it("affiche une variation absente comme absence, jamais comme +0,00 %", () => {
+    // Une cote sans variation déterminable (source de repli sans cours
+    // d'ouverture). Afficher « +0,00 % » avec la flèche haussière fabriquerait
+    // le fait « stable aujourd'hui » ; l'absence doit rester visible.
+    const noChange = [{ ...assets[0], change: null, changePct: null }];
+    render(<AssetTable assets={noChange} onSelect={vi.fn()} />);
+    expect(screen.queryByText("+0.00%")).not.toBeInTheDocument();
+    expect(screen.queryByText("+$0.00")).not.toBeInTheDocument();
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
+  });
 });

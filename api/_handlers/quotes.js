@@ -14,7 +14,9 @@ function normalizeStooqQuote(symbol, payload) {
   const rawQuote = payload?.symbols?.[0];
   const close = Number(rawQuote?.close);
   const open = Number(rawQuote?.open);
-  const change = Number.isFinite(open) ? close - open : 0;
+  // Sans cours d'ouverture, la variation est INCONNUE. Renvoyer 0 affirmerait
+  // « stable aujourd'hui » — un fait fabriqué (factualité stricte : masqué).
+  const change = Number.isFinite(open) ? close - open : null;
 
   if (!Number.isFinite(close)) {
     throw new Error(`${symbol}: invalid stooq payload`);
@@ -25,7 +27,7 @@ function normalizeStooqQuote(symbol, payload) {
     name: rawQuote.name,
     price: close,
     change,
-    changePct: Number.isFinite(open) && open > 0 ? (change / open) * 100 : 0,
+    changePct: Number.isFinite(open) && open > 0 ? (change / open) * 100 : null,
     volume: rawQuote.volume,
     source: FALLBACK_SOURCE,
     fetchedAt: new Date().toISOString(),
@@ -58,11 +60,23 @@ async function fetchQuote(symbol) {
       throw new Error(`${symbol}: invalid finnhub payload`);
     }
 
+    // Variation indéterminable (ni `d`/`dp`, ni clôture précédente exploitable)
+    // ⇒ null, jamais 0 : « inconnu » et « stable » ne sont pas la même chose.
+    const resolvedChange = Number.isFinite(change)
+      ? change
+      : Number.isFinite(previousClose)
+        ? price - previousClose
+        : null;
+
     return {
       symbol,
       price,
-      change: Number.isFinite(change) ? change : price - previousClose,
-      changePct: Number.isFinite(changePct) ? changePct : 0,
+      change: resolvedChange,
+      changePct: Number.isFinite(changePct)
+        ? changePct
+        : Number.isFinite(previousClose) && previousClose > 0
+          ? ((price - previousClose) / previousClose) * 100
+          : null,
       previousClose: Number.isFinite(previousClose) ? previousClose : null,
       source: PRIMARY_SOURCE,
       fetchedAt: new Date().toISOString(),
@@ -111,8 +125,11 @@ export default async function handler(request, response) {
   // (quotes + per-symbol errors). An uncovered symbol (e.g. a Canadian listing
   // the free data source does not quote) is a missing datum, not an endpoint
   // outage — the client renders it as "unavailable" rather than a global error.
+  // Provenance : chaque cote porte déjà la sienne. Le champ d'enveloppe liste
+  // les sources RÉELLEMENT utilisées — annoncer « finnhub.io » pour tout le lot
+  // parce qu'une cote sur trente en venait mésattribuait les vingt-neuf autres.
   sendJson(response, 200, {
-    source: quotes.some((quote) => quote.source === PRIMARY_SOURCE) ? PRIMARY_SOURCE : FALLBACK_SOURCE,
+    sources: [...new Set(quotes.map((quote) => quote.source))],
     fetchedAt: new Date().toISOString(),
     quotes,
     errors,

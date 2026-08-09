@@ -71,4 +71,18 @@ describe('getQuoteFreshness', () => {
       new Date('2026-05-09T16:00:00.000Z'),
     ).isStale).toBe(true);
   });
+
+  it("propage une variation absente en null plutôt qu'en 0 fabriqué", () => {
+    // Le serveur masque désormais une variation indéterminable ; la normaliser
+    // en 0 ici rétablirait l'affirmation « stable aujourd'hui » qu'on vient
+    // d'écarter (factualité stricte : champ absent => masqué).
+    const quote = normalizeQuote({ symbol: "AAA", price: 100, change: null, changePct: null });
+    expect(quote.change).toBeNull();
+    expect(quote.changePct).toBeNull();
+  });
+
+  it("n'invente pas de source quand la cote n'en porte pas", () => {
+    const quote = normalizeQuote({ symbol: "AAA", price: 100 });
+    expect(quote.source).toBeNull();
+  });
 });

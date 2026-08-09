@@ -52,8 +52,10 @@ export function buildPeersTable(peers, quotes, baseQuote) {
       symbol,
       status: 'ready',
       price,
-      change: change ?? 0,
-      changePct: changePct ?? 0,
+      // Cohérent avec les branches d'indisponibilité ci-dessus : une variation
+      // inconnue reste `null`, elle n'est pas ramenée à « stable ».
+      change,
+      changePct,
       deltaVsBasePct,
       source: quote.source ?? null,
     };

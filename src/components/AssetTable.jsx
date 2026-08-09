@@ -104,7 +104,10 @@ export default function AssetTable({ assets, buffettSummaries = {}, onSelect }) 
           </thead>
           <tbody className="divide-y divide-white/5">
             {sorted.map((asset) => {
-              const isUp = asset.changePct >= 0;
+              // Variation inconnue (source de repli sans cours d'ouverture) :
+              // ni flèche, ni couleur, ni « +0,00 % » — l'absence reste visible.
+              const hasChange = Number.isFinite(asset.changePct);
+              const isUp = hasChange && asset.changePct >= 0;
               const pnlUp = asset.positionMetrics.unrealizedPnl >= 0;
               const driftAbs = Math.abs(asset.positionMetrics.targetDrift);
               const buffett = asset.buffettSummary;
@@ -125,7 +128,7 @@ export default function AssetTable({ assets, buffettSummaries = {}, onSelect }) 
                   role="row"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === "Enter" && onSelect(asset)}
-                  aria-label={`${asset.symbol} — ${formatPercent(asset.changePct)}`}
+                  aria-label={`${asset.symbol} — ${hasChange ? formatPercent(asset.changePct) : "variation indisponible"}`}
                 >
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
@@ -145,13 +148,21 @@ export default function AssetTable({ assets, buffettSummaries = {}, onSelect }) 
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <div className="inline-flex items-center justify-end gap-2">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${isUp ? "bg-emerald-500/25 text-emerald-300" : "bg-rose-500/25 text-rose-300"}`}>
-                      {isUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                      {formatPercent(asset.changePct)}
-                      </span>
-                      <span className={`text-xs font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
-                        {isUp ? "+" : "-"}${Math.abs(asset.change).toFixed(2)}
-                      </span>
+                      {hasChange ? (
+                        <>
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${isUp ? "bg-emerald-500/25 text-emerald-300" : "bg-rose-500/25 text-rose-300"}`}>
+                          {isUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                          {formatPercent(asset.changePct)}
+                          </span>
+                          {Number.isFinite(asset.change) && (
+                            <span className={`text-xs font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`}>
+                              {asset.change >= 0 ? "+" : "-"}${Math.abs(asset.change).toFixed(2)}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="px-2 py-1 text-xs text-slate-500" title="Variation indisponible pour cette source">—</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3.5 text-right">
