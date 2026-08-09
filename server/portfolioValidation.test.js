@@ -60,6 +60,22 @@ describe('portfolioValidation', () => {
     expect(() => validatePortfolioSnapshot({ totalMarketValue: -1 })).toThrow('totalMarketValue');
   });
 
+  it("rejette un prix démesuré (c'est lui qui alimente la valeur de marché)", () => {
+    // `marketValue = quantity × asset.price` (portfolioAnalytics.js) — c'est
+    // `price`, pas `averageCost`, qui produit le total. Il traversait la
+    // validation via le spread `...asset` : borner la quantité seule laissait
+    // 1e9 × 1e308 = Infinity atteignable.
+    expect(() => validatePortfolioAssets([
+      { symbol: 'AAPL', price: 1e308, position: { quantity: 1, averageCost: 10, targetWeight: 10 } },
+    ])).toThrow('price');
+    expect(() => validatePortfolioAssets([
+      { symbol: 'AAPL', price: -1, position: { quantity: 1, averageCost: 10, targetWeight: 10 } },
+    ])).toThrow('price');
+    expect(() => validatePortfolioAssets([
+      { symbol: 'AAPL', price: 750_000, position: { quantity: 1_000_000, averageCost: 750_000, targetWeight: 10 } },
+    ])).not.toThrow();
+  });
+
   it('rejette les quantités et coûts démesurés (garde anti-débordement)', () => {
     // quantity x averageCost alimente la valeur de marché. Sans borne haute,
     // 1e308 x 1e308 vaut Infinity et contamine tous les totaux du portefeuille.

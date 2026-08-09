@@ -20,12 +20,13 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## ⏸️ EN ATTENTE DE L'UTILISATEUR — DÉMARRER ICI (2026-08-09)
 
-**Contre-vérification de l'audit : 35 points sur 39 tiennent. 4 étaient faux ou mal cadrés, 1 correction était incomplète.** Les deux corrections qui en découlent sont livrées (1168 tests verts).
+**Contre-vérification de l'audit : 35 points sur 39 tiennent. 4 étaient faux ou mal cadrés, 1 correction était incomplète.** Les deux corrections qui en découlent sont livrées (1174 tests verts).
 
 ### Corrigé le 2026-08-09
 
 - **A2 rouvert puis refermé** — la correction de l'annualisation n'avait touché que le code. `PortfolioRiskPanel.jsx` (légende), `src/help/aide-theorie.md` (**onglet Aide, visible en production**) et `ROADMAP_PM.md` annonçaient toujours `×√(252/jours moyens)`. C'est le défaut A13 (« commentaire qui ment »), mais **affiché à l'utilisateur**. Corrigé aux 4 endroits + test qui échoue si légende et calcul divergent. Résidus A5 nettoyés (`// 6 Buffett gates`, fixture `criteriaTotal: 6`, attente `4/6`).
-- **B13** — `quantity` et `averageCost` sans borne haute ⇒ `Infinity` dans les totaux. `parseFiniteNumber` acceptait déjà `max` (utilisé pour `targetWeight`) : il suffisait de l'appliquer. Bornes 1e9 / 1e6. Vérifié en exécution : 400 sur 1e308, 200 sur 1 M de titres à 750 k$.
+- **B13 — fermé en DEUX passes ; la première ne protégeait rien en ligne.** Elle avait borné `quantity` et `averageCost` dans `server/portfolioValidation.js`, qui n'est importé que par `vite.config.js` : **il n'existe aucun `api/_handlers/portfolio.js`**, le portefeuille persiste en `localStorage` via `normalizePortfolioAsset`. En production, rien n'était borné. Elle avait aussi borné `averageCost` alors que la valeur de marché est `quantity × asset.price` (`portfolioAnalytics.js:7`) — `price` traversait la validation par le spread `...asset`, laissant `1e9 × 1e308 = Infinity` atteignable. Corrigé : constantes partagées `src/utils/positionLimits.js` (recopiées, elles se désynchronisaient — défaut A12), appliquées **aux deux couches** + `max` sur les champs du formulaire. Le client replie comme sur une valeur non finie (jamais d'écrêtage : écrêter 1e308 à 1e9 fabriquerait une quantité non saisie), le serveur lève. Vérifié en exécution : `400` sur `price: 1e308` et sur `quantity: 1e308`, `200` sur 1 M de titres à 750 k$.
+  - **Constaté au passage, pas un défaut** : la réponse `PUT /api/portfolio` renvoie toujours `price: 0`. Comportement préexistant vérifié par `git stash` — le dépôt SQLite ne persiste pas le prix, qui est une cote live re-fetchée au chargement.
 
 ### Constats de l'audit invalidés — ne pas les retravailler
 
@@ -42,7 +43,9 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 3. **B3** renommer ou personnaliser le calcul Buffett
 4. **B1** en hygiène + réparer le workflow Dependabot
 
-Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (17 pages, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
+Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (16 pages, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
+
+⚠️ **Rien de tout ceci n'est en ligne.** Trois commits locaux non poussés (`d392dbb`, `45e1d72`, celui-ci) ; `origin/main` est resté à `e9ae5aa`. La version déployée sur devlabai.tech est celle d'avant la contre-vérification. Le push reste une décision utilisateur explicite.
 
 ---
 

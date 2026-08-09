@@ -4,6 +4,15 @@ import { enrichAssetsWithPositionMetrics } from "../utils/portfolioAnalytics";
 import { formatCurrency } from "../utils/scoreTranslator";
 import { buildPortfolioCsv, buildPortfolioJson, downloadTextFile } from "../services/portfolioExport";
 import { parseBrokerCsv } from "../services/csvImporter";
+import { MAX_QUANTITY, MAX_UNIT_PRICE } from "../utils/positionLimits";
+
+// Mêmes bornes que la persistance, pour que le navigateur signale la saisie
+// hors limite au lieu de la laisser replier silencieusement au enregistrement.
+const FIELD_MAX = {
+  quantity: MAX_QUANTITY,
+  averageCost: MAX_UNIT_PRICE,
+  targetWeight: 100,
+};
 
 function toDraft(asset) {
   return {
@@ -226,6 +235,7 @@ export default function PortfolioManager({ assets, onSavePosition, onRemoveAsset
                       <input
                         type="number"
                         min="0"
+                        max={FIELD_MAX[field]}
                         step={field === "quantity" ? "0.01" : "0.1"}
                         value={draft[field]}
                         onChange={(event) => updateDraft(asset.symbol, field, event.target.value)}

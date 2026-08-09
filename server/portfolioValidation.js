@@ -1,12 +1,7 @@
+import { MAX_QUANTITY, MAX_UNIT_PRICE } from '../src/utils/positionLimits.js';
+
 const symbolPattern = /^[A-Z0-9][A-Z0-9.-]{0,14}$/;
 const maxPositions = 200;
-// Bornes hautes : `quantity × averageCost` alimente la valeur de marché, donc
-// deux valeurs non bornées produisent Infinity et contaminent tous les totaux.
-// Le produit maximal (1e9 × 1e6 = 1e15) reste sous Number.MAX_SAFE_INTEGER,
-// tout en laissant passer n'importe quel portefeuille réel (un milliard de
-// titres à un million de dollars pièce).
-const maxQuantity = 1e9;
-const maxUnitPrice = 1e6;
 
 function parseFiniteNumber(value, field, { min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY } = {}) {
   const parsed = Number(value);
@@ -62,9 +57,13 @@ export function validatePortfolioAssets(assets) {
       symbol,
       name: parseText(asset.name, `assets[${index}].name`, symbol),
       sector: parseText(asset.sector, `assets[${index}].sector`, "Portefeuille - Non classé"),
+      // `price` est le facteur réel de la valeur de marché (quantity × price).
+      // Il traversait la validation par le spread ci-dessus : borner la seule
+      // quantité laissait 1e9 × 1e308 = Infinity atteignable.
+      price: parseFiniteNumber(asset.price ?? 0, `assets[${index}].price`, { min: 0, max: MAX_UNIT_PRICE }),
       position: {
-        quantity: parseFiniteNumber(position.quantity ?? 0, `assets[${index}].position.quantity`, { min: 0, max: maxQuantity }),
-        averageCost: parseFiniteNumber(position.averageCost ?? asset.price ?? 0, `assets[${index}].position.averageCost`, { min: 0, max: maxUnitPrice }),
+        quantity: parseFiniteNumber(position.quantity ?? 0, `assets[${index}].position.quantity`, { min: 0, max: MAX_QUANTITY }),
+        averageCost: parseFiniteNumber(position.averageCost ?? asset.price ?? 0, `assets[${index}].position.averageCost`, { min: 0, max: MAX_UNIT_PRICE }),
         targetWeight: parseFiniteNumber(position.targetWeight ?? 0, `assets[${index}].position.targetWeight`, { min: 0, max: 100 }),
       },
     };

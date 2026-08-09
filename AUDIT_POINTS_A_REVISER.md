@@ -24,7 +24,7 @@ changé, pour que des annotations déjà prises restent valides.
 | **B5** | **Formulation fausse.** 13 des 17 fichiers concernés n'ont pas de test. Le vrai point propre à `search` est ailleurs. |
 | **B7** | **Faux.** La clé est présente. Point retiré des décisions ouvertes. |
 | **B10** | **Faux.** La chaîne d'intégration vérifie déjà Node 20 à chaque envoi. Note 4/10 → 2/10. |
-| **B13** | **Corrigé le 9 août.** Le mécanisme de borne existait déjà, il n'était pas appliqué. |
+| **B13** | **Corrigé le 9 août**, en deux passes. La première ne protégeait que le serveur de développement — en ligne, rien ne l'était. Les deux couches sont bornées depuis. |
 
 ---
 
@@ -375,8 +375,13 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 ## B13. Quantité démesurée acceptée
 
 **Constat** On pouvait enregistrer 1e308 actions. Le produit quantité × prix valait alors l'infini.  
-**Enjeu** Le mécanisme de borne existait déjà dans le code, il n'avait pas été appliqué à ces deux champs.  
-**Note 5/10, corrigé le 9 août** — Sous-noté au départ : le prix aussi était sans borne, et le correctif tenait en deux lignes.
+**Enjeu** Le mécanisme de borne existait déjà dans le code, il n'avait pas été appliqué.  
+**Note 5/10, corrigé le 9 août** — En deux passes. La première n'a borné que le validateur du
+serveur, qui ne tourne qu'en développement : en ligne le portefeuille est gardé par le navigateur,
+sans passer par aucun serveur, donc rien n'était protégé. Elle avait aussi borné le coût moyen
+plutôt que le prix, alors que c'est le prix qui multiplie la quantité dans la valeur de marché.
+Les deux couches sont maintenant bornées avec les mêmes constantes partagées, et le formulaire
+refuse la saisie hors limite.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -454,7 +459,9 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 4. **B3** renommer ou personnaliser le calcul Buffett
 5. **B1** en hygiène, et réparer la mise à jour automatique des librairies
 
-**État du dépôt** branche `main`, dernier commit poussé et déployé. Aucun travail en cours.
+**État du dépôt** branche `main`, aucun travail en cours. **Trois commits locaux ne sont pas encore
+envoyés** : la fiche de décision, la première passe de corrections et celle-ci. Rien de tout cela
+n'est donc en ligne — la version déployée sur devlabai.tech reste celle d'avant la contre-vérification.
 
 **Pour relancer** ouvrir une session dans le dossier du projet et donner tes réponses point par point,
 en citant les numéros (A1, B7, etc.). Le détail technique complet de chaque point est dans
