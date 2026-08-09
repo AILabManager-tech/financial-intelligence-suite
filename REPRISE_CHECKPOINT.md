@@ -43,7 +43,15 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 3. **B3** renommer ou personnaliser le calcul Buffett
 4. **B1** en hygiène + réparer le workflow Dependabot
 
-Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (16 pages, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
+Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (17 pages, couverture + sommaire, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
+
+> **Régénération du PDF — commande complète obligatoire.** Omettre les options refait un document dégradé (couverture perdue, pied de page `CONFIDENTIAL` réintroduit) :
+> ```
+> "$P" generate AUDIT_POINTS_A_REVISER.md AUDIT_POINTS_A_REVISER.pdf \
+>   --cover --toc --no-chapter-breaks --no-confidential \
+>   --title "Audit de fiabilité — points à réviser" \
+>   --author "Financial Intelligence Suite" --date "<date>"
+> ```
 
 ⚠️ **Rien de tout ceci n'est en ligne.** Trois commits locaux non poussés (`d392dbb`, `45e1d72`, celui-ci) ; `origin/main` est resté à `e9ae5aa`. La version déployée sur devlabai.tech est celle d'avant la contre-vérification. Le push reste une décision utilisateur explicite.
 
