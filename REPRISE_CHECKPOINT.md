@@ -36,12 +36,32 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 - **B5 MAL FORMULÉ** — 13 des 17 `api/_handlers/*.js` n'ont pas de test ; `search` n'est pas l'exception. Ce qui lui est propre : **seule feature sans couche `server/<feature>.js`**, donc seule à échapper à la couche testée qu'impose la convention.
 - **B3 À NUANCER** — les hypothèses figées ne valent que pour le score du tableau (`buffettReadiness.js`). `BuffettAnalysisPanel` expose déjà r et g en curseurs (`type="range"`) avec présets. Le problème de nom est confiné au chemin résumé.
 
+### Corrigé le 2026-08-09 (suite) — B1, workflow Dependabot
+
+**Diagnostic** : trois problèmes chaînés, pas un.
+1. Le job « Dependabot Updates » échouait sur `corepack npm update undici` — `undici` est une dépendance **transitive** de `jsdom`, non déclarée dans `package.json`, donc impossible à bumper seule. Il retentait ensuite de créer une PR déjà ouverte (#2).
+2. La CI échouait sur les PR Dependabot (`PeersComparisonPanel.test.jsx` : « Unable to find MSFT ») dès que vite/vitest bougeaient — donc aucune PR ne pouvait être fusionnée.
+3. **Aucun `.github/dependabot.yml`** : comportement par défaut, une PR par avis, sans limite ni regroupement. **6 PR ouvertes depuis le 27 juillet**, jamais traitées, d'où le rejeu en boucle.
+
+**Corrigé à la source** plutôt qu'en rafistolant le workflow : `npm audit fix` (sans `--force`, donc **aucune montée majeure** et `package.json` inchangé — les plages `^` couvraient déjà). Lockfile seul modifié.
+
+| Paquet | Avant → Après |
+|---|---|
+| vitest | 4.0.18 → **4.1.10** (corrige l'avis **critique**) |
+| vite | 7.3.3 → 7.3.6 · esbuild 0.27.3 → 0.28.2 |
+| **undici** | 7.25.0 → **7.29.0** (celui qui bloquait Dependabot) |
+| postcss, js-yaml, brace-expansion, @babel/core, nanoid | montés |
+
+`npm audit` : **9 → 0**, y compris en `--package-lock-only` (ce que fait la CI avec `npm ci`). Le test qui cassait la CI passe désormais — vérifié **5 fois de suite** pour écarter l'instabilité. lint + **1174 tests** + build verts sur vitest 4.1.10 / vite 7.3.6.
+
+**Prévention** : `.github/dependabot.yml` créé — regroupement en deux familles (`dev-tooling`, `runtime`), plafond de 5 PR, cadence hebdomadaire. Les 6 PR ouvertes deviennent obsolètes une fois ce lockfile poussé ; Dependabot doit les fermer seul (à vérifier après le push).
+
 ### ➡️ ORDRE DE REPRISE CORRIGÉ
 
 1. **B11** fuseau horaire Stooq + **B4** échec de stockage silencieux (`portfolioStore.js:51`)
 2. **B2** titres canadiens — vrai trou produit, demande une source payante
 3. **B3** renommer ou personnaliser le calcul Buffett
-4. **B1** en hygiène + réparer le workflow Dependabot
+4. ~~**B1** en hygiène + réparer le workflow Dependabot~~ — **fait le 2026-08-09**
 
 Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (17 pages, couverture + sommaire, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
 
