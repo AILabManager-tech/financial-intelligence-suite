@@ -98,14 +98,20 @@ export function computeMoneyWeightedReturn(snapshots, transactions = []) {
     return { hasData: false };
   }
 
-  // Flux investisseur datés : −V_début à t0, −flow à chaque jour de flux strictement
-  // après le départ et avant la fin, +V_fin à la date finale. Les flux du jour de
-  // départ/fin sont rattachés au point correspondant (ignorés ici pour ne pas
-  // double-compter la valeur de marché qui les contient déjà).
+  // Flux investisseur datés : −V_début à t0, −flow à chaque jour de flux après le
+  // départ et jusqu'à la fin INCLUSE, +V_fin à la date finale.
+  //
+  // Asymétrie volontaire entre les deux bornes :
+  //  - jour de DÉPART exclu : le snapshot initial est postérieur aux transactions
+  //    du jour, donc V_début EST déjà ce flux. Le compter à nouveau le doublerait.
+  //  - jour de FIN inclus : la valeur finale contient déjà les titres achetés ce
+  //    jour-là (la série reconstruite applique les deltas du jour J dans la valeur
+  //    du jour J). Sans son décaissement, un achat de dernière minute serait lu
+  //    comme un gain — le défaut qui produisait un MWR de 11 010 % au lieu de 10 %.
   const flows = [{ t: 0, cf: -startValue }];
   let flowsCount = 0;
   for (const [day, amount] of computeFlowsByDay(transactions)) {
-    if (day <= startDay || day >= endDay) continue;
+    if (day <= startDay || day > endDay) continue;
     const t = yearsBetween(startDay, day);
     if (t === null) continue;
     flows.push({ t, cf: -amount });

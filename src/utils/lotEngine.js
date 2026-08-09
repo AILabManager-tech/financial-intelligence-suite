@@ -34,10 +34,21 @@ function num(v, fallback = 0) {
 
 export function applyTransactions(transactions, { method = "fifo" } = {}) {
   const lifo = method === "lifo";
+  // Tri chronologique, puis achat avant vente à date égale, puis ordre d'entrée.
+  // Sans la clé secondaire, un aller-retour intrajournalier (ou un import CSV non
+  // trié) dépendait de l'ordre des lignes : la vente listée avant son achat
+  // produisait une survente fantôme et un P&L réalisé nul.
+  const typeRank = (t) => (t.type === "buy" ? 0 : 1);
   const ordered = (Array.isArray(transactions) ? transactions : [])
     .filter((t) => t && t.symbol && t.date)
-    .slice()
-    .sort((a, b) => toTime(a.date) - toTime(b.date));
+    .map((t, index) => ({ t, index }))
+    .sort(
+      (a, b) =>
+        toTime(a.t.date) - toTime(b.t.date) ||
+        typeRank(a.t) - typeRank(b.t) ||
+        a.index - b.index,
+    )
+    .map((entry) => entry.t);
 
   const bySymbol = {};
   const sym = (s) => (bySymbol[s] ??= emptySymbol());

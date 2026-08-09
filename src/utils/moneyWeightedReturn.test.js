@@ -36,12 +36,39 @@ describe("computeMoneyWeightedReturn", () => {
     expect(result.days).toBe(10);
   });
 
-  it("ignore les flux du jour de départ/fin (déjà dans la valeur de marché)", () => {
-    const onlyEndDayFlow = computeMoneyWeightedReturn(
+  it("ignore le flux du jour de DÉPART (déjà contenu dans la valeur de départ)", () => {
+    // Le snapshot de départ est pris après l'achat du jour : son montant EST le
+    // flux initial (−V_début). Le compter deux fois fausserait l'IRR.
+    const onlyStartDayFlow = computeMoneyWeightedReturn(
       [snap("2025-05-01", 1000), snap("2026-05-01", 1100)],
+      [{ type: "buy", date: "2025-05-01", quantity: 1, price: 50 }],
+    );
+    expect(onlyStartDayFlow.flowsCount).toBe(0);
+    expect(onlyStartDayFlow.annualizedIrrPct).toBeCloseTo(10, 4);
+  });
+
+  it("COMPTE le flux du jour de fin : la valeur finale contient déjà les titres achetés", () => {
+    // La série reconstruite applique les deltas de quantité du jour J dans la
+    // valeur du jour J. Un achat daté du dernier jour est donc valorisé dans
+    // V_fin ; ignorer son décaissement transformerait un actif acheté en gain.
+    // Ici : 1000 → 1100 sur un an (IRR 10 %) puis achat de 50 $ le dernier jour,
+    // dont les titres sont dans V_fin = 1150. L'IRR doit rester 10 %.
+    const endDayFlow = computeMoneyWeightedReturn(
+      [snap("2025-05-01", 1000), snap("2026-05-01", 1150)],
       [{ type: "buy", date: "2026-05-01", quantity: 1, price: 50 }],
     );
-    expect(onlyEndDayFlow.flowsCount).toBe(0);
-    expect(onlyEndDayFlow.annualizedIrrPct).toBeCloseTo(10, 4);
+    expect(endDayFlow.flowsCount).toBe(1);
+    expect(endDayFlow.annualizedIrrPct).toBeCloseTo(10, 4);
+  });
+
+  it("un achat massif le dernier jour ne fabrique pas de rendement", () => {
+    // Régression du défaut critique : sans le flux, l'IRR explosait (11 010 %).
+    const massiveEndBuy = computeMoneyWeightedReturn(
+      [snap("2025-05-01", 1000), snap("2026-05-01", 111_100)],
+      [{ type: "buy", date: "2026-05-01", quantity: 1000, price: 110 }],
+    );
+    expect(massiveEndBuy.flowsCount).toBe(1);
+    expect(massiveEndBuy.annualizedIrrPct).toBeLessThan(20);
+    expect(massiveEndBuy.annualizedIrrPct).toBeCloseTo(10, 4);
   });
 });

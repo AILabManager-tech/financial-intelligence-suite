@@ -68,6 +68,19 @@ describe("applyTransactions — appariement de lots", () => {
     expect(r.D.realizedPnl).toBeCloseTo(-5, 6); // frais autonome réduit le réalisé
   });
 
+  it("achat et vente le MÊME jour : résultat indépendant de l'ordre du tableau", () => {
+    // Un aller-retour intrajournalier (ou un import CSV non trié) ne doit pas
+    // produire une survente fantôme selon l'ordre des lignes en entrée.
+    const b = buy("AAPL", "2024-03-01", 100, 150);
+    const s = sell("AAPL", "2024-03-01", 100, 160);
+    for (const input of [[b, s], [s, b]]) {
+      const r = summarize(applyTransactions(input)).AAPL;
+      expect(r.realizedPnl).toBeCloseTo(1000, 6);
+      expect(r.openQuantity).toBeCloseTo(0, 6);
+      expect(r.oversold).toBeCloseTo(0, 6);
+    }
+  });
+
   it("trie par date même en entrée désordonnée et isole les symboles", () => {
     const r = applyTransactions([
       sell("A", "2020-12-01", 5, 200),
