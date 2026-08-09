@@ -23,7 +23,7 @@ changé, pour que des annotations déjà prises restent valides.
 | **B1** | **Mal cadré.** 9 avis, pas 20, et tous sur des outils de développement. Note ramenée de 8/10 à 4/10. |
 | **B5** | **Formulation fausse.** 13 des 17 fichiers concernés n'ont pas de test. Le vrai point propre à `search` est ailleurs. |
 | **B7** | **Faux.** La clé est présente. Point retiré des décisions ouvertes. |
-| **B10** | **Faux.** La chaîne d'intégration vérifie déjà Node 20 à chaque envoi. Note 4/10 → 2/10. |
+| **B10** | Le constat d'origine était mal formulé — l'intégration vérifie bien Node 20 — mais l'écart avec le poste local **était** le vrai problème : aucune vérification locale ne reproduisait la version de l'intégration. Ramené à 2/10 par erreur, **remonté à 4/10**, corrigé le 9 août. |
 | **B13** | **Corrigé le 9 août**, en deux passes. La première ne protégeait que le serveur de développement — en ligne, rien ne l'était. Les deux couches sont bornées depuis. |
 
 ---
@@ -344,9 +344,13 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 
 ## B10. Version de Node incohérente
 
-**Constat** Faux. La chaîne d'intégration épingle Node 20 et passe au vert à chaque envoi.  
-**Enjeu** Seul ton poste tourne en 24. La version annoncée **est** vérifiée automatiquement.  
-**Note 2/10** — Je n'avais pas regardé la configuration d'intégration avant d'affirmer le contraire.
+**Constat** Le projet annonce Node 20, la chaîne d'intégration le vérifie, ton poste tournait en 24.  
+**Enjeu** Ce n'était pas cosmétique : **aucune vérification locale ne reproduisait la version d'exécution
+de l'intégration**. C'est ce qui a rendu trois vérifications successives non concluantes — dont une qui a
+déclaré une correction faite alors qu'elle ne protégeait rien. Node 20 est maintenant installé
+en local et la suite complète y passe.  
+**Note 4/10, corrigé le 9 août** — J'avais ramené ce point à 2/10 en disant « seul le poste est en 24 ».
+Exact, et trop indulgent : cet écart était la condition qui rendait toute vérification locale muette.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -453,15 +457,20 @@ refuse la saisie hors limite.
 
 **Priorité corrigée après contre-vérification** (B1 étant limité aux outils de développement, il descend) :
 
-1. ~~Légende de la volatilité~~ et ~~bornes de saisie~~ — **faits le 9 août**
+1. ~~Légende de la volatilité~~, ~~bornes de saisie~~, ~~failles des librairies~~, ~~écart de version de Node~~ — **faits le 9 août**
 2. **B11** fuseau horaire de la source de secours + **B4** échec de stockage silencieux
 3. **B2** titres canadiens — vrai trou produit, demande une source payante
 4. **B3** renommer ou personnaliser le calcul Buffett
-5. **B1** en hygiène, et réparer la mise à jour automatique des librairies
 
-**État du dépôt** branche `main`, aucun travail en cours. **Trois commits locaux ne sont pas encore
-envoyés** : la fiche de décision, la première passe de corrections et celle-ci. Rien de tout cela
-n'est donc en ligne — la version déployée sur devlabai.tech reste celle d'avant la contre-vérification.
+**Règle de vérification adoptée le 9 août** — *une vérification ne compte que si elle reproduit
+la branche exacte, avec son fichier de verrouillage exact, sur la version de Node de l'intégration.*
+Trois affirmations de cette séquence ont été démenties parce qu'elles s'appuyaient sur une boucle
+locale : une correction déclarée faite qui ne protégeait que le serveur de développement, une
+stabilité de test mesurée sur la mauvaise chaîne d'outils, une réparation annoncée avant que
+l'intégration ait rendu son verdict. « Vert chez moi » n'est pas un résultat.
+
+**État du dépôt** branche `main`, aucun travail en cours. **Un commit local n'est pas encore envoyé.**
+Ce qui précède est en ligne depuis le 9 août ; ce dernier lot ne l'est pas.
 
 **Pour relancer** ouvrir une session dans le dossier du projet et donner tes réponses point par point,
 en citant les numéros (A1, B7, etc.). Le détail technique complet de chaque point est dans

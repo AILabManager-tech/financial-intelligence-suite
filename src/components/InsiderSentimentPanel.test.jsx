@@ -27,8 +27,9 @@ describe("InsiderSentimentPanel", () => {
     fetchInsiderSentiment.mockReset();
     fetchInsiderSentiment.mockResolvedValue(SAMPLE);
     render(<InsiderSentimentPanel asset={asset} />);
-    await waitFor(() => expect(screen.getByRole("region", { name: /Sentiment des initiés/i })).toBeInTheDocument());
-    expect(screen.getByText(/MSPR moyen/i)).toBeInTheDocument();
+    // Ancré sur la donnée : la région existe avant que les lignes soient rendues.
+    expect(await screen.findByText(/MSPR moyen/i)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Sentiment des initiés/i })).toBeInTheDocument();
     expect(screen.getByText("mars 2026")).toBeInTheDocument();
     expect(screen.getByText(/pas un conseil/i)).toBeInTheDocument();
   });

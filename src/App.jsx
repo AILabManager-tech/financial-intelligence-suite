@@ -265,7 +265,14 @@ export default function App() {
   const [assets, setAssets] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [buffettSummaries, setBuffettSummaries] = useState({});
-  const [portfolioSnapshots, setPortfolioSnapshots] = useState([]);
+  // Série chargée de façon SYNCHRONE au montage : mandat de démo depuis
+  // localStorage (dev), sinon la série accumulée durable (source de vérité en
+  // prod). Initialiseur paresseux plutôt qu'un `setState` dans un effet — même
+  // résultat, sans le rendu intermédiaire à vide (`react-hooks/set-state-in-effect`).
+  // Le miroir SQLite, lui, reste asynchrone : il est appliqué par l'effet.
+  const [portfolioSnapshots, setPortfolioSnapshots] = useState(() =>
+    isDemoMandateId(activeId) ? loadDemoSnapshots(activeId) : loadStoredSnapshots(activeId),
+  );
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname || "/");
   const [marketStatus, setMarketStatus] = useState({
     mode: "booting",
@@ -329,18 +336,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    // La série synchrone est déjà posée par l'initialiseur de `useState`. Il ne
+    // reste ici que le miroir SQLite (dev-only) qui, s'il renvoie des données,
+    // supplante la série accumulée. Les mandats de démo n'ont pas de miroir.
+    if (isDemoMandateId(activeId)) return () => {};
+
     let active = true;
-
-    // Demo mandates carry a reconstituted series in localStorage (dev-only);
-    // real mandates mirror their accrued snapshots in dev SQLite.
-    if (isDemoMandateId(activeId)) {
-      setPortfolioSnapshots(loadDemoSnapshots(activeId));
-      return () => {};
-    }
-
-    // localStorage holds the durable accrued series (the source of truth in
-    // prod). The dev-only SQLite mirror, when it returns data, supersedes it.
-    setPortfolioSnapshots(loadStoredSnapshots(activeId));
     fetchPortfolioSnapshots(120, activeId)
       .then((snapshots) => {
         if (active && snapshots.length > 0) {
@@ -779,6 +780,19 @@ export default function App() {
 
   // Per-component props for the layout-driven dashboard block. Keyed by the
   // registry componentKey; LayoutSurface feeds each visible panel its slice.
+  //
+  // `react-hooks/refs` désactivé ici après vérification, PAS par confort :
+  // `dashboardPanelProps.js` ne contient aucun `.current` — aucune ref n'est
+  // lue pendant le rendu. La règle signale l'appel parce qu'elle ne peut pas
+  // prouver, à travers la frontière de fonction, que les callbacks passés
+  // (`handleAddAlert`, `handleRemoveAlert`, `handleToggleAlert`, qui lisent
+  // `alertsRef.current`) ne sont pas invoqués pendant le rendu. Ce sont des
+  // gestionnaires d'événements ; ils ne le sont pas.
+  // Les refs sont porteuses ici : elles gardent ces callbacks stables (leurs
+  // deps excluent `alerts` et `assets`). Les retirer relancerait la mémoïsation
+  // de tout le tableau de bord — un refactor, pas l'assainissement d'un
+  // diagnostic. À revoir si `buildDashboardPanelProps` venait à lire une ref.
+  // eslint-disable-next-line react-hooks/refs
   const dashboardPanelProps = buildDashboardPanelProps({
     assets,
     buffettSummaries,

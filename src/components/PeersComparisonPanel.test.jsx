@@ -72,8 +72,12 @@ describe("PeersComparisonPanel", () => {
       fetchedAt: "2026-05-10T12:00:01.000Z",
     });
     render(<PeersComparisonPanel asset={makeAsset()} />);
-    await waitFor(() => expect(screen.getByRole("region", { name: /Comparaison sectorielle/i })).toBeInTheDocument());
-    expect(screen.getByText("MSFT")).toBeInTheDocument();
+    // Attendre la DONNÉE, pas le conteneur : la région est montée dès que le
+    // panneau charge, avant que les cotes des pairs soient résolues. Attendre la
+    // région puis lire « MSFT » de façon synchrone ne passait que par chance de
+    // timing — c'est ce qui rendait ce test rouge dès que l'outillage bougeait.
+    expect(await screen.findByText("MSFT")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Comparaison sectorielle/i })).toBeInTheDocument();
     expect(screen.getByText("GOOGL")).toBeInTheDocument();
     expect(screen.getByText("META")).toBeInTheDocument();
     // delta vs base: GOOGL is +1.10 pp better than AAPL.

@@ -89,9 +89,9 @@ describe("SecFilingsPanel", () => {
   it("renders the filings grouped by form with localized labels and SEC links", async () => {
     fetchSecFilings.mockResolvedValue(SAMPLE);
     render(<SecFilingsPanel asset={makeAsset()} />);
-    await waitFor(() => expect(screen.getByRole("region", { name: /Dépôts SEC/i })).toBeInTheDocument());
-
-    expect(screen.getByText(/Rapport annuel/)).toBeInTheDocument();
+    // Ancré sur la donnée : la région existe avant que les lignes soient rendues.
+    expect(await screen.findByText(/Rapport annuel/)).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Dépôts SEC/i })).toBeInTheDocument();
     expect(screen.getByText(/Rapport trimestriel/)).toBeInTheDocument();
     expect(screen.getByText(/Événement matériel/)).toBeInTheDocument();
 

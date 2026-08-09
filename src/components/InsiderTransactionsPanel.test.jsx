@@ -58,9 +58,9 @@ describe("InsiderTransactionsPanel", () => {
   it("renders the summary, the rows and the not-advice disclaimer", async () => {
     fetchInsiderTransactions.mockResolvedValue(SAMPLE);
     render(<InsiderTransactionsPanel asset={makeAsset()} />);
-    await waitFor(() => expect(screen.getByRole("region", { name: /Transactions d'initiés/i })).toBeInTheDocument());
-
-    expect(screen.getByText("COOK TIMOTHY")).toBeInTheDocument();
+    // Ancré sur la donnée : la région existe avant que les lignes soient rendues.
+    expect(await screen.findByText("COOK TIMOTHY")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Transactions d'initiés/i })).toBeInTheDocument();
     expect(screen.getByText("MAESTRI LUCA")).toBeInTheDocument();
     expect(screen.getByText(/Vente \(marché\)/)).toBeInTheDocument();
     expect(screen.getByText(/Achat \(marché\)/)).toBeInTheDocument();
