@@ -4,9 +4,9 @@
 
 Audit complet de la chaîne entrée → calcul → affichage. Chaque sortie chiffrée a été confrontée
 à un calcul indépendant fait en dehors du système. Six défauts démontrés, corrigés et déployés.
-Après contre-vérification et corrections, onze points restent ouverts.
+Après contre-vérification et corrections, huit points restent ouverts — dont un seul, B2, demande une décision.
 
-**État** 1191 tests verts · lint 0 · build OK · vérifié sur Node 20 · en production sur devlabai.tech
+**État** 1216 tests verts · lint 0 · build OK · vérifié sur Node 20 · en production sur devlabai.tech
 
 ---
 
@@ -26,6 +26,9 @@ changé, pour que des annotations déjà prises restent valides.
 | **B10** | Le constat d'origine était mal formulé — l'intégration vérifie bien Node 20 — mais l'écart avec le poste local **était** le vrai problème : aucune vérification locale ne reproduisait la version de l'intégration. Ramené à 2/10 par erreur, **remonté à 4/10**, corrigé le 9 août. |
 | **B11** | **Corrigé le 9 août.** Aucun fuseau inventé : seule la date, fiable, est retenue et étiquetée. |
 | **B4** | **Corrigé le 9 août.** Le repli reste, le silence part : bandeau + trace en console. |
+| **B3** | **Corrigé le 9 août.** L'équivalence en P/FCF est affichée au lieu d'être implicite. |
+| **B5** | **Formulation fausse**, et le vrai manque comblé le 9 août : couche de domaine extraite et testée. |
+| **B6** | **Corrigé le 9 août.** Sonde d'écart entre les deux sources de prix. |
 | **B13** | **Corrigé le 9 août**, en deux passes. La première ne protégeait que le serveur de développement — en ligne, rien ne l'était. Les deux couches sont bornées depuis. |
 
 ---
@@ -276,8 +279,12 @@ Dix-neuf points non traités. Ce sont ceux qui demandent ta décision.
 ## B3. Le « DCF » Buffett n'en est pas un
 
 **Constat** Deux hypothèses fixes pour toutes les entreprises réduisent le calcul à un simple ratio.  
-**Enjeu** Les chiffres sont exacts et l'hypothèse est affichée. C'est le nom qui promet trop.  
-**Note 7/10** — Décision produit : personnaliser le calcul, ou renommer l'indicateur. Pas un bug.  
+**Enjeu** Les chiffres sont exacts. C'est le nom qui promettait trop.  
+**Note 7/10, corrigé le 9 août** — Ni renommé ni repersonnalisé : **rendu explicite**. Le panneau
+laissait déjà régler les deux hypothèses ; ce qui manquait, c'était de dire ce qu'elles impliquent.
+Il affiche maintenant, et met à jour avec les curseurs, l'équivalence exacte : sous les hypothèses
+par défaut, « marge de sécurité > 25 % » **est** « P/FCF < 15,75 ». Le résumé du tableau porte
+désormais ses hypothèses avec lui. Une convention affichée, plus une promesse implicite.  
 **Précision (9 août)** Les hypothèses figées ne concernent que le **score du tableau**. Le panneau de détail expose déjà les deux réglages en curseurs avec présets. Le problème de nom est donc confiné au résumé.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
@@ -303,9 +310,12 @@ doublon), le branchement de six lignes ne l'est pas.
 
 ## B5. Un fichier serveur sans aucun test
 
-**Constat** 13 des 17 fichiers de ce dossier n'ont pas de test. `search` n'est pas l'exception.  
-**Enjeu** Ce qui lui est propre : c'est la **seule feature sans couche `server/`**, donc la seule qui échappe à la couche testée qu'impose ta convention. Les autres sont couverts indirectement.  
-**Note 5/10** — Note inchangée, mais pour la bonne raison cette fois.
+**Constat** 13 des 17 fichiers de ce dossier n'ont pas de test. `search` n'était pas l'exception.  
+**Enjeu** Ce qui lui était propre : la **seule feature sans couche `server/`**, donc la seule à échapper
+à la couche testée qu'impose ta convention. Sa logique vivait en double, recopiée dans les deux serveurs.  
+**Note 5/10, corrigé le 9 août** — Logique extraite en un module unique, 9 tests, dont la vérification
+qu'aucune clé ne fuit ni dans les résultats ni dans les messages d'erreur. Les deux serveurs
+l'appellent désormais au lieu de la recopier.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -314,8 +324,12 @@ doublon), le branchement de six lignes ne l'est pas.
 ## B6. Deux sources de prix différentes
 
 **Constat** Les cotes viennent de Finnhub, l'historique de Twelve Data.  
-**Enjeu** Ils concordent aujourd'hui (313,33 contre 313,32999). Rien ne surveille l'écart.  
-**Note 5/10** — Risque latent. Une sonde de comparaison suffirait.
+**Enjeu** Ils concordaient (313,33 contre 313,32999), mais rien ne surveillait l'écart.  
+**Note 5/10, corrigé le 9 août** — Une sonde compare les deux et fait passer l'état de santé en
+« dégradé » si l'écart dépasse 0,5 %, même quand les deux sources répondent normalement. Elle
+confronte deux **clôtures** : comparer un cours courant à une clôture quotidienne signalerait une
+anomalie chaque après-midi de séance. Faute des deux valeurs, elle dit « inconnu » plutôt que de
+supposer un accord.
 
 \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
@@ -472,10 +486,10 @@ refuse la saisie hors limite.
 **Priorité corrigée après contre-vérification** (B1 étant limité aux outils de développement, il descend) :
 
 1. ~~Légende de la volatilité~~, ~~bornes de saisie~~, ~~failles des librairies~~, ~~écart de version de Node~~,
-   ~~fuseau de la source de secours~~, ~~échec de stockage silencieux~~ — **faits le 9 août**
-2. **B2** titres canadiens — vrai trou produit, demande une source payante
-3. **B3** renommer ou personnaliser le calcul Buffett
-4. **B5** couche de domaine absente pour la recherche · **B6** sonde d'écart entre les deux sources de prix
+   ~~fuseau de la source de secours~~, ~~échec de stockage silencieux~~, ~~hypothèse du calcul Buffett~~,
+   ~~couche de domaine de la recherche~~, ~~sonde d'écart entre les deux sources~~ — **faits le 9 août**
+2. **B2** titres canadiens — le seul point restant qui demande une décision : choisir et payer une
+   source. Tout le reste des points ouverts est du constat assumé, pas du travail en attente.
 
 **Règle de vérification adoptée le 9 août** — *une vérification ne compte que si elle reproduit
 la branche exacte, avec son fichier de verrouillage exact, sur la version de Node de l'intégration.*

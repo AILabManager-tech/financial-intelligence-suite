@@ -11,6 +11,26 @@ export function calcIntrinsicValue(fcf, g, r, years = 10) {
   return pv + terminal / Math.pow(1 + r, years);
 }
 
+// Seuil de P/FCF auquel le critère de marge de sécurité revient (B3).
+//
+// Avec des hypothèses UNIFORMES pour toutes les entreprises, `calcIntrinsicValue`
+// est linéaire en FCF : VI = K × FCF, où K ne dépend que de (g, r, années). Or
+// fcf = prix / (P/FCF), donc mos = 1 − (P/FCF) ÷ K. Le critère « mos > seuil »
+// est alors arithmétiquement le MÊME test que « P/FCF < (1 − seuil) × K ».
+//
+// C'est le fond du point B3 : sous ses hypothèses par défaut (g = 5 %, r = 10 %,
+// 10 ans → K = 21), le calcul ne distingue pas les entreprises entre elles, il
+// applique un multiple — « marge de sécurité > 25 % » signifie exactement
+// « P/FCF < 15,75 ». Le calcul est juste ; c'est le laisser implicite qui
+// promettait plus qu'il ne tient. On l'expose donc, et il suit les curseurs.
+//
+// `null` quand r <= g : la valeur intrinsèque diverge, aucun seuil fini n'a de sens.
+export function impliedPriceToFcfThreshold(g, r, mosThreshold, years = 10) {
+  const k = calcIntrinsicValue(1, g, r, years);
+  if (!Number.isFinite(k) || k <= 0) return null;
+  return (1 - mosThreshold) * k;
+}
+
 // Moat heuristic (replaces a static lookup table).
 // Buffett's wide-moat signature:
 //   - High return on equity (≥15%) → pricing power / capital efficiency

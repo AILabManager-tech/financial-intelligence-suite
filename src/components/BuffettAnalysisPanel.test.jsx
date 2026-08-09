@@ -151,7 +151,9 @@ describe("BuffettAnalysisPanel", () => {
       cache: null,
     });
     render(<BuffettAnalysisPanel asset={makeAsset()} />);
-    await waitFor(() => expect(screen.getByText(/Hypothèses/i)).toBeInTheDocument());
+    // Correspondance exacte : le libellé de la section, pas la phrase qui
+    // explique l'équivalence en P/FCF et qui contient aussi le mot.
+    await waitFor(() => expect(screen.getByText("Hypothèses")).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("button", { name: /Conservateur/i }));
     expect(screen.getByLabelText(/Taux d'actualisation/i)).toHaveValue("0.12");
@@ -185,5 +187,23 @@ describe("BuffettAnalysisPanel", () => {
     await act(async () => {});
     unmount();
     expect(abortSignal?.aborted).toBe(true);
+  });
+
+  it("expose le seuil de P/FCF auquel le critère de marge de sécurité revient (B3)", async () => {
+    // Les hypothèses étant uniformes, la valeur intrinsèque est linéaire en flux :
+    // « marge de sécurité > 25 % » EST un seuil de P/FCF. Laisser cette
+    // équivalence implicite faisait promettre au mot « DCF » plus qu'il ne tient.
+    fetchFundamentals.mockResolvedValue({
+      symbol: "KO",
+      source: "finnhub.io",
+      fetchedAt: "2026-05-10T12:00:00.000Z",
+      fields: completeFields,
+      cache: null,
+    });
+    render(<BuffettAnalysisPanel asset={makeAsset()} />);
+
+    // Par défaut (r = 10 %, g = 5 %, 10 ans) : K = 21, donc 0,75 × 21 = 15,75.
+    expect(await screen.findByText(/P\/FCF < 15\.75/)).toBeInTheDocument();
+    expect(screen.getByText(/appliquées à toutes les entreprises/i)).toBeInTheDocument();
   });
 });

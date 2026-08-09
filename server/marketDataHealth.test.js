@@ -213,3 +213,23 @@ describe('marketDataHealth', () => {
     expect(summarizeMarketDataHealth([{ status: 'ok' }, { status: 'down' }])).toBe('degraded');
   });
 });
+
+describe('accord entre les deux sources de prix (B6)', () => {
+  it('une divergence dégrade la santé globale sans qu\'aucune source soit en panne', () => {
+    // Le risque que B6 visait : les deux fournisseurs répondent, mais ne
+    // racontent plus la même chose. Sans ce cas, `degraded` n'était atteignable
+    // que par une panne franche et la dérive serait passée inaperçue.
+    expect(summarizeMarketDataHealth([
+      { provider: 'finnhub.io', status: 'ok' },
+      { provider: 'twelvedata.com', status: 'ok' },
+      { provider: 'finnhub.io + twelvedata.com', status: 'degraded' },
+    ])).toBe('degraded');
+  });
+
+  it('reste ok quand les sources concordent', () => {
+    expect(summarizeMarketDataHealth([
+      { provider: 'finnhub.io', status: 'ok' },
+      { provider: 'finnhub.io + twelvedata.com', status: 'ok' },
+    ])).toBe('ok');
+  });
+});

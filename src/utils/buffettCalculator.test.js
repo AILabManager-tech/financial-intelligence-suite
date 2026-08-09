@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   calcIntrinsicValue,
+  impliedPriceToFcfThreshold,
   evaluateCriteria,
   decideAction,
   inferMoat,
@@ -193,5 +194,37 @@ describe('resolveMoat — heuristic with curated overrides', () => {
     expect(
       resolveMoat('UNKNOWN', { roe: 0.05, earningsGrowth5y: 0.10, fcf: 5, debtEquity: 0.30 }),
     ).toBe(false);
+  });
+});
+
+describe('impliedPriceToFcfThreshold (B3)', () => {
+  it('rend le seuil de P/FCF auquel le critère de marge de sécurité revient', () => {
+    // Avec des hypothèses UNIFORMES, la valeur intrinsèque vaut K × FCF, donc
+    // mos = 1 − P/FCF ÷ K : le critère « mos > 25 % » est arithmétiquement le
+    // même test que « P/FCF < 0,75 × K ». C'est le fond de B3 — le calcul par
+    // défaut ne discrimine pas les entreprises entre elles, il applique un
+    // multiple. On l'affiche plutôt que de le laisser implicite.
+    expect(impliedPriceToFcfThreshold(0.05, 0.10, 0.25)).toBeCloseTo(15.75, 2);
+  });
+
+  it("suit les hypothèses : plus le taux d'actualisation monte, plus le seuil baisse", () => {
+    const conservative = impliedPriceToFcfThreshold(0.03, 0.12, 0.25);
+    const optimistic = impliedPriceToFcfThreshold(0.07, 0.09, 0.25);
+    expect(conservative).toBeLessThan(optimistic);
+  });
+
+  it('rend null quand les hypothèses divergent (r <= g)', () => {
+    // La valeur intrinsèque est infinie : aucun seuil fini n'a de sens.
+    expect(impliedPriceToFcfThreshold(0.10, 0.10, 0.25)).toBeNull();
+    expect(impliedPriceToFcfThreshold(0.12, 0.10, 0.25)).toBeNull();
+  });
+
+  it('reste cohérent avec calcIntrinsicValue sur un cas concret', () => {
+    // Vérification croisée : un titre pile au seuil doit rendre mos = 25 %.
+    const threshold = impliedPriceToFcfThreshold(0.05, 0.10, 0.25);
+    const price = 100;
+    const fcf = price / threshold;
+    const iv = calcIntrinsicValue(fcf, 0.05, 0.10);
+    expect((iv - price) / iv).toBeCloseTo(0.25, 10);
   });
 });

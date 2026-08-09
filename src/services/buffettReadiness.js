@@ -2,6 +2,7 @@ import {
   calcIntrinsicValue,
   decideAction,
   evaluateCriteria,
+  impliedPriceToFcfThreshold,
   resolveMoat,
 } from "../utils/buffettCalculator";
 import { extractBuffettInputs, formatActionLabel } from "../utils/buffettFormatters";
@@ -9,6 +10,8 @@ import { fetchFundamentals } from "./fundamentals";
 
 const STANDARD_R = 0.10;
 const STANDARD_G = 0.05;
+// Même seuil que le critère « Margin of Safety > 25% » dans evaluateCriteria.
+const MOS_GATE = 0.25;
 const REQUIRED_FIELDS = ["roeTtm", "epsGrowth5y", "debtEquityAnnual", "pfcfShareTtm"];
 // Dérivé de la liste réelle : un total codé en dur se désynchronise dès qu'un
 // critère est ajouté ou retiré (c'était le cas avec « FCF > 0 »).
@@ -57,6 +60,15 @@ export function buildBuffettSummary(asset, fields) {
     score,
     criteria, // traçabilité : quel critère a échoué, sans le recalculer
     criteriaTotal: criteria.length,
+    // B3 — le score du tableau est calculé avec des hypothèses UNIFORMES, pas
+    // avec celles que l'utilisateur règle dans le panneau. Les exposer permet
+    // de l'étiqueter là où le chiffre est montré, plutôt que de laisser croire
+    // à une estimation propre au titre.
+    assumptions: {
+      discountRate: STANDARD_R,
+      growthRate: STANDARD_G,
+      impliedPriceToFcf: impliedPriceToFcfThreshold(STANDARD_G, STANDARD_R, MOS_GATE),
+    },
     signal,
     label: formatActionLabel(signal),
     intrinsicValue,

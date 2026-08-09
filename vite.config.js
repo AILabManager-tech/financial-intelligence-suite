@@ -19,6 +19,7 @@ import { extractMeetingTopics } from './server/meetingTopics.js'
 import { createRateLimiter, clientIp } from './server/rateLimiter.js'
 import { toStooqSymbol } from './server/stooqSymbol.js'
 import { normalizeStooqQuote } from './server/stooqQuote.js'
+import { searchSymbols } from './server/search.js'
 
 const primaryQuoteSource = 'finnhub.io'
 const marketCache = new Map()
@@ -199,34 +200,6 @@ async function fetchHistory(symbol, days) {
   }
 
   return normalizeTimeSeries(symbol, await response.json())
-}
-
-async function searchSymbols(query) {
-  const token = process.env.FINNHUB_API_KEY
-  if (!token) {
-    throw new Error('FINNHUB_API_KEY is required for symbol search')
-  }
-
-  const url = new URL('https://finnhub.io/api/v1/search')
-  url.searchParams.set('q', query)
-  url.searchParams.set('token', token)
-
-  const response = await fetch(url, { headers: { accept: 'application/json' } })
-  if (!response.ok) {
-    throw new Error(`Finnhub search failed: ${response.status}`)
-  }
-
-  const payload = await response.json()
-  return Array.isArray(payload.result)
-    ? payload.result
-      .filter((item) => item.symbol && item.description)
-      .map((item) => ({
-        symbol: item.symbol,
-        description: item.description,
-        type: item.type,
-      }))
-      .slice(0, 12)
-    : []
 }
 
 export default defineConfig(({ mode }) => {
@@ -827,7 +800,9 @@ export default defineConfig(({ mode }) => {
             const { value: results, cacheStatus, expiresAt } = await readThroughCache(
               `search:${query.toLowerCase()}`,
               cacheTtlMs.search,
-              () => searchSymbols(query),
+              // Le module de domaine renvoie l'enveloppe complète ; on ne met en
+              // cache que la liste, l'horodatage et le cache étant recalculés ici.
+              async () => (await searchSymbols(query, { finnhubApiKey })).results,
             )
             response.statusCode = 200
             response.setHeader('Content-Type', 'application/json')

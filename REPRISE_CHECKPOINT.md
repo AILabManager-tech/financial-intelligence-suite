@@ -20,7 +20,7 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ## ⏸️ EN ATTENTE DE L'UTILISATEUR — DÉMARRER ICI (2026-08-09)
 
-**Contre-vérification de l'audit : 35 points sur 39 tiennent. 4 étaient faux ou mal cadrés, 1 correction était incomplète.** Les corrections qui en découlent sont livrées (1191 tests verts, vérifiés sur Node 20).
+**Contre-vérification de l'audit : 35 points sur 39 tiennent. 4 étaient faux ou mal cadrés, 1 correction était incomplète.** Les corrections qui en découlent sont livrées (1216 tests verts, vérifiés sur Node 20).
 
 ### Corrigé le 2026-08-09
 
@@ -37,6 +37,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 - **B11 — horodatage de la source de secours.** Stooq renvoie date et heure sans décalage ; `new Date("2026-08-08T21:45:00")` est lu en heure LOCALE par ECMAScript, donc le même envoi donnait un instant différent selon le navigateur. **Aucun fuseau inventé** — la source n'en documente aucun, en choisir un serait de la provenance fabriquée. Seule la date est retenue (`…T00:00:00.000Z`) et étiquetée `asOfPrecision: "day"` ; minuit UTC place l'instant AVANT l'heure réelle, donc la cote paraît au plus vieille d'un jour, jamais plus fraîche qu'on ne sait. `getQuoteFreshness` masque l'âge en heures pour cette précision et expose `ageDays` ; finnhub garde `"instant"`. Normaliseur extrait en `server/stooqQuote.js` (pur, 7 tests) — il était **dupliqué** entre `api/_handlers/quotes.js` et `vite.config.js`.
 - **B4 — échec de stockage silencieux.** `src/services/storageDiagnostics.js` : trace en console (diagnostic à distance) + bandeau `role="alert"` nommant ce qui n'a pas pu être relu, avec « rien n'a été effacé automatiquement ». Branché sur `portfolioStore` et `snapshotStore`. Le repli inchangé — mieux vaut démarrer qu'un écran blanc. Ni la trace ni le bandeau ne recopient la donnée corrompue ; une même clé n'est signalée qu'une fois.
   - **Réserve** : le bandeau lui-même n'a **pas** de test — il n'existe aucun harnais pour `App.jsx`. La logique dessous est testée (message rendu, panne consignée, pas de doublon), le branchement de six lignes de JSX ne l'est pas.
+
+- **B5 — couche de domaine de la recherche.** `server/search.js` extrait (fetcher injectable, 9 tests, token-leak vérifié dans les résultats ET les messages d'erreur). `api/_handlers/search.js` et le middleware `vite.config.js` l'appellent au lieu de recopier la logique : 28 lignes de duplication retirées. Validation longueur + clé AVANT tout appel réseau (pas de quota amont consommé pour rien).
+- **B6 — sonde d'accord entre les deux sources de prix.** `server/priceSourceAgreement.js`, branchée sur `checkMarketDataHealth`. Compare `pc` finnhub à la dernière clôture complète twelvedata (deux **clôtures** — comparer un cours courant à une clôture quotidienne crierait au loup chaque après-midi). Tolérance 0,5 %, borne inclusive. `summarizeMarketDataHealth` accepte `degraded` : une divergence n'est pas une panne mais doit teinter la santé. Sans les deux valeurs → `unknown`, jamais un accord supposé.
+- **B3 — hypothèse Buffett rendue explicite.** Sous hypothèses uniformes, VI = K × FCF, donc « MoS > 25 % » **est** « P/FCF < 0,75×K » ; par défaut K = 21 → **P/FCF < 15,75**. `impliedPriceToFcfThreshold` (pur, testé, y compris en vérification croisée avec `calcIntrinsicValue`), affiché dans le panneau et suivant les curseurs ; `buildBuffettSummary` expose `assumptions` pour étiqueter le score du tableau. **Ni renommé ni repersonnalisé** — le panneau avait déjà des curseurs, le calcul était juste ; c'est l'implicite qui promettait trop.
 
 ### ⚠️ Règle de vérification — adoptée le 2026-08-09
 
@@ -72,10 +76,10 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ### ➡️ ORDRE DE REPRISE CORRIGÉ
 
-1. **B2** titres canadiens — vrai trou produit pour un outil québécois, demande une source payante. **Décision utilisateur** (choisir et payer un fournisseur), pas une tâche technique.
-2. **B3** renommer ou personnaliser le calcul Buffett — le défaut par défaut vaut exactement « P/FCF < 15,75 »
-3. **B5** couche de domaine absente pour `search` (seule feature sans `server/<feature>.js`) + **B6** sonde d'écart entre les deux sources de prix
-4. ~~**B1** en hygiène + réparer le workflow Dependabot~~ · ~~**B11** fuseau Stooq~~ · ~~**B4** échec de stockage silencieux~~ — **faits le 2026-08-09**
+1. **B2** titres canadiens — **le seul point restant qui demande une décision** : choisir et payer une source. Pas une tâche technique. Ordres de grandeur relevés le 2026-08-09 : Twelve Data (déjà intégré pour l'historique) à partir de ~29 $US/mois et couvre le TSX ; EODHD à partir de ~20 $US/mois ; le flux officiel TMX à partir de ~163 $CA/mois avec licence de redistribution. Le chemin le moins coûteux en argent ET en code est de monter le plan Twelve Data — aucun nouveau fournisseur, il suffit de lever `.TO` de `NON_US_EXCHANGE_SUFFIXES` et d'y router les cotes. **À confirmer chez le fournisseur** : les paliers d'entrée sont typiquement en différé/fin de journée pour le TSX ; le temps réel implique les frais de licence TMX.
+2. ~~**B1** workflow Dependabot~~ · ~~**B11** fuseau Stooq~~ · ~~**B4** stockage silencieux~~ · ~~**B3** hypothèse Buffett~~ · ~~**B5** couche de domaine recherche~~ · ~~**B6** sonde d'écart~~ — **faits le 2026-08-09**
+
+Il ne reste **aucun défaut technique connu**. Les points ouverts restants (B8 Supabase, B9 portefeuille soldé, B12 seuils d'endettement, B14 référence de traité, B15 frais sur survente, B16 conventions Sharpe/Sortino, B17 Berkshire en dur, B18 fichiers non versionnés, B19 base locale) sont des constats assumés ou des décisions, pas du travail en attente.
 
 Document de décision à jour : `AUDIT_POINTS_A_REVISER.pdf` (17 pages, couverture + sommaire, section « Errata » en tête, numérotation inchangée pour préserver les annotations papier).
 

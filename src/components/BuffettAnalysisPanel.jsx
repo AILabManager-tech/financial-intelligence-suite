@@ -6,6 +6,7 @@ import {
   calcIntrinsicValue,
   decideAction,
   evaluateCriteria,
+  impliedPriceToFcfThreshold,
   resolveMoat,
 } from "../utils/buffettCalculator";
 import {
@@ -17,6 +18,8 @@ import {
 } from "../utils/buffettFormatters";
 import BuffettMathBreakdown from "./BuffettMathBreakdown";
 
+// Seuil du critère « marge de sécurité » — le même que dans evaluateCriteria.
+const MOS_GATE = 0.25;
 const DEFAULT_R = 0.10;
 const DEFAULT_G = 0.05;
 const ASSUMPTION_PRESETS = [
@@ -213,6 +216,7 @@ function BuffettBody({ inputs, r, g, setR, setG }) {
   );
   const stockForCriteria = { ...inputs, hasMoat };
   const criteria = evaluateCriteria(stockForCriteria, mos);
+  const impliedPfcf = useMemo(() => impliedPriceToFcfThreshold(g, r, MOS_GATE), [g, r]);
   const allPass = criteria.every((c) => c.status === "PASS");
   const passedCount = criteria.filter((c) => c.status === "PASS").length;
   const action = isDivergent ? "INVALID" : decideAction(allPass, mos);
@@ -341,6 +345,20 @@ function BuffettBody({ inputs, r, g, setR, setG }) {
         <span className="text-slate-400">Critères Buffett validés</span>
         <span className="font-semibold tabular-nums text-white">{passedCount}/{criteria.length}</span>
       </div>
+      {/* B3 — les hypothèses étant uniformes, la valeur intrinsèque est linéaire
+          en flux : le critère de marge de sécurité revient exactement à un seuil
+          de P/FCF. Le laisser implicite faisait promettre au mot « DCF » plus
+          qu'il ne tient. Affiché, il devient une hypothèse vérifiable, et il
+          suit les curseurs. */}
+      {impliedPfcf !== null && (
+        <p className="text-[11px] text-slate-500">
+          Avec ces hypothèses ({(r * 100).toFixed(0)} % d&apos;actualisation, {(g * 100).toFixed(0)} % de
+          croissance), « marge de sécurité &gt; 25 % » équivaut exactement à{" "}
+          <span className="tabular-nums text-slate-300">P/FCF &lt; {impliedPfcf.toFixed(2)}</span>. Les mêmes
+          hypothèses sont appliquées à toutes les entreprises — c&apos;est une convention affichée, pas une
+          estimation propre à ce titre.
+        </p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
         {criteria.map((criterion) => (
           <CriterionRow key={criterion.label} criterion={criterion} />

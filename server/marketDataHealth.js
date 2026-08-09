@@ -1,3 +1,5 @@
+import { checkPriceSourceAgreement } from "./priceSourceAgreement.js";
+
 const defaultTimeoutMs = 5000;
 
 function nowIso() {
@@ -257,7 +259,9 @@ export async function checkFxHealth(fetcher = fetchWithTimeout) {
 }
 
 export function summarizeMarketDataHealth(providers) {
-  if (providers.some((provider) => provider.status === "down")) {
+  // "degraded" couvre aussi la divergence entre les deux sources de prix (B6) :
+  // aucune n'est en panne, mais elles ne racontent plus la même chose.
+  if (providers.some((provider) => provider.status === "down" || provider.status === "degraded")) {
     return "degraded";
   }
 
@@ -276,6 +280,9 @@ export async function checkMarketDataHealth({ finnhubApiKey, twelveDataApiKey, f
     checkTwelveDataHealth(twelveDataApiKey, fetcher),
     checkStooqHealth(fetcher),
     checkFxHealth(fetcher),
+    // Une probe par capability distincte : celle-ci ne teste pas une source
+    // mais leur ACCORD — le risque latent qu'aucune des autres ne couvre (B6).
+    checkPriceSourceAgreement({ finnhubApiKey, twelveDataApiKey, fetcher }),
   ]);
 
   return {
