@@ -18,7 +18,31 @@ Quand l'utilisateur tape `FIS-REPRISE-FD01815` (ou simplement « on continue »)
 
 ---
 
-## 🟢 ÉTAT ACTUEL — DÉMARRER ICI (mis à jour 2026-08-08)
+## ⏸️ EN ATTENTE DE L'UTILISATEUR — DÉMARRER ICI (2026-08-08)
+
+**Le bloc « corrections de justesse » est CLOS, poussé et déployé.** Rien n'est en cours.
+
+- **Livré** : 7 commits `d3287df..e9ae5aa`, poussés sur GitHub, déployés en production (`dpl_Dt3oMip8...`, alias `devlabai.tech`). 1166 tests verts, lint 0, build OK, mutation 16/16.
+- **Vérifié en production** : `/api/quotes` renvoie `sources: ["finnhub.io"]`, l'ancien champ `source` mensonger a disparu, provenance par cote intacte, site en 0,28 s.
+- **Document de décision** : `AUDIT_POINTS_A_REVISER.pdf` (16 pages, 39 points numérotés A1-A20 / B1-B19, barème de notation, 2 lignes de notes manuscrites par point). Source régénérable : `AUDIT_POINTS_A_REVISER.md`.
+
+### ➡️ REPRISE — ce que l'utilisateur doit fournir
+
+L'utilisateur imprime le PDF, annote à tête reposée, puis revient avec ses réponses **par numéro** (« A1 ok », « B3 : renommer », etc.). **Ne rien entreprendre sur les points ouverts avant d'avoir ses réponses** — ils demandent des arbitrages produit, pas des corrections.
+
+**Priorité suggérée si l'utilisateur laisse choisir** : B1 (20 vulnérabilités npm dont 1 critique, site public — 8/10) → B2 (titres canadiens non cotables alors que la fiscalité CELI/REER est modélisée — 7/10) → B3 (le « DCF » Buffett se réduit au multiple 21× : personnaliser `g` par titre, donnée déjà chargée, ou requalifier le libellé — 7/10).
+
+**Les 19 points ouverts sont listés en Partie B du PDF** et cochés `[ ]` dans `PLATFORM_CHECKLIST.md` § « Justesse des calculs ».
+
+### Contexte utile pour la reprise
+
+- Les oracles de vérification indépendants sont rejouables : `/tmp/claude-*/scratchpad/audit/` (v1 annualisation, v2 MWR/VaR/lots, v3 Buffett bout-en-bout, v5 corrélation/concentration, v6 VaR, v7 Buffett anti-point-gratuit, `mutate.py`). Éphémères — les recréer si besoin.
+- **Piège outil** : `make-pdf` attend `generate <in.md> <out.pdf> [options]` — les options APRÈS les fichiers, sinon il prend le PDF pour l'entrée.
+- Base SQLite de dev (`data/financial-intelligence.sqlite`) : portefeuille écrasé pendant les tests de validation. Non versionnée, sans conséquence.
+
+---
+
+## 🟢 ÉTAT PRÉCÉDENT — bloc corrections de justesse (2026-08-08)
 
 - **🔴 CORRECTIONS DE JUSTESSE — LOT 1/2 : MWR + MOTEUR DE LOTS ✅ (2026-08-08, 1155 tests verts, +3).** Un audit de fiabilité complet (vérification de chaque sortie contre un oracle indépendant : racine analytique de polynôme, écart-type de série à σ connu, quantile empirique, HHI, régression OLS) a démontré **5 sorties fausses sur 12 vérifiées**. Ce lot corrige les deux qui touchent le journal de transactions.
   - **F-01 — MWR/IRR, CRITIQUE.** `moneyWeightedReturn.js:108` écartait les flux datés du **dernier** jour de la série (`day >= endDay`). Or la série reconstruite applique les deltas de quantité du jour J dans la valeur du jour J : les titres achetés étaient **valorisés dans `V_fin` sans leur décaissement** → l'IRR lisait un actif acheté comme un gain. Bout-en-bout sur 90 jours de cours réels, achat de 110 000 $ le dernier jour : **MWR = 11 010 % au lieu de 10 %**, sans exception ni avertissement, pendant que le TWR affiché juste à côté restait correct à 10 %. Corrigé en `day > endDay`. La borne de **départ** reste exclue (asymétrie volontaire, commentée dans le code : `V_début` **est** déjà ce flux).
