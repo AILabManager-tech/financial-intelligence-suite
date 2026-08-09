@@ -23,8 +23,10 @@ describe("computePortfolioRisk", () => {
     expect(result.observations).toBe(3);
     // σ d'échantillon des rendements {0.1, -0.1, 0.1}
     expect(result.perPeriodVolPct).toBeCloseTo(11.547, 2);
-    // annualisée ×√252 (espacement = 1 jour)
-    expect(result.annualizedVolPct).toBeCloseTo(11.547 * Math.sqrt(252), 0);
+    // Annualisation = √(périodes réelles par an). Espacement 1 jour CALENDAIRE
+    // ⇒ 365 périodes/an. (Utiliser √252 ici mélangerait jours de bourse au
+    // numérateur et jours calendaires au dénominateur — cf. le test ci-dessous.)
+    expect(result.annualizedVolPct).toBeCloseTo(11.547 * Math.sqrt(365), 0);
     // courbe d'indice 1 → 1.1 → 0.99 → 1.089 : repli max -10% (pic→creux)
     expect(result.maxDrawdownPct).toBeCloseTo(-10, 6);
     expect(result.maxDrawdownFrom).toBe("2026-05-02");
@@ -60,5 +62,33 @@ describe("computePortfolioRisk", () => {
     expect(result.observations).toBe(2);
     expect(result.maxDrawdownPct).toBeCloseTo(0, 6); // monotone, aucun repli
     expect(result.perPeriodVolPct).toBeCloseTo(3.5355, 3); // σ de {0, 0.05} (n-1)
+  });
+
+  it("annualise d'après l'espacement RÉEL d'une série de jours de bourse", () => {
+    // Le cas que les autres tests ne couvrent pas : une vraie série saute les
+    // week-ends, donc l'espacement moyen vaut ~1,4 jour calendaire et non 1.
+    // L'annualisation doit refléter le nombre de sous-périodes réellement
+    // observées par an — ni √252 en dur, ni √365 en dur.
+    const snapshots = [];
+    const day = new Date(Date.UTC(2024, 0, 1)); // lundi
+    let value = 1000;
+    while (snapshots.length < 261) {
+      const dow = day.getUTCDay();
+      if (dow >= 1 && dow <= 5) {
+        snapshots.push(snap(day.toISOString().slice(0, 10), value));
+        value *= snapshots.length % 2 === 0 ? 1.01 : 0.99; // alternance ±1 %
+      }
+      day.setUTCDate(day.getUTCDate() + 1);
+    }
+
+    const result = computePortfolioRisk(snapshots);
+    const n = result.observations;
+    // Oracle : périodes/an = n / (durée de la série en années).
+    const periodsPerYear = n / (result.days / 365);
+    expect(periodsPerYear).toBeGreaterThan(250); // ~261, pas ~180
+    expect(result.annualizedVolPct).toBeCloseTo(
+      result.perPeriodVolPct * Math.sqrt(periodsPerYear),
+      6,
+    );
   });
 });

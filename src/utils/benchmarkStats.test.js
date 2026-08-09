@@ -49,7 +49,10 @@ describe("computeBenchmarkStats", () => {
     expect(stats.downCapturePct).toBeCloseTo(200, 4); // et 2× la baisse
     expect(stats.informationRatio).not.toBeNull();
     expect(stats.trackingErrorPct).toBeGreaterThan(0);
-    expect(stats.treynor).toBeCloseTo(8.4, 1);
+    // Treynor = (excès moyen × périodes/an) / beta. Espacement 1 jour calendaire
+    // ⇒ 365 périodes/an (et non 252 : le dénominateur est en jours calendaires).
+    // Ancienne valeur 8,4 × 365/252 = 12,1667.
+    expect(stats.treynor).toBeCloseTo(12.1667, 3);
   });
 
   it("beta/corrélation null si la variance du benchmark est nulle", () => {

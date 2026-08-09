@@ -12,7 +12,8 @@
 
 import { computeSubPeriodReturns, daysBetween } from "./timeWeightedReturn";
 
-const TRADING_DAYS = 252;
+// Même unité de temps des deux côtés (jours calendaires) — cf. portfolioRisk.js.
+const CALENDAR_DAYS = 365;
 
 function dayKey(value) {
   return typeof value === "string" && value.length >= 10 ? value.slice(0, 10) : null;
@@ -56,7 +57,7 @@ export function computeBenchmarkStats(snapshots, transactions, benchmarkPoints, 
   const to = pairs[n - 1].toDay;
   const spanDays = daysBetween(from, to) ?? n;
   const meanPeriodDays = spanDays > 0 ? spanDays / n : 1;
-  const periodsPerYear = TRADING_DAYS / meanPeriodDays;
+  const periodsPerYear = CALENDAR_DAYS / meanPeriodDays;
   const rfPerPeriod = annualRiskFreePct / 100 / periodsPerYear;
 
   const meanP = pairs.reduce((a, x) => a + x.p, 0) / n;

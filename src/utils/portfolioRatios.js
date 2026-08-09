@@ -15,7 +15,11 @@
 import { computeSubPeriodReturns, daysBetween } from "./timeWeightedReturn";
 import { computePortfolioRisk } from "./portfolioRisk";
 
-const TRADING_DAYS = 252;
+// Nombre de sous-périodes par an = 365 / espacement moyen en jours CALENDAIRES.
+// Les deux termes doivent partager la même unité : `daysBetween` compte en
+// calendaire, donc 252 (jours de bourse) au numérateur sous-estimait tous les
+// ratios annualisés de ~15 %. Voir la note détaillée dans portfolioRisk.js.
+const CALENDAR_DAYS = 365;
 
 export function computePortfolioRatios(snapshots, transactions = [], { annualRiskFreePct = 0 } = {}) {
   const series = computeSubPeriodReturns(snapshots, transactions);
@@ -29,7 +33,7 @@ export function computePortfolioRatios(snapshots, transactions = [], { annualRis
   const to = series[series.length - 1].toDay;
   const spanDays = daysBetween(from, to) ?? n;
   const meanPeriodDays = spanDays > 0 ? spanDays / n : 1;
-  const periodsPerYear = TRADING_DAYS / meanPeriodDays;
+  const periodsPerYear = CALENDAR_DAYS / meanPeriodDays;
   const annualizationFactor = Math.sqrt(periodsPerYear);
 
   // Taux sans risque ramené à la période (hypothèse).

@@ -20,10 +20,11 @@ describe("computePortfolioRatios", () => {
     ]);
     expect(result.hasData).toBe(true);
     expect(result.observations).toBe(3);
-    // rendements {0.1,-0.1,0.1} : mean 0.0333, σ 0.11547 → Sharpe = mean/σ × √252
-    expect(result.sharpe).toBeCloseTo((0.0333333 / 0.1154701) * Math.sqrt(252), 1);
+    // rendements {0.1,-0.1,0.1} : mean 0.0333, σ 0.11547. Espacement 1 jour
+    // calendaire ⇒ 365 périodes/an → Sharpe = mean/σ × √365.
+    expect(result.sharpe).toBeCloseTo((0.0333333 / 0.1154701) * Math.sqrt(365), 1);
     // downside dev = √(mean(min(0,r)²)) = √(0.01/3) = 0.057735 → Sortino plus élevé
-    expect(result.sortino).toBeCloseTo((0.0333333 / 0.0577350) * Math.sqrt(252), 1);
+    expect(result.sortino).toBeCloseTo((0.0333333 / 0.0577350) * Math.sqrt(365), 1);
     // série < 1 an → Calmar et rendement annualisé masqués
     expect(result.calmar).toBeNull();
     expect(result.annualizedReturnPct).toBeNull();

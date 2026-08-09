@@ -311,7 +311,7 @@ Audit complet : chaque sortie critique confrontée à un oracle **indépendant**
 
 - [x] **F-01 MWR/IRR** — flux du dernier jour ignorés → MWR 11 010 % au lieu de 10 %. Corrigé (`day > endDay`) ; le test qui verrouillait le bug a été scindé et complété d'une régression.
 - [x] **F-04 Moteur de lots** — résultat dépendant de l'ordre d'entrée à date égale (P&L 1 000 $ ou 0 $). Corrigé par tri secondaire `buy` avant `sell` puis index d'entrée.
-- [ ] **F-02 Annualisation** — `252 / meanPeriodDays` mélange jours de bourse et jours calendaires → biais systématique −15,4 % sur vol, Sharpe, Sortino, Calmar, tracking error, information ratio, alpha, Treynor.
+- [x] **F-02 Annualisation** — `252 / meanPeriodDays` mélangeait jours de bourse et jours calendaires → biais systématique −15,4 % sur vol, Sharpe, Sortino, Calmar, tracking error, information ratio, alpha, Treynor. Corrigé en `365 / meanPeriodDays` (même unité des deux côtés) dans `portfolioRisk`, `portfolioRatios`, `benchmarkStats`. Écart à l'oracle : −15,41 % → −0,00 %.
 - [ ] **F-03 VaR/CVaR** — `MIN_HISTORICAL = 10` rend VaR 95 % = VaR 99 % = CVaR ; un quantile 1 % n'est pas estimable sur 10 observations.
 - [ ] **F-06 / F-07 Factualité quotes** — `changePct: 0` et `change: 0` fabriqués quand la donnée manque ; champ `source` global du payload annonçant `finnhub.io` dès qu'une seule cote sur 30 en vient.
 - [ ] **F-05 Analyse Buffett** — `r` et `g` constants réduisent le DCF à un seuil sur le P/FCF (multiple K = 21) ; critère « FCF > 0 » tautologique ; seuils D/E contradictoires (0,5 vs 1,5).

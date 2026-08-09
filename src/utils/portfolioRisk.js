@@ -6,7 +6,15 @@
 //
 // Volatilité : écart-type d'échantillon (n-1) des rendements de sous-période,
 // annualisé en tenant compte de l'espacement RÉEL des points (les snapshots
-// peuvent sauter des jours) : σ_annuel = σ_période × √(252 / jours_moyens_période).
+// peuvent sauter des jours) : σ_annuel = σ_période × √(365 / jours_moyens_période),
+// c'est-à-dire × √(nombre de sous-périodes réellement observées par an).
+// Les deux termes sont en jours CALENDAIRES — `daysBetween` compte du calendaire.
+// Y mettre 252 (jours de bourse) sous-estimait toute vol annualisée de ~15 % dès
+// qu'un week-end apparaissait dans la série, donc sur toute série réelle.
+// La formule reste juste dans les deux régimes : sur une série de jours de bourse
+// elle rend ~261 périodes/an (≈ la convention 252, aux fériés près) ; sur une série
+// calendaire 7j/7 elle rend 365, ce qui compense exactement les week-ends à
+// rendement nul (σ_cal × √365 = σ_bourse × √252).
 // Drawdown : repli maximal sur la courbe de performance flux-neutralisée (indice
 // base 1), dates pic→creux, durée de récupération, repli courant, statut.
 //
@@ -15,7 +23,7 @@
 
 import { computeSubPeriodReturns, daysBetween } from "./timeWeightedReturn";
 
-const TRADING_DAYS = 252;
+const CALENDAR_DAYS = 365;
 const EPS = 1e-9;
 
 export function computePortfolioRisk(snapshots, transactions = []) {
@@ -34,7 +42,7 @@ export function computePortfolioRisk(snapshots, transactions = []) {
   const to = series[series.length - 1].toDay;
   const spanDays = daysBetween(from, to) ?? n;
   const meanPeriodDays = spanDays > 0 ? spanDays / n : 1;
-  const annualizedVol = perPeriodVol * Math.sqrt(TRADING_DAYS / meanPeriodDays);
+  const annualizedVol = perPeriodVol * Math.sqrt(CALENDAR_DAYS / meanPeriodDays);
 
   // Courbe de performance flux-neutralisée (indice base 1 au premier point).
   const curve = [{ day: from, idx: 1 }];
